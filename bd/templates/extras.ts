@@ -27,9 +27,6 @@ export const generateTokenJWT = (tokenizeData, opts?): string => {
 };
 
 export const genPasswordAndTokens = (userData) => {
-  userData._password = generateHash(userData.password);
-  userData.password = '******';
-
   // TODO: schort the expire date
   const options = { expiresIn: '365d' };
   userData.token = generateTokenJWT({ id: userData.id, role: userData.role }, options);
@@ -97,7 +94,7 @@ export const protectToRole = async (ctx, entry, role) => {
     const ctxUser = ctx.state.user;
     const userRoleModel = entry.models['userRole'];
 
-    const userRole = await userRoleModel.findOne({ role, user: ctxUser.id });
+    const userRole = await userRoleModel.findOne({ role, users: ctxUser.id });
 
     return userRole != null;
   }
@@ -134,7 +131,7 @@ export const generateProtection = (entry, ctx, data) => {
         const ctxUser = ctx.state.user;
         const userRoleModel = entry.models['userRole'];
       
-        const userRole = await userRoleModel.findOne({ role: roles[0], user: ctxUser.id });
+        const userRole = await userRoleModel.findOne({ role: roles[0], users: ctxUser.id });
       
         return userRole != null;
       }

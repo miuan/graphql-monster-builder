@@ -91,7 +91,7 @@ app.use(async (ctx, next) => {
 });
 
 app.use(jwt({
-  secret: process.env.JWT_TOKEN_SECRET || 'pwc_test_secret',
+  secret: process.env.JWT_TOKEN_SECRET || 'protectql_test_secret',
   passthrough: true,
 }).unless({
   path: [/^\/v1\/graphiql/, /^\/public/],

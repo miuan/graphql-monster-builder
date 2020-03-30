@@ -29,11 +29,14 @@ export const createService = (model : SchemaModel) => {
   let actionBeforeUpdate = '';
   if (modelName === 'User') {
     actionBeforeCreate = `
-extras.genPasswordAndTokens(data);
+    if(data.password) {
+      data._password = extras.generateHash(data.password);
+      data.password = '******';
+    }
 `;
     actionAfterCreate = `
-extras.genPasswordAndTokens(createdModel);
-await createdModel.save();
+  extras.genPasswordAndTokens(createdModel);
+  await createdModel.save();
 
 `;
     actionBeforeUpdate = 'extras.checkPasswordIsNotIncluded(data);';
