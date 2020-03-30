@@ -1,0 +1,16 @@
+{
+  "name": "qpb",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Milan Medlik <milan.medlik@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "npx ts-node index.ts"
+  },
+  "dependencies": {
+    "lodash": "^4.17.15",
+    "ts-node": "^8.8.1",
+    "typescript": "^3.8.3",
+    "yargs": "^15.3.1"
+  }
+}
