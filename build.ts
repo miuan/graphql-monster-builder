@@ -33,6 +33,8 @@ export const exportAs = async (name, from, base='.') => {
   writeToFile(structure.schema, `gen/extras`, templateToText('extras.ts', null));
   writeToFile(structure.schema, `gen/services/db`, templateToText('db.ts', null));
   writeToFile(structure.schema, `package.json`, templateToText('package.json', null));
+
+  // writeToFile(structure.gen, 'models.json', JSON.stringify(models))
 };
 
 

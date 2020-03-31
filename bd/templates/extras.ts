@@ -64,7 +64,7 @@ export const generateChangePassword = (entry) => {
     }
 
     if (!bcrypt.compareSync(data.oldPassword, user._password)) {
-      throw `Old password seems to be different than is currently used`;
+      throw `Old password id different than is currently used`;
     }
 
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -77,56 +77,34 @@ export const generateChangePassword = (entry) => {
   };
 };
 
-
-
-export const protectToPublic = () => {
-  return true;
-};
-
-export const protectToUser = (ctx, entry) => {
-  if (ctx && ctx.state && ctx.state.user) {
-    return true;
-  }
-};
-
-export const protectToRole = async (ctx, entry, role) => {
-  if (ctx && ctx.state && ctx.state.user) {
-    const ctxUser = ctx.state.user;
-    const userRoleModel = entry.models['userRole'];
-
-    const userRole = await userRoleModel.findOne({ role, users: ctxUser.id });
-
-    return userRole != null;
-  }
-};
-
-export const protectToOwner = (ctx, entry, one, id) => {
-  if (ctx && ctx.state && ctx.state.user) {
-    return true;
-  }
-};
-
-export const protectToFilter = (ctx, data, filter, roles) => {
-  if (ctx && ctx.state && ctx.state.user) {
-    return true;
-  }
-};
-
-export const generateProtection = (entry, ctx, data) => {
+export const generateProtections = (entry, modelName) => {
   return {
     public: () => true,
-    user: () => {
+    user: (ctx) => {
       if (ctx && ctx.state && ctx.state.user) {
         return true;
       }
     },
-    owner: async (ownerField = 'user') => {
+    owner: async (ctx, data, ownerField = 'user') => {
       if (ctx && ctx.state && ctx.state.user) {
+        const fd = {
+          ...data
+        }
 
-        return true;
+        if(fd.id) {
+          fd._id = fd.id
+          delete fd.id
+        }
+
+        const u = await entry.models[modelName].findOne(fd, ownerField)
+        console.log('OWNER CHECK : user1 >>', {u, fd, state: ctx.state, modelName, models: entry.models})
+        console.log('u && u[ownerField] == ctx.state.user.id', u && u[ownerField] == ctx.state.user.id)
+        return u && u[ownerField] == ctx.state.user.id;
+      } else {
+        return false
       }
     },
-    role: async (roles: string[]) => {
+    role: async (ctx, roles: string[]) => {
       if (ctx && ctx.state && ctx.state.user) {
         const ctxUser = ctx.state.user;
         const userRoleModel = entry.models['userRole'];
@@ -136,7 +114,7 @@ export const generateProtection = (entry, ctx, data) => {
         return userRole != null;
       }
     },
-    filter: async (filters: any[], roles: string[]) => {
+    filter: async (ctx, data, filters: any[], roles: string[]) => {
       if (ctx && ctx.state && ctx.state.user) {
         const ctxUser = ctx.state.user;
         console.log(data.filter)
@@ -178,25 +156,4 @@ export const generateProtection = (entry, ctx, data) => {
       return false
     },
   };
-};
-
-export const protection = {
-  public : protectToPublic,
-  user : protectToUser,
-  owner : protectToOwner,
-  role : protectToRole,
-  filter : protectToFilter,
-};
-
-export const protect = async (ctx, entry, protections, one, id) => {
-  for (const protect of protections) {
-    if ((protect.type === 'public' && protectToPublic()) ||
-    (protect.type === 'user' && await protectToUser(ctx, entry)) ||
-    (protect.type === 'owner' && await protectToOwner(ctx, entry, one, id)) ||
-    (protect.type === 'user' && await protectToRole(ctx, entry, protect.role))) {
-      return;
-    }
-  }
-
-  throw 'unauthorized';
 };

@@ -121,8 +121,6 @@ export const scanProtectionUnit = (unit: string, protection:SchemaModelProtectio
   } else if (protectFor === 'remove') {
     protection.remove.push(param);
   }
-
-  console.log(protection);
 };
 
 export const protectionCheckTheParameter = (param:SchemaModelProtectionParam, typeName: string, value: string, unit: string, row: number) => {

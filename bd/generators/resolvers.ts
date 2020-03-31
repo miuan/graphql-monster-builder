@@ -60,13 +60,13 @@ export const generateProtectionFromParam = (protection : SchemaModelProtectionPa
   if (protection.type === SchemaModelProtectionType.PUBLIC) {
     result += `await protections.public()`;
   } else if (protection.type === SchemaModelProtectionType.USER) {
-    result += `await protections.user()`;
+    result += `await protections.user(ctx)`;
   } else if (protection.type === SchemaModelProtectionType.OWNER) {
     const param = protection.param ?  `${protection.param}` : 'user';
-    result += `await protections.owner('${param}')`;
+    result += `await protections.owner(ctx, data, '${param}')`;
   } else if (protection.type === SchemaModelProtectionType.ROLE) {
     const roles = `'` + protection.roles.join(`','`) + `'`;
-    result += `await protections.role([${roles}])`;
+    result += `await protections.role(ctx, [${roles}])`;
   } else if (protection.type === SchemaModelProtectionType.FILTER) {
     const roles = protection.roles.length > 0 ? `['` + protection.roles.join(`','`) + `']` : 'null';
     let filters = '';
@@ -74,7 +74,7 @@ export const generateProtectionFromParam = (protection : SchemaModelProtectionPa
       filters = `,{name: '${filter.name}', value: '${filter.value}'}`;
     }
     
-    result += `await protections.filter([${filters.substr(1)}], ${roles})`;
+    result += `await protections.filter(ctx, data, [${filters.substr(1)}], ${roles})`;
   }
   return result;
 };

@@ -35,20 +35,33 @@ export const removeDirs = async (dir) => {
     return fs.unlinkSync(dir);
   }
   
+  if(/node_modules$/.test(dir)) {
+    console.log(`skip dir: ${dir}`)
+    return
+  }
+
+  console.log(`remove dir: '${dir}'`);
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullfile = path.join(dir, file);
     const stats = fs.statSync(fullfile);
     if (stats.isDirectory()) {
       removeDirs(fullfile);
-    } else {
-      console.log(`fs.unlinkSync(${fullfile})`);
+    } else if(! /yarn.lock$/.test(fullfile) && ! /package.json$/.test(fullfile)) {
+      // also not remove 'yarn.lock
       fs.unlinkSync(fullfile);
+    } else {
+      console.log('skiped: ', fullfile)
     }
   }
 
-  console.log(`fs.unlinkSync(${dir})`);
-  fs.rmdirSync(dir);
+  // if node modules stays then rm on root dir will fail
+  try {
+    fs.rmdirSync(dir);
+  } catch (ex) {
+
+  }
+  
 };
 
 export const createDirs = (structure: Structure, baseDir: string = '') => {
@@ -59,7 +72,13 @@ export const createDirs = (structure: Structure, baseDir: string = '') => {
     }
 
     const dir = path.join(baseDir, structure[str].dir);
-    fs.mkdirSync(dir);
+    // if node modules stays then rm on root dir was not removed
+    try {
+      fs.mkdirSync(dir);
+    } catch (ex) {
+
+    }
+    
   }
 };
 
@@ -87,8 +106,13 @@ export const generateStructure = (id, baseDir: string = './graphql/generated/'):
 export const writeToFile = (item: StructureItem, name: string, content: string) => {
   const nameWithExt = name.indexOf('.') === -1 ? `${name}.ts` : name;
   const fullName = path.join(item.dir, nameWithExt);
-  fs.writeFileSync(fullName, content);
-  item.modules.push(name);
+
+  // some files should not be overrided 
+  // for example the package.json 
+  if(!fs.existsSync(fullName)){
+    fs.writeFileSync(fullName, content);
+    item.modules.push(name);
+  }
 };
 
 

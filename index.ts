@@ -32,8 +32,11 @@ new Promise(async() => {
     // await exportAs('protectql', './graphql/protectql.schema');
     const name = argv._[1]
     await exportAs(name, argv._[0]);
-    
-    console.log(`cd ${name}/`)
-    console.log(`yarn && yarn start`)
-    
+    console.log(`done`)
+    console.log(``)
+    console.log(``)
+    console.log(`Next step:`)
+    console.log(``)
+    console.log(`cd ${name}/ && yarn && yarn start`)
+    console.log(``)
   });

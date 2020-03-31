@@ -1,8 +1,7 @@
 import * as extras from '../extras';
 
-export const _MODEL_LOWER_NAME_All = (entry) => {
+export const _MODEL_LOWER_NAME_All = (entry, protections) => {
   return async (root, data, ctx) => {
-    const protections = extras.generateProtection(entry, ctx, data);
     _PROTECT_ALL_;
 
     if (entry.hooks && entry.hooks.resolvers['before_MODEL_NAME_All']) {
@@ -18,9 +17,8 @@ export const _MODEL_LOWER_NAME_All = (entry) => {
   };
 };
 
-export const _MODEL_LOWER_NAME_One = (entry) => {
+export const _MODEL_LOWER_NAME_One = (entry, protections) => {
   return async (root, data, ctx) => {
-    const protections = extras.generateProtection(entry, ctx, data);
     _PROTECT_ONE_;
     if (entry.hooks && entry.hooks.resolvers['before_MODEL_NAME_One']) {
       await entry.hooks.resolvers['before_MODEL_NAME_One'](entry, { root, data, ctx });
@@ -35,9 +33,8 @@ export const _MODEL_LOWER_NAME_One = (entry) => {
   };
 };
 
-export const _MODEL_LOWER_NAME_Create = (entry) => {
+export const _MODEL_LOWER_NAME_Create = (entry, protections) => {
   return async (root, data, ctx) => {
-    const protections = extras.generateProtection(entry, ctx, data);
     _PROTECT_CREATE_;
     if (entry.hooks && entry.hooks.resolvers['before_MODEL_NAME_Create']) {
       data = await entry.hooks.resolvers['before_MODEL_NAME_Create'](entry, { root, data, ctx });
@@ -53,9 +50,8 @@ export const _MODEL_LOWER_NAME_Create = (entry) => {
   };
 };
 
-export const _MODEL_LOWER_NAME_Update = (entry) => {
+export const _MODEL_LOWER_NAME_Update = (entry, protections) => {
   return async (root, data, ctx) => {
-    const protections = extras.generateProtection(entry, ctx, data);
     _PROTECT_UPDATE_;
     if (entry.hooks && entry.hooks.resolvers['before_MODEL_NAME_Update']) {
       data = await entry.hooks.resolvers['before_MODEL_NAME_Update'](entry, { root, data, ctx });
@@ -71,9 +67,9 @@ export const _MODEL_LOWER_NAME_Update = (entry) => {
   };
 };
 
-export const _MODEL_LOWER_NAME_Remove = (entry) => {
+export const _MODEL_LOWER_NAME_Remove = (entry, protections) => {
   return async ({ root, data, ctx }) => {
-    const protections = extras.generateProtection(entry, ctx, data);
+    
     _PROTECT_REMOVE_;
     if (entry.hooks && entry.hooks.resolvers['before_MODEL_NAME_Remove']) {
       await entry.hooks.resolvers['before_MODEL_NAME_Remove'](entry, { root, data, ctx });
@@ -92,11 +88,12 @@ export const _MODEL_LOWER_NAME_Remove = (entry) => {
 
 
 export const generate_MODEL_NAME_Resolver = (entry) => {
+  const protections = extras.generateProtections(entry, '_MODEL_LOWER_NAME_')
   return {
-    all: _MODEL_LOWER_NAME_All(entry),
-    one: _MODEL_LOWER_NAME_One(entry),
-    create: _MODEL_LOWER_NAME_Create(entry),
-    update: _MODEL_LOWER_NAME_Update(entry),
-    remove: _MODEL_LOWER_NAME_Remove(entry), 
+    all: _MODEL_LOWER_NAME_All(entry, protections),
+    one: _MODEL_LOWER_NAME_One(entry, protections),
+    create: _MODEL_LOWER_NAME_Create(entry, protections),
+    update: _MODEL_LOWER_NAME_Update(entry, protections),
+    remove: _MODEL_LOWER_NAME_Remove(entry, protections), 
   };
 };
