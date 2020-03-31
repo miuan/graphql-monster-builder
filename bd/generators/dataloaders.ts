@@ -11,7 +11,7 @@ export const generateDataloadersWorker = (structure: Structure, models: SchemaMo
   import * as DataLoader from 'dataloader';
  
   interface IServiceDataloader {
-    findByIds(id);
+    find(filter);
     count(param);
   }
 
@@ -95,13 +95,10 @@ export const generateDataloadersWorker = (structure: Structure, models: SchemaMo
   const batchFind = async (service: IServiceDataloader, keys) => {
     // tslint:disable-next-line:ter-arrow-parens
     return await processBatches(keys, async (batchKeys) => {
-      return await service.findByIds(keys);
+      return await service.find({_id: {$in: keys}});
     });
   };
   
-  // export const userDataloader = async (ctx, userIds, loadMany = true) => {
-  //   return await dataloaderByName('user', userService, ctx, userIds, loadMany);
-  // };
   
   export const generateDataloaders = (entry) => {
 

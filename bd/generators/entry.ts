@@ -160,7 +160,7 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
         member.relation.type === SchemaModelRelationType.MANY_TO_MANY 
         || member.relation.type === SchemaModelRelationType.MANY_TO_ONE;
     body += `\n\t\t${memberName}: async (root, data, ctx) => {
-      return await entry.dataloaders['${lower}'](ctx, data.${memberName},${many});
+      return await entry.dataloaders['${lower}'](ctx, root.${memberName},${many});
     },`;
   }
   body += `

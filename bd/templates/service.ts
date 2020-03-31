@@ -8,7 +8,7 @@ export const _LOWER_NAME_All = (entry) => {
     }
 
     const filter = extras.filterGen(data.filter)
-    console.log('\nfilterGen(filter)\n', filter['$and'])
+    console.log('\nfilterGen(filter)\n', filter)
     let models = await _LOWER_NAME_Model.find(filter);
     
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_All']) {

@@ -12,10 +12,11 @@ yarn build --backend examples/project.schema my-server
 cd my-server/ && yarn && yarn start
 ```
 
-### create admin user
+### create login as admin user
 
-```
-mutation {
-  createUser(email:"admin@my-server.com", password:"admin", roles: {role:"admin"}) {id, token, roles{role, id}}
-}
+```curl
+curl --request POST \
+  --url http://localhost:3001/entry/graphql \
+  --header 'content-type: application/json' \
+  --data '{"query":"{\n  login(email: \"admin\", password: \"admin\") {\n    token\n    id\n  }\n}\n"}'
 ```

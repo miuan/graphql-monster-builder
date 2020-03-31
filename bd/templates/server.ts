@@ -13,6 +13,7 @@ import * as mongoDB from './gen/services/db';
 import { generateResolver } from './gen/entry';
 import { makeExecutableSchema } from 'graphql-tools';
 
+// TODO: reimplement server.ts for koa version 2
 const app: Koa = new Koa();
 
 // load config to `process.env.*` from `.env` file
