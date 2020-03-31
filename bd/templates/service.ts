@@ -2,13 +2,17 @@ import { VAR_NAME } from '../models/_MODEL_NAME_';
 import * as extras from '../extras';
   
 export const _LOWER_NAME_All = (entry) => {
-  return async (limit:number = null,offset:number = null,sort:any = null) => {
+  return async (data) => {
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_All']) {
-      await entry.hooks.services['before_MODEL_NAME_All'](entry, { limit, offset, sort });
+      await entry.hooks.services['before_MODEL_NAME_All'](entry, data);
     }
-    let models = await _LOWER_NAME_Model.find({});
+
+    const filter = extras.filterGen(data.filter)
+    console.log('\nfilterGen(filter)\n', filter['$and'])
+    let models = await _LOWER_NAME_Model.find(filter);
+    
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_All']) {
-      models = await entry.hooks.services['after_MODEL_NAME_All'](entry, { models, limit, offset, sort });
+      models = await entry.hooks.services['after_MODEL_NAME_All'](entry, { models, ...data });
     }
     return models;
   };

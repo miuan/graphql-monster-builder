@@ -157,3 +157,91 @@ export const generateProtections = (entry, modelName) => {
     },
   };
 };
+
+// ******************************
+// * * *    F I L T E R     * * *
+// ******************************
+
+const filterANDOR = (filter, operator) => {
+  if(filter.length == 1){
+    return filterGen(filter[0])
+  }
+  else if(filter.length > 1) {
+    const obj = {}
+    obj[operator] = []
+    for(const f of filter) {
+      obj[operator].push(filterGen(f))
+    }
+    return obj
+  } else {
+    return undefined
+  }
+
+}
+
+
+export const filterGen = (filter) => {
+
+  console.log('DEBUG:FILTER', filter)
+  let obj = {}
+
+  if(filter.AND) {
+    return filterANDOR(filter.AND, '$and')
+  } else if(filter.OR) {
+    return filterANDOR(filter.OR, '$or')
+  } 
+
+  if(Object.keys(filter).length > 0) {
+    for(const f in filter){
+      const ff = filter[f]
+
+      if(/_every$/.test(f)){
+        obj[f.substr(0, f.length-6)] = filterGen(ff)
+      } else if(/_none$/.test(f)){
+        obj[f.substr(0, f.length-5)] = {'$not': filterGen(ff)}
+      } else if(/_not_contains$/.test(f)){
+        obj[f.substr(0, f.length-13)] = {$not: { "$regex": ff, "$options": "i" }}
+      } else if(/_contains$/.test(f)){
+        obj[f.substr(0, f.length-9)] = { "$regex": ff, "$options": "i" }
+      } else if(/_not$/.test(f)){
+        obj[f.substr(0, f.length-4)] = { $ne: ff }
+      } else if(/_not_in$/.test(f)){
+        obj[f.substr(0, f.length-7)] = { $not: { $in: ff } }
+      } else if(/_in$/.test(f)){
+        obj[f.substr(0, f.length-3)] = { $in: ff }
+      } else if(/_not_starts_with$/.test(f)){
+        obj[f.substr(0, f.length-16)] = {$not: { "$regex": `^${ff}`, "$options": "i" }}
+      } else if(/_starts_with$/.test(f)){
+        obj[f.substr(0, f.length-12)] = { "$regex": `^${ff}`, "$options": "i" }
+      } else if(/_not_ends_with$/.test(f)){
+        obj[f.substr(0, f.length-14)] = {$not: { "$regex": `${ff}$`, "$options": "i" }}
+      } else if(/_ends_with$/.test(f)){
+        obj[f.substr(0, f.length-10)] = { "$regex": `${ff}$`, "$options": "i" }
+      } else if(/_lt$/.test(f)){
+        obj[f.substr(0, f.length-3)] = { "$lt": ff }
+      } else if(/_lt$/.test(f)){
+        obj[f.substr(0, f.length-3)] = { "$lt": ff }
+      } else if(/_lte$/.test(f)){
+        obj[f.substr(0, f.length-4)] = { "$lte": ff }
+      } else if(/_gt$/.test(f)){
+        obj[f.substr(0, f.length-3)] = { "$gt": ff }
+      } else if(/_gte$/.test(f)){
+        obj[f.substr(0, f.length-4)] = { "$gte": ff }
+      } else if(f == 'id') {
+        obj['_id'] = ff
+      } else if(typeof ff == 'string' || typeof ff == 'number') {
+        obj = {...filter}
+      } else {
+        // TODO: stop going deeper than just object.id
+        //       mongoose can't query populated fields
+        //       https://stackoverflow.com/questions/17535587/mongoose-query-a-populated-field
+        //       posible show message is funciton of prepaid version
+        return filterGen(ff)
+      }
+    }
+  } else {
+    return filter
+  }
+  
+  return obj
+}

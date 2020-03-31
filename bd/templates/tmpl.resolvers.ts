@@ -8,7 +8,7 @@ export const _MODEL_LOWER_NAME_All = (entry, protections) => {
       await entry.hooks.resolvers['before_MODEL_NAME_All'](entry, { root, data, ctx });
     }
 
-    let models = await entry.services['_MODEL_LOWER_NAME_'].all(data.limit, data.offset, data.sort, ctx.userId);
+    let models = await entry.services['_MODEL_LOWER_NAME_'].all(data, ctx.userId);
 
     if (entry.hooks && entry.hooks.resolvers['after_MODEL_NAME_All']) {
       models = await entry.hooks.resolvers['after_MODEL_NAME_All'](entry, { models, root, data, ctx });
