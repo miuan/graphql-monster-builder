@@ -68,7 +68,7 @@ export const _MODEL_LOWER_NAME_Update = (entry, protections) => {
 };
 
 export const _MODEL_LOWER_NAME_Remove = (entry, protections) => {
-  return async ({ root, data, ctx }) => {
+  return async (root, data, ctx) => {
     
     _PROTECT_REMOVE_;
     if (entry.hooks && entry.hooks.resolvers['before_MODEL_NAME_Remove']) {

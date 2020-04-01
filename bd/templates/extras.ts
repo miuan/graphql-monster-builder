@@ -87,17 +87,20 @@ export const generateProtections = (entry, modelName) => {
     },
     owner: async (ctx, data, ownerField = 'user') => {
       if (ctx && ctx.state && ctx.state.user) {
-        const fd = {
-          ...data
-        }
-
-        if(fd.id) {
-          fd._id = fd.id
-          delete fd.id
-        }
-
-        const u = await entry.models[modelName].findOne(fd, ownerField)
-        console.log('OWNER CHECK : user1 >>', {u, fd, state: ctx.state, modelName, models: entry.models})
+        // NOTE: in edit, if `fd` contain also other fields, what they are edited
+        //       then `await entry.models[modelName].findOne(fd)` not find anything
+        //       because data are not corespond with what is in DB
+        // const fd = {
+        //   ...data
+        // }
+        // if(fd.id) {
+        //   fd._id = fd.id
+        //   delete fd.id
+        // }
+        // const u = await entry.models[modelName].findOne(fd, ownerField)
+        
+        const u = await entry.models[modelName].findById(data.id || data._id, ownerField)
+        console.log('OWNER CHECK : user1 >>', {u, fd:(data.id || data._id), state: ctx.state, modelName, models: entry.models})
         console.log('u && u[ownerField] == ctx.state.user.id', u && u[ownerField] == ctx.state.user.id)
         return u && u[ownerField] == ctx.state.user.id;
       } else {
