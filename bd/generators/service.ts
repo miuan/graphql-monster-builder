@@ -8,6 +8,8 @@ import {
 import {
   writeToFile, templateToText,
 } from '../../common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema';
 
 const defaultMembers = [
   'createdAt',
@@ -15,9 +17,64 @@ const defaultMembers = [
   'id',
 ];
 
+const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMember) => {
+  const modelName = model.modelName
+  const relation = member.relation
+  const relatedMember = getOnlyOneRelatedMember(member)
+  
+  const ret = {
+    result : '',
+    connect: ''
+  }
+  
+  if(!relatedMember) {
+    return ret
+  }
+
+  const lower = firstToLower(modelName);
+  const relationName = relation.name;
+  const funcAddToName = `${lower}AddTo${relationName}`
+  const funcRemoveFromName = `${lower}RemoveFrom${relationName}`
+
+  ret.result = templateToText('service-add-remove.ts',{
+    _LOWER_NAME_: lower,
+    _RELATION_NAME_: relationName,
+    _RELATED_PARAM_NAME_1_: relatedParamName1Id(model, relatedMember),
+    _RELATED_PARAM_NAME_2_: relatedParamName2Id(member),
+    _RELATED_MEMBER_NAME_: relatedMember.name,
+    _MEMBER_NAME_: member.name,
+    _RELATED_MODEL_NAME_: member.relation.relatedModel.modelName,
+    _PAYLOAD_PARAM_1: relatedParamName1(model, relatedMember),
+    _PAYLOAD_PARAM_2: relatedParamName2(member),
+  })
+  
+  ret.connect += `${funcAddToName} : ${funcAddToName}(entry),\n${funcRemoveFromName} : ${funcRemoveFromName}(entry),`
+
+  return ret
+}
+
+const modelCreateAddRemoveLinks = (model: SchemaModel) => {
+  let ret = {
+    result: '',
+    connect: ''
+  }
+
+  for (const member of model.members) {
+    if (member.relation) {
+      const {result, connect} = memberCreateAndRemoveLinks(model, member)
+
+      ret.result += result
+      ret.connect += connect
+    }
+
+
+  }
+  return ret
+}
+
 export const createService = (model : SchemaModel) => {
   const modelName = model.modelName;
-  const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+  const lower = firstToLower(modelName);
   const varName =  lower + 'Model';
 
   const allIdsConversions = conversionsIdsToField(model.members);
@@ -42,6 +99,8 @@ export const createService = (model : SchemaModel) => {
     actionBeforeUpdate = 'extras.checkPasswordIsNotIncluded(data);';
   }
 
+  const {result: serviceAddRemove, connect: serviceAddRemoveConnect} = modelCreateAddRemoveLinks(model)
+
   let result = templateToText('service.ts',{
     _MODEL_NAME_: modelName,
     _LOWER_NAME_: lower,
@@ -54,6 +113,9 @@ export const createService = (model : SchemaModel) => {
     _EXTRA_ACTION_AFTER_CREATE_: actionAfterCreate,
     _EXTRA_ACTION_BEFORE_UPDATE_: actionBeforeUpdate,
     _EXTRA_ACTION_AFTER_UPDATE_: '',
+    _SERVICE_ADD_REMOVE_CONNECT_: serviceAddRemoveConnect,
+    _SERVICE_ADD_REMOVE_: serviceAddRemove,
+    
   });
   result += '';
   return result;

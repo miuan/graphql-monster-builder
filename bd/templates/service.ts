@@ -105,7 +105,7 @@ export const _LOWER_NAME_Remove = (entry) => {
   };
 };
 
-
+_SERVICE_ADD_REMOVE_
 
 export const generate_MODEL_NAME_Service = (entry) => {
   return {
@@ -114,5 +114,6 @@ export const generate_MODEL_NAME_Service = (entry) => {
     create: _LOWER_NAME_Create(entry),
     update: _LOWER_NAME_Update(entry),
     remove: _LOWER_NAME_Remove(entry),
+    _SERVICE_ADD_REMOVE_CONNECT_
   };
 };

@@ -24,7 +24,6 @@ type User @model {
   refreshToken: String
   roles: [UserRole] @relation(name: "RoleOnUser")
   projects: [Project] @relation(name: "ProjectOnUser")
-  verirfiedProjects: [Project] @relation(name: "ProjectOnVerifierUser")
 }
 
 type UserRole @model {
@@ -40,8 +39,25 @@ type UserRole @model {
 type Project @model {
   id: ID! @isUnique
   name: String
-  models: String
-  verified: Boolean
-  verifiedBy: User @relation(name: "ProjectOnVerifierUser")
+  models: [Model] @relation(name: "ModelOnProject")
   user: User! @relation(name: "ProjectOnUser")
+}
+
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+type Model @model {
+  id: ID! @isUnique
+  name: String
+  models: String
+  project: Project! @relation(name: "ModelOnProject")
+  members: [Member] @relation(name: "MemberOnModel")
+}
+
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+type Member @model {
+  id: ID! @isUnique
+  name: String
+  type: String
+  model: Model! @relation(name: "MemberOnModel")
 }

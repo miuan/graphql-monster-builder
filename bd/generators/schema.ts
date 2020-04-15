@@ -10,8 +10,10 @@ import {
   Structure,
   SchemaModel,
   SchemaModelRelationType,
+  SchemaModelMember,
 } from '../../common/types';
 import { writeToFile } from '../../common/files';
+import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../common/utils';
 
 let applayedRelations = [];
 
@@ -41,6 +43,10 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
 export const cleanApplayedRelations = () => {
   applayedRelations = [];
 };
+export const relatedParamName1 = (model: SchemaModel, relatedMember: SchemaModelMember) => `${relatedMember.name}${model.modelName}`
+export const relatedParamName2 = (member: SchemaModelMember) => `${member.name}${member.relation.relatedModel.modelName}`
+export const relatedParamName1Id = (model: SchemaModel, relatedMember: SchemaModelMember) => `${relatedParamName1(model, relatedMember)}Id`
+export const relatedParamName2Id = (member: SchemaModelMember) => `${relatedParamName2(member)}Id`
 
 
 export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
@@ -52,16 +58,18 @@ export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
       member.relation.type === SchemaModelRelationType.MANY_TO_MANY) {
       const relation = member.relation;
       const relationName = relation.name;
-       
-      if (applayedRelations.indexOf(relationName) !== -1) {
-        continue;
+      
+      const relatedMember = getOnlyOneRelatedMember(member)
+      if(!relatedMember) {
+        continue
       }
 
-      const relatedModel = relation.relatedModel;
-      const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
+      console.log('winner is:', model.modelName)
 
-      let params = `${member.name}${relation.relatedModel.modelName}Id: ID!`;
-      params += `, ${relatedMember.name}${model.modelName}Id: ID!`;
+      const relatedModel = relation.relatedModel;
+      // const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
+
+      let params = `${relatedParamName1Id(model, relatedMember)}: ID!, ${relatedParamName2Id(member)}: ID!`;
 
       result += `addTo${relationName}(${params}): AddTo${relation.payloadNameForAddOrDelete}\n`;
       result += `removeFrom${relationName}(${params}): RemoveFrom${relation.payloadNameForAddOrDelete}\n`;
@@ -96,10 +104,9 @@ export const genereateSchemaModelPayloads = (model: SchemaModel) => {
       const relatedModel = relation.relatedModel;
       const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
 
-      
-      const bodyMember1 = `${member.name}${member.modelName}: ${member.modelName}`;
-      const bodyMember2 = `${relatedMember.name}${relatedMember.modelName}: ${relatedMember.modelName}`;
-      
+      const bodyMember1 = `${relatedParamName1(model, relatedMember)}: ${relatedMember.modelName}`;
+      const bodyMember2 = `${relatedParamName2(member)}: ${member.modelName}`;
+
       relation.payloadNameForAddOrDelete = payloadName;
       relatedMember.relation.payloadNameForAddOrDelete = payloadName;
 

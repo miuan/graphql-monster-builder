@@ -120,24 +120,25 @@ export const generateProtections = (entry, modelName) => {
     filter: async (ctx, data, filters: any[], roles: string[]) => {
       if (ctx && ctx.state && ctx.state.user) {
         const ctxUser = ctx.state.user;
-        console.log(data.filter)
-        
+        const dataFilter = data.filter || {}
+ 
         // if is something restricted to filter can't be filter behind OR
         // because it will pass security 
         // but show even data what is under protection
-        if(data.filter.OR) {
+        if(dataFilter.OR) {
           return false
         }
 
+        // TODO: is catch if secure filter is behind one $and example: filter: {$and:[{user: {{userId}}}]}
+        //       but not catch if is under depper $and ... example filter: {$and:[{$and:[{user: {{userId}}}]]}
         let AND = null
-        if(data.filter.AND) {
-          AND = data.filter.AND
-        } else if(data.filter.length) {
-          AND = data.filter
+        if(dataFilter.AND) {
+          AND = dataFilter.AND
+        } else if(dataFilter.length) {
+          AND = dataFilter
         } else {
-          AND = [data.filter]
+          AND = [dataFilter]
         }
-
 
         for(let a of AND) {
           for(let filter of filters) {
@@ -188,7 +189,9 @@ export const filterGen = (filter) => {
   console.log('DEBUG:FILTER', filter)
   let obj = {}
 
-  if(filter.AND) {
+  if(!filter){
+    return obj
+  } else if(filter.AND) {
     return filterANDOR(filter.AND, '$and')
   } else if(filter.OR) {
     return filterANDOR(filter.OR, '$or')
