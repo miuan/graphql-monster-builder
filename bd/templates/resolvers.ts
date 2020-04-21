@@ -85,7 +85,7 @@ export const _MODEL_LOWER_NAME_Remove = (entry, protections) => {
   };
 };
 
-
+_RESOLVERS_ADD_REMOVE_
 
 export const generate_MODEL_NAME_Resolver = (entry) => {
   const protections = extras.generateProtections(entry, '_MODEL_LOWER_NAME_')
@@ -95,5 +95,6 @@ export const generate_MODEL_NAME_Resolver = (entry) => {
     create: _MODEL_LOWER_NAME_Create(entry, protections),
     update: _MODEL_LOWER_NAME_Update(entry, protections),
     remove: _MODEL_LOWER_NAME_Remove(entry, protections), 
+    _RESOLVERS_ADD_REMOVE_CONNECT_
   };
 };

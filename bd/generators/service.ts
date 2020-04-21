@@ -6,7 +6,7 @@ import {
 } from '../../common/types';
 
 import {
-  writeToFile, templateToText,
+  writeToFile, templateFileToText,
 } from '../../common/files';
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
 import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema';
@@ -36,7 +36,7 @@ const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMembe
   const funcAddToName = `${lower}AddTo${relationName}`
   const funcRemoveFromName = `${lower}RemoveFrom${relationName}`
 
-  ret.result = templateToText('service-add-remove.ts',{
+  ret.result = templateFileToText('service-add-remove.ts',{
     _LOWER_NAME_: lower,
     _RELATION_NAME_: relationName,
     _RELATED_PARAM_NAME_1_: relatedParamName1Id(model, relatedMember),
@@ -101,7 +101,7 @@ export const createService = (model : SchemaModel) => {
 
   const {result: serviceAddRemove, connect: serviceAddRemoveConnect} = modelCreateAddRemoveLinks(model)
 
-  let result = templateToText('service.ts',{
+  let result = templateFileToText('service.ts',{
     _MODEL_NAME_: modelName,
     _LOWER_NAME_: lower,
     VAR_NAME: varName,

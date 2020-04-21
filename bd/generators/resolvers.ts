@@ -9,14 +9,73 @@ import {
 } from '../../common/types';
 
 import {
-  writeToFile, templateToText,
+  writeToFile, templateFileToText, templateToText,
 } from '../../common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+import { relatedParamName1Id, relatedParamName1, relatedParamName2Id, relatedParamName2 } from './schema';
 
 const defaultMembers = [
   'createdAt',
   'updatedAt',
   'id',
 ];
+
+
+const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMember) => {
+  const modelName = model.modelName
+  const relation = member.relation
+  const relatedMember = getOnlyOneRelatedMember(member)
+  
+  const ret = {
+    result : '',
+    connect: ''
+  }
+  
+  if(!relatedMember) {
+    return ret
+  }
+
+  const lower = firstToLower(modelName);
+  const relationName = relation.name;
+  const funcAddToName = `${lower}AddTo${relationName}`
+  const funcRemoveFromName = `${lower}RemoveFrom${relationName}`
+
+  ret.result = templateFileToText('resolvers-add-remove.ts',{
+    _LOWER_NAME_: lower,
+    _RELATION_NAME_: relationName,
+    _RELATED_PARAM_NAME_1_: relatedParamName1Id(model, relatedMember),
+    _RELATED_PARAM_NAME_2_: relatedParamName2Id(member),
+    _RELATED_MEMBER_NAME_: relatedMember.name,
+    _MEMBER_NAME_: member.name,
+    _RELATED_MODEL_NAME_: member.relation.relatedModel.modelName,
+    _PAYLOAD_PARAM_1: relatedParamName1(model, relatedMember),
+    _PAYLOAD_PARAM_2: relatedParamName2(member),
+  })
+  
+  ret.connect += `${funcAddToName} : ${funcAddToName}(entry, protections),\n${funcRemoveFromName} : ${funcRemoveFromName}(entry, protections),`
+
+  return ret
+}
+
+const modelCreateAddRemoveLinks = (model: SchemaModel) => {
+  let ret = {
+    result: '',
+    connect: ''
+  }
+
+  for (const member of model.members) {
+    if (member.relation) {
+      const {result, connect} = memberCreateAndRemoveLinks(model, member)
+
+      ret.result += result
+      ret.connect += connect
+    }
+
+
+  }
+  return ret
+}
+
 export const createResolver = (model : SchemaModel) => {
   const modelName = model.modelName;
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
@@ -28,7 +87,14 @@ export const createResolver = (model : SchemaModel) => {
   const protectionUpdate = generateProtection(model.protection.update);
   const protectionRemove = generateProtection(model.protection.remove);
 
-  let result = templateToText('tmpl.resolvers.ts',{
+  const {result: serviceAddRemove, connect: serviceAddRemoveConnect} = modelCreateAddRemoveLinks(model)
+
+  let file = templateFileToText('resolvers.ts',{
+    _RESOLVERS_ADD_REMOVE_CONNECT_: serviceAddRemoveConnect,
+    _RESOLVERS_ADD_REMOVE_: serviceAddRemove,
+  })
+
+  let result = templateToText(file, {
     _MODEL_NAME_: modelName,
     _MODEL_LOWER_NAME_: lower,
     _PROTECT_ALL_: protectionAll,
@@ -36,7 +102,9 @@ export const createResolver = (model : SchemaModel) => {
     _PROTECT_CREATE_: protectionCreate,
     _PROTECT_UPDATE_: protectionUpdate,
     _PROTECT_REMOVE_: protectionRemove,
+    
   });
+  
   result += '';
   return result;
 };

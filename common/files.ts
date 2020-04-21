@@ -116,10 +116,8 @@ export const writeToFile = (item: StructureItem, name: string, content: string) 
 };
 
 
-export const templateToText = (templateName: string, params: any = null): string => {
-  const templateFilePath = `./bd/templates/${templateName}`;
-  let text = fs.readFileSync(templateFilePath).toString();
-  
+
+export const templateToText = (text: string, params: any) => {
   if (params && params instanceof Object) {
     for (const key in params) {
       const search = new RegExp(key, 'g');
@@ -127,7 +125,15 @@ export const templateToText = (templateName: string, params: any = null): string
     }
   }
 
-  return text;
+  return text
+}
+
+export const templateFileToText = (fileName: string, params: any = null): string => {
+  const templateFilePath = `./bd/templates/${fileName}`;
+  let text = fs.readFileSync(templateFilePath).toString();
+  
+  
+  return templateToText(text, params);
 };
 
 export const templateToFile = (templateName: string, params: any) => {

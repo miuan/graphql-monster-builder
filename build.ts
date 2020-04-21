@@ -1,4 +1,4 @@
-import { generateStructure, templateToText, writeToFile } from './common/files';
+import { generateStructure, templateFileToText, writeToFile } from './common/files';
 import { getModelsFromSchema } from './parser/scan';
 import { generateModels } from './bd/generators/model';
 import { generateServices } from './bd/generators/service';
@@ -26,13 +26,13 @@ export const exportAs = async (name, from, base='.') => {
   generateEntry(structure, models);
 
 
-  const server = templateToText('server.ts', null);
+  const server = templateFileToText('server.ts', null);
   writeToFile(structure.schema, `server`, server);
 
-  writeToFile(structure.schema, `gen/schemaLoad`, templateToText('schemaLoad.ts', null));
-  writeToFile(structure.schema, `gen/extras`, templateToText('extras.ts', null));
-  writeToFile(structure.schema, `gen/services/db`, templateToText('db.ts', null));
-  writeToFile(structure.schema, `package.json`, templateToText('package.json', null));
+  writeToFile(structure.schema, `gen/schemaLoad`, templateFileToText('schemaLoad.ts', null));
+  writeToFile(structure.schema, `gen/extras`, templateFileToText('extras.ts', null));
+  writeToFile(structure.schema, `gen/services/db`, templateFileToText('db.ts', null));
+  writeToFile(structure.schema, `package.json`, templateFileToText('package.json', null));
 
   // writeToFile(structure.gen, 'models.json', JSON.stringify(models))
 };
