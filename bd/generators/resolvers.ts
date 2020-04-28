@@ -37,8 +37,8 @@ const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMembe
 
   const lower = firstToLower(modelName);
   const relationName = relation.name;
-  const funcAddToName = `${lower}AddTo${relationName}`
-  const funcRemoveFromName = `${lower}RemoveFrom${relationName}`
+  const funcAddToName = `addTo${relationName}`
+  const funcRemoveFromName = `removeFrom${relationName}`
 
   ret.result = templateFileToText('resolvers-add-remove.ts',{
     _LOWER_NAME_: lower,

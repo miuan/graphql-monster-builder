@@ -1,5 +1,6 @@
 import { Structure, SchemaModel, SchemaModelRelationType } from '../../common/types';
-import { writeToFile } from '../../common/files';
+import { writeToFile, templateToText, templateFileToText } from '../../common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
 
 
 export const generateEntry = async (structure: Structure, models: SchemaModel[]) => {
@@ -7,11 +8,30 @@ export const generateEntry = async (structure: Structure, models: SchemaModel[])
   writeToFile(structure.gen, `entry`, body);
 };
 
+const genAddingAndRemovingsForModel = (model: SchemaModel) => {
+  let result = ''
+  for (const member of model.members) {
+    const relatedMember = member.relation && getOnlyOneRelatedMember(member)
+
+    if (member.relation && relatedMember) {
+      const lower = firstToLower(relatedMember.modelName);
+      const relationName = member.relation.name;
+      const funcAddToName = `addTo${relationName}`
+      const funcRemoveFromName = `removeFrom${relationName}`
+
+      result += `\t\t${funcAddToName}: entry.resolvers['${lower}'].${funcAddToName},\n`
+      result += `\t\t${funcRemoveFromName}: entry.resolvers['${lower}'].${funcRemoveFromName},\n`
+    }
+  }
+  return result
+}
+
 export const generateEntryWorker = (structure: Structure, models: SchemaModel[]):string => {
-  let body = '';
+  let body:string = '';
   let modelsBody = '';
   let services = '';
   let resolvers = '';
+  
 
   for (const model of structure.models.modules) {
     const lower = model.charAt(0).toLowerCase() + model.slice(1);
@@ -36,68 +56,19 @@ export const generateEntryWorker = (structure: Structure, models: SchemaModel[])
     resolvers += `entry.resolvers['${lower}'] = generate${model}Resolver(entry);\n`;
   }
 
-
   const resolver = createResolvers(structure, models);
 
-  body += `
-    import { generateDataloaders } from './dataloaders';
-    import * as extras from './extras';
-
-    let hooks;
-
-    try {
-      hooks = require('../../custom/${structure.id}/hooks.ts').hooks
-    } catch( ex ) {
-      hooks = {}
-      console.log('missing custom/${structure.id}/hooks.ts');
-    }
-
-    export const generateResolver = (setting = {}) => {
-      const entry = {
-        models:{},
-        services:{},
-        resolvers:{},
-        dataloaders:{},
-        hooks:{
-          services: {},
-          resolvers: {}
-        },
-      };
-
-      if( hooks.services ){
-        for( const serviceHookName in hooks.services ) {
-          console.log('Register ' + serviceHookName + ' for service');
-          entry.hooks.services[serviceHookName] = hooks.services[serviceHookName];
-        }
-      }
-      
-
-      if( hooks.resolvers ){
-        for( const serviceHookName in hooks.resolvers ) {
-          console.log('Register ' + serviceHookName + ' for resolver');
-          entry.hooks.resolvers[serviceHookName] = hooks.resolvers[serviceHookName];
-        }
-      }
-      
-
-      ${modelsBody}
-      ${services}
-      ${resolvers}
-      
-      generateDataloaders(entry);
-
-      const resolver = ${resolver}
-
-      return {
-        entry,
-        resolver,
-      };
-    };
-  
-  `;
+  body += templateFileToText('entry.tmpl.ts', {
+    _MODELS_BODY_: modelsBody,
+    _SERVICES_: services,
+    _RE1SOLVERS_: resolvers,
+    _RESOLVER_: resolver
+  });
 
   return body;
 };
+
+
 
 
 export const createResolvers = (structure: Structure, models: SchemaModel[]) => {
@@ -118,8 +89,9 @@ export const createResolvers = (structure: Structure, models: SchemaModel[]) => 
     mutations += `\t\tupdate${modul}: entry.resolvers['${lower}'].update,\n`;
     mutations += `\t\tdelete${modul}: entry.resolvers['${lower}'].remove,\n`;
   }
-  
+
   for (const model of models) {
+    mutations += genAddingAndRemovingsForModel(model)
     dataloaders += generateDataloadersForResolver(model);
   }
   

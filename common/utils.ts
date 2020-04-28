@@ -17,8 +17,6 @@ export const searchModelsRelationsInModels = (relationName: string, models: Sche
   // in many to many relation we need create only one add or delete methods
   // for example User and UserRole we want only userAddToUserRole and userRemoveFromUserRole
   // but because the relation is cross each others it will create also userRoleAddToUser and userRoleRemoveFromUser
-  // be aware  SchemaModelRelationType.ONE_TO_MANY don't have cross relations 
-  // and need to be create one add and delete methods too
   export const getOnlyOneRelatedMember = (member: SchemaModelMember) => {
     const relation = member.relation
     const relationName = relation.name;
@@ -28,7 +26,7 @@ export const searchModelsRelationsInModels = (relationName: string, models: Sche
 
     // relation is created in relation what 
     // member is alfabethicaly higher
-    if (member.relation.type !== SchemaModelRelationType.ONE_TO_MANY && member.modelName < relatedMember.modelName) {
+    if (member.relation.type !== SchemaModelRelationType.MANY_TO_MANY || member.modelName < relatedMember.modelName) {
       return
     }
 

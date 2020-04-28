@@ -33,8 +33,9 @@ const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMembe
 
   const lower = firstToLower(modelName);
   const relationName = relation.name;
-  const funcAddToName = `${lower}AddTo${relationName}`
-  const funcRemoveFromName = `${lower}RemoveFrom${relationName}`
+  const funcAddToName = `addTo${relationName}`
+  const funcRemoveFromName = `removeFrom${relationName}`
+  const relatedModelName = member.relation.relatedModel.modelName
 
   ret.result = templateFileToText('service-add-remove.ts',{
     _LOWER_NAME_: lower,
@@ -43,7 +44,8 @@ const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMembe
     _RELATED_PARAM_NAME_2_: relatedParamName2Id(member),
     _RELATED_MEMBER_NAME_: relatedMember.name,
     _MEMBER_NAME_: member.name,
-    _RELATED_MODEL_NAME_: member.relation.relatedModel.modelName,
+    _LOWER_RELATED_MODEL_NAME_: firstToLower(relatedModelName),
+    _RELATED_MODEL_NAME_: relatedModelName,
     _PAYLOAD_PARAM_1: relatedParamName1(model, relatedMember),
     _PAYLOAD_PARAM_2: relatedParamName2(member),
   })
