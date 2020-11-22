@@ -1,5 +1,4 @@
 import { SchemaModelRelationType, SchemaModel } from '../common/types';
-import { searchModelsRelationsInModels } from '../common/utils';
 
 export const setupModelsRelations = (models: SchemaModel[]) => {
 
@@ -68,6 +67,20 @@ in member ${member.name} doesn't exist`;
 
   const noCreateFromAnother = NO_CREATE_FROM_ANOTHER_MODEL.some(m => m === modelName);
   member.relation.createFromAnotherModel = !noCreateFromAnother;
+};
+
+export const searchModelsRelationsInModels = (relationName: string, models: SchemaModel[], exc: string[]) => {
+  for (const model of models) {
+    if (exc.indexOf(model.modelName) === -1) {
+      for (const member of model.members) {
+        if (member.relation && member.relation.name === relationName) {
+          return { model, member };
+        }
+      }
+    }
+  }
+
+  return null;
 };
 
 export const extendModelNameFromType = (memberType: string) => {

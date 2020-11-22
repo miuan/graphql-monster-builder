@@ -5,9 +5,11 @@
   "author": "Milan Medlik <milan.medlik@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "build": "npx ts-node index.ts"
+    "build": "npx ts-node index.ts",
+    "build:simple": "npx ts-node index.ts -bd -d ./examples/simple.schema server3"
   },
   "dependencies": {
+    "@types/node": "^14.14.9",
     "lodash": "^4.17.15",
     "ts-node": "^8.8.1",
     "typescript": "^3.8.3",

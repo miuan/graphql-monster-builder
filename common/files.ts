@@ -40,6 +40,12 @@ export const removeDirs = async (dir) => {
     return
   }
 
+  if(/^.git/.test(dir)) {
+    console.log(`skip dir: ${dir}`)
+    return
+  }
+
+
   console.log(`remove dir: '${dir}'`);
   const files = fs.readdirSync(dir);
   for (const file of files) {
@@ -47,7 +53,8 @@ export const removeDirs = async (dir) => {
     const stats = fs.statSync(fullfile);
     if (stats.isDirectory()) {
       removeDirs(fullfile);
-    } else if(! /yarn.lock$/.test(fullfile) && ! /package.json$/.test(fullfile)) {
+    } else if( ! /yarn.lock$/.test(fullfile) 
+               ) {
       // also not remove 'yarn.lock
       fs.unlinkSync(fullfile);
     } else {
@@ -96,7 +103,7 @@ export const generateStructure = (id, baseDir: string = './graphql/generated/'):
     item.dir = path.join(baseDir, item.dir.replace('ID', id));
   }
 
-  removeDirs(path.join(baseDir, id));
+  removeDirs(path.join(baseDir, id, 'gen'));
   createDirs(structure);
 
   return structure;

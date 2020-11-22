@@ -1,5 +1,5 @@
 export const schemaFilterNumberValue = [
-  ['not', 'All values that are not equal to given value.'],
+  ['not', 'All values that are not equal to given value.', true],
   ['in', 'All values that are contained in given list.', true],
   ['not_in', 'All values that are not contained in given list.', true],
   ['lt', 'All values less than the given value.'],

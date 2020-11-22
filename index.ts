@@ -27,7 +27,7 @@ const argv = yargs
     .alias('help', 'h')
     .argv;
 
-new Promise(async() => {
+(new Promise(async() => {
     console.log(argv);
     // await exportAs('protectql', './graphql/protectql.schema');
     const name = argv._[1]
@@ -39,4 +39,4 @@ new Promise(async() => {
     console.log(``)
     console.log(`cd ${name}/ && yarn && yarn start`)
     console.log(``)
-  });
+  }));

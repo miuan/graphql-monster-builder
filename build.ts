@@ -9,11 +9,9 @@ import * as fs from 'fs';
 import { Schema } from 'inspector';
 import { generateSchema } from './bd/generators/schema';
 
-
-
 export const exportAs = async (name, from, base='.') => {
   
-  const importedSchema = fs.readFileSync(from, { encoding: 'UTF8' });
+  const importedSchema = fs.readFileSync(from, { encoding: 'utf8' });
   const models = await getModelsFromSchema(importedSchema);
  
   const structure = generateStructure(name, base);

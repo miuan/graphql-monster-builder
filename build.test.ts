@@ -15,21 +15,21 @@ import {
   genereateSchemaModelPayloads,
   generateMutationAddingsAndRemovings,
   cleanApplayedRelations,
-} from './bd/generators/schema';
+} from './generators/schema';
 
 import {
   createMongoModel,
   generateModels,
-} from './bd/generators/model';
+} from './generators/model';
 
 import {
   generateStructure,
   writeToFile,
 } from './common/files';
-import { generateEntry, generateEntryWorker } from './bd/generators/entry';
-import { generateServices } from './bd/generators/service';
-import { generateResolvers } from './bd/generators/resolvers';
-import { generateDataloaders } from './bd/generators/dataloaders';
+import { generateEntry, generateEntryWorker } from './generators/entry';
+import { generateServices } from './generators/service';
+import { generateResolvers } from './generators/resolvers';
+import { generateDataloaders } from './generators/dataloaders';
 
 const importedModelFileForSchema = `
 type File @model {
