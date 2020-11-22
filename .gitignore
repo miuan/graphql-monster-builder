@@ -1,3 +1,6 @@
 node_modules
 test*
 server*
+
+.env.local
+.env.*.local
