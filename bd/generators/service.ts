@@ -3,13 +3,16 @@ import {
   SchemaModelRelationType,
   Structure,
   SchemaModelMember,
-} from '../../common/types';
+} from '../../services/common/types';
 
 import {
   writeToFile, templateFileToText,
-} from '../../common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+} from '../../services/common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils';
 import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema';
+
+import logger from '../../services/log'
+const log = logger.getLogger('service')
 
 const defaultMembers = [
   'createdAt',
@@ -264,7 +267,9 @@ export const generateServiceToFile = (structure: Structure, model: SchemaModel) 
 
 
 export const generateServices = (structure: Structure, models: SchemaModel[]) => {
+  log.trace('generateServices')
   for (const model of models) {
+    log.info(`Generate service for model: ${model.modelName}`)
     generateServiceToFile(structure, model);
   }
 };

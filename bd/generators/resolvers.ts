@@ -6,13 +6,16 @@ import {
   SchemaModelProtection,
   SchemaModelProtectionParam,
   SchemaModelProtectionType,
-} from '../../common/types';
+} from '../../services/common/types';
 
 import {
   writeToFile, templateFileToText, templateToText,
-} from '../../common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+} from '../../services/common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils';
 import { relatedParamName1Id, relatedParamName1, relatedParamName2Id, relatedParamName2 } from './schema';
+
+import logger from '../../services/log'
+const log = logger.getLogger('resolvers')
 
 const defaultMembers = [
   'createdAt',
@@ -157,7 +160,9 @@ export const generateResolverToFile = (structure: Structure, model: SchemaModel)
 
 
 export const generateResolvers = (structure: Structure, models: SchemaModel[]) => {
+  log.trace('generateResolvers')
   for (const model of models) {
+    log.info(`Generate resolver for model: ${model.modelName}`)
     generateResolverToFile(structure, model);
   }
 };

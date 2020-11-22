@@ -1,13 +1,13 @@
 import { generateStructure, templateFileToText, writeToFile } from './common/files';
 import { getModelsFromSchema } from './parser/scan';
-import { generateModels } from './bd/generators/model';
-import { generateServices } from './bd/generators/service';
-import { generateResolvers } from './bd/generators/resolvers';
-import { generateDataloaders } from './bd/generators/dataloaders';
-import { generateEntry } from './bd/generators/entry';
+import { generateModels } from '../bd/generators/model';
+import { generateServices } from '../bd/generators/service';
+import { generateResolvers } from '../bd/generators/resolvers';
+import { generateDataloaders } from '../bd/generators/dataloaders';
+import { generateEntry } from '../bd/generators/entry';
 import * as fs from 'fs';
 import { Schema } from 'inspector';
-import { generateSchema } from './bd/generators/schema';
+import { generateSchema } from '../bd/generators/schema';
 
 export const exportAs = async (name, from, base='.') => {
   

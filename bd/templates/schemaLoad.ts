@@ -1,6 +1,6 @@
-import { makeExecutableSchema } from 'graphql-tools';
-import { IResolvers } from 'graphql-tools/dist/Interfaces';
-import * as _ from 'lodash';
+import { makeExecutableSchema } from './graphql-tools';
+import { IResolvers } from './graphql-tools/dist/Interfaces';
+import * as _ from './lodash';
 import * as path from 'path';
 import * as fs from 'fs';
 

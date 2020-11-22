@@ -1,4 +1,6 @@
 import { SchemaModel, SchemaModelRelationType, SchemaModelMember } from "./types";
+import logger from '../log'
+const log = logger.getLogger('utils')
 
 export const searchModelsRelationsInModels = (relationName: string, models: SchemaModel[], exclude: string[] = []) => {
     for (const model of models) {
@@ -22,7 +24,7 @@ export const searchModelsRelationsInModels = (relationName: string, models: Sche
     const relationName = relation.name;
 
     const {model:_, member: relatedMember} = searchModelsRelationsInModels(relationName, [relation.relatedModel])
-    console.log('relationName, member.name '+relationName, member.modelName, relatedMember.modelName)
+    log.trace('relationName, member.name '+relationName, member.modelName, relatedMember.modelName)
 
     // relation is created in relation what 
     // member is alfabethicaly higher

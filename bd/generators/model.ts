@@ -3,17 +3,21 @@ import {
   SchemaModelRelationType,
   Structure,
   SchemaModelMember,
-} from '../../common/types';
+} from '../../services/common/types';
 
 import {
   writeToFile,
-} from '../../common/files';
+} from '../../services/common/files';
 
 const defaultMembers = [
   'createdAt',
   'updatedAt',
   'id',
 ];
+
+import logger from '../../services/log'
+const log = logger.getLogger('model')
+
 export const createMongoModel = (structure: Structure, model : SchemaModel) => {
   const modelName = model.modelName;
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
@@ -92,7 +96,9 @@ export const generateMongoModelToFile = (structure: Structure, model: SchemaMode
 
 
 export const generateModels = (structure: Structure, models: SchemaModel[]) => {
+  log.trace('generateModels')
   for (const model of models) {
+    log.info(`Generate model: ${model.modelName}`)
     generateMongoModelToFile(structure, model);
   }
 };

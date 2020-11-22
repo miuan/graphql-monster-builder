@@ -1,7 +1,7 @@
-import React from 'react'
-import {Link} from 'react-router-dom'
-import gql from 'graphql-tag';
-import { useQuery } from '@apollo/react-hooks';
+import React from './react'
+import {Link} from './react-router-dom'
+import gql from './graphql-tag';
+import { useQuery } from './@apollo/react-hooks';
 import { ListRow, IListRowItem } from './row';
 
 

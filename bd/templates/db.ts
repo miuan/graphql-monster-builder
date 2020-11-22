@@ -2,12 +2,12 @@
  * One MongoDB connection approach
  */
 
-import * as mongoose from 'mongoose';
+import * as mongoose from './mongoose';
 
 mongoose.Promise = global.Promise;
 
-import * as _ from 'lodash';
-import * as dotenv from 'dotenv';
+import * as _ from './lodash';
+import * as dotenv from './dotenv';
 
 const ValidationError  = mongoose.Error.ValidationError;
 const ValidatorError  = mongoose.Error.ValidatorError;

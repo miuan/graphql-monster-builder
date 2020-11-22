@@ -1,5 +1,9 @@
 import * as yargs from 'yargs'
-import { exportAs } from './build';
+
+// NOTE: loger need to be fist 
+//       before any custom lib
+import log, {setupLogLevel} from './services/log'
+import { exportAs } from './services/build'
 
 const argv = yargs
     .usage('Usage: $0 <command> [options] path/to/schema.file [desctination/folder]')
@@ -28,15 +32,13 @@ const argv = yargs
     .argv;
 
 (new Promise(async() => {
-    console.log(argv);
+    log.debug(argv);
     // await exportAs('protectql', './graphql/protectql.schema');
-    const name = argv._[1]
-    await exportAs(name, argv._[0]);
-    console.log(`done`)
-    console.log(``)
-    console.log(``)
-    console.log(`Next step:`)
-    console.log(``)
-    console.log(`cd ${name}/ && yarn && yarn start`)
-    console.log(``)
+    const schema = argv._[0]
+    const outDir = argv._[1]
+    log.info(`Generate schema: '${schema} to ${outDir}`)
+    await exportAs(outDir, schema);
+
+    log.info(`Done. Next step:`)
+    log.info(`\tcd ${outDir}/ && yarn && yarn start\n`)
   }));

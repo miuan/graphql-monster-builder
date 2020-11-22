@@ -1,9 +1,9 @@
-import * as bcrypt from 'bcrypt-nodejs';
-import * as jwt from 'jsonwebtoken';
-import * as randomtoken from 'random-token';
+import * as bcrypt from './bcrypt-nodejs';
+import * as jwt from './jsonwebtoken';
+import * as randomtoken from './random-token';
 
 import { userModel, IUserModel } from '../models/user';
-import { Model, Error, Types } from 'mongoose';
+import { Model, Error, Types } from './mongoose';
 
 import { throwValidationError } from './db';
 

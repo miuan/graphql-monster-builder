@@ -4,16 +4,18 @@ import {
   notMutationFields,
   schemaFilterStringValue,
   schemaFilterNumberValue,
-} from '../../common/constatns';
+} from '../../services/common/constatns';
 
 import {
   Structure,
   SchemaModel,
   SchemaModelRelationType,
   SchemaModelMember,
-} from '../../common/types';
-import { writeToFile } from '../../common/files';
-import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../common/utils';
+} from '../../services/common/types';
+import { writeToFile } from '../../services/common/files';
+import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../services/common/utils';
+import logger from '../../services/log'
+const log = logger.getLogger('schema')
 
 let applayedRelations = [];
 
@@ -64,7 +66,7 @@ export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
         continue
       }
 
-      console.log('winner is:', model.modelName)
+      log.debug('winner is:', model.modelName)
 
       const relatedModel = relation.relatedModel;
       // const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
@@ -384,6 +386,7 @@ scalar DateTime
 };
 
 export const generateSchema = async (structure: Structure, models: SchemaModel[]) => {
+  log.trace('generateSchema', models)
   const body = generateSchemaAsString(models);
   writeToFile(structure.gen, `graphql.schema`, body);
 };

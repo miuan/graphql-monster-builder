@@ -1,9 +1,12 @@
 const fs = require('fs');
 const path = require('path');
+import loglevel from '../log'
+const log = loglevel.getLogger('files')
+
 import {
   Structure,
   StructureItem,
-} from '../common/types';
+} from './types';
 
 export const STRUCTURE = {
   schema: { 
@@ -36,17 +39,17 @@ export const removeDirs = async (dir) => {
   }
   
   if(/node_modules$/.test(dir)) {
-    console.log(`skip dir: ${dir}`)
+    log.trace(`skip dir: ${dir}`)
     return
   }
 
   if(/^.git/.test(dir)) {
-    console.log(`skip dir: ${dir}`)
+    log.trace(`skip dir: ${dir}`)
     return
   }
 
 
-  console.log(`remove dir: '${dir}'`);
+  log.info(`remove dir: '${dir}'`);
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullfile = path.join(dir, file);
@@ -58,7 +61,7 @@ export const removeDirs = async (dir) => {
       // also not remove 'yarn.lock
       fs.unlinkSync(fullfile);
     } else {
-      console.log('skiped: ', fullfile)
+      log.trace('skiped: ', fullfile)
     }
   }
 

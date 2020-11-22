@@ -2,7 +2,7 @@
 import { 
   schemaExport,
   schemaExportWorker,
-} from './schema.exporter';
+} from '../schema.exporter';
 
 import {
   getModelsFromSchema,

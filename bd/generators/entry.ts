@@ -1,6 +1,6 @@
-import { Structure, SchemaModel, SchemaModelRelationType } from '../../common/types';
-import { writeToFile, templateToText, templateFileToText } from '../../common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+import { Structure, SchemaModel, SchemaModelRelationType } from '../../services/common/types';
+import { writeToFile, templateToText, templateFileToText } from '../../services/common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils';
 
 
 export const generateEntry = async (structure: Structure, models: SchemaModel[]) => {
