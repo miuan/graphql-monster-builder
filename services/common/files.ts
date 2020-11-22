@@ -84,7 +84,8 @@ export const createDirs = (structure: Structure, baseDir: string = '') => {
     const dir = path.join(baseDir, structure[str].dir);
     // if node modules stays then rm on root dir was not removed
     try {
-      fs.mkdirSync(dir);
+      fs.mkdirSync(dir)
+      log.info(`Create dir: ${dir}`)
     } catch (ex) {
 
     }
@@ -95,7 +96,9 @@ export const createDirs = (structure: Structure, baseDir: string = '') => {
 export const generateStructure = (id, baseDir: string = './graphql/generated/'): Structure => {
   const structure: Structure = JSON.parse(JSON.stringify(STRUCTURE)) as Structure;
   
-  structure.id = id;
+  const outDir = id
+  structure.id = id.replace('../', '');
+
 
   for (const str in structure) {
     if (str === 'id') {
@@ -103,10 +106,10 @@ export const generateStructure = (id, baseDir: string = './graphql/generated/'):
     }
 
     const item = structure[str];
-    item.dir = path.join(baseDir, item.dir.replace('ID', id));
+    item.dir = path.join(baseDir, item.dir.replace('ID', outDir));
   }
 
-  removeDirs(path.join(baseDir, id, 'gen'));
+  removeDirs(path.join(baseDir, outDir, 'gen'));
   createDirs(structure);
 
   return structure;

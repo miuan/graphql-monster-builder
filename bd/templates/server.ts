@@ -1,17 +1,17 @@
-import * as Koa from './koa';
-import { graphqlKoa, graphiqlKoa } from './apollo-server-koa';
-import * as Router from './koa-router';
-import * as dotenv from './dotenv';
-import * as cors from './koa2-cors';
-import * as koaBody from './koa-body';
-import * as jwt from './koa-jwt';
-import { IResolvers } from './graphql-tools/dist/Interfaces';
+import * as Koa from 'koa';
+import { graphqlKoa, graphiqlKoa } from 'apollo-server-koa';
+import * as Router from 'koa-router';
+import * as dotenv from 'dotenv';
+import * as cors from 'koa2-cors';
+import * as koaBody from 'koa-body';
+import * as jwt from 'koa-jwt';
+import { IResolvers } from 'graphql-tools/dist/Interfaces';
 import { schemaLoad } from './gen/schemaLoad';
 // tslint:disable-next-line:import-name
 
 import * as mongoDB from './gen/services/db';
 import { generateResolver } from './gen/entry';
-import { makeExecutableSchema } from './graphql-tools';
+import { makeExecutableSchema } from 'graphql-tools';
 
 // TODO: reimplement server.ts for koa version 2
 const app: Koa = new Koa();
