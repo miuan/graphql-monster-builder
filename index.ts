@@ -37,8 +37,11 @@ const argv = yargs
     const schema = argv._[0]
     const outDir = argv._[1]
     log.info(`Generate schema: '${schema} to ${outDir}`)
+    const start = Date.now();
+  
     await exportAs(outDir, schema);
+    const ms = Date.now() - start;
 
-    log.info(`Done. Next step:`)
+    log.info(`Done in ${ms}ms. Next step:`)
     log.info(`\tcd ${outDir}/ && yarn && yarn start\n`)
   }));

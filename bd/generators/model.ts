@@ -67,6 +67,36 @@ const ${varName}: Schema = new Schema(
   versionKey: false,
 });
 
+${varName}.pre('find', function() {
+  this._startTime = Date.now();
+});
+
+${varName}.post('find', function() {
+  if (this._startTime != null) {
+    // console.log('Runtime in MS: ', Date.now() - this._startTime);
+  }
+})
+
+${varName}.pre('findOne', function() {
+  this._startTime = Date.now();
+});
+
+${varName}.post('findOne', function() {
+  if (this._startTime != null) {
+    // console.log('Runtime in MS: ', Date.now() - this._startTime);
+  }
+})
+
+${varName}.pre('update', function() {
+  this._startTime = Date.now();
+});
+
+${varName}.post('update', function() {
+  if (this._startTime != null) {
+    // console.log('Runtime in MS: ', Date.now() - this._startTime);
+  }
+})
+
 export const ${lower}Model: Model<Document> = model<Document>('${structure.id}_${modelName}', ${varName});`;
   return result;
 };

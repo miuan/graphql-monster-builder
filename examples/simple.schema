@@ -24,6 +24,7 @@ type User @model {
   refreshToken: String
   roles: [UserRole] @relation(name: "RoleOnUser")
   projects: [Project] @relation(name: "ProjectOnUser")
+  logs: [ProjectLogs] @relation(name: "ProjectLogOnUser")
 }
 
 type UserRole @model {
@@ -41,5 +42,18 @@ type Project @model {
   name: String
   models: String
   user: User! @relation(name: "ProjectOnUser")
+  logs: [ProjectLogs] @relation(name: "ProjectOnProjectLog")
+}
+
+@all(filter:"user_every.id={{userId}}")
+@all(role:"project",filter:"name=project")
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+type ProjectLogs @model {
+  id: ID! @isUnique
+  type: String
+  log: String
+  project: Project! @relation(name: "ProjectOnProjectLog")
+  user: User! @relation(name: "ProjectLogOnUser")
 }
 
