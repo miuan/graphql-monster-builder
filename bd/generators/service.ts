@@ -177,7 +177,6 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) 
       continue;
     }
 
-    const relatedToMany = SchemaModelRelationType.ONE_TO_MANY || SchemaModelRelationType.MANY_TO_MANY;
     const relationModelName = member.relation.relatedModel.modelName;
     const relatedModel = member.relation.relatedModel;
     const relationName = member.relation.name;
@@ -188,9 +187,11 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) 
     
     result += `
     if(${varLinkedIds} && ${varLinkedIds}.length > 0) {`;
-    if (relatedMember.relation.type === relatedToMany) {
+    // TODO: test for relatedMember.relation.type generate correct `updateMany`
+    // TODO: test for relatedMember.relation.type set right type corespond to member model
+    if (relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY || relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE) {
       result += `
-        await entry.models['${lower}'].update({
+        await entry.models['${lower}'].updateMany({
           _id: {$in: ${varLinkedIds}}
         }, {
           $push: {${relatedMemberName}: { $each: [${currentIdName}]}}
@@ -198,7 +199,7 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) 
       `;
     } else {
       result += `
-      await entry.models['${lower}'].update({
+      await entry.models['${lower}'].updateMany({
         _id: {$in: ${varLinkedIds}}
       }, {
         ${relatedMemberName}: ${currentIdName}
