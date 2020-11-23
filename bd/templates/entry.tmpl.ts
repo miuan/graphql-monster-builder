@@ -4,10 +4,10 @@ import * as extras from './extras';
 let hooks;
 
 try {
-  hooks = require('../../custom/${structure.id}/hooks.ts').hooks
+  hooks = require('../services/entryHooks.ts').hooks
 } catch( ex ) {
   hooks = {}
-  console.log('missing custom/${structure.id}/hooks.ts');
+  console.log('missing ../services/entryHooks.ts');
 }
 
 export const generateResolver = (setting = {}) => {
