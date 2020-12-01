@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "build": "npx ts-node index.ts",
-    "build:simple": "npx ts-node index.ts -bd -d ./examples/simple.schema server3"
+    "build:todo": "npx ts-node index.ts -bd -d ./examples/todo.schema server3",
+    "test": "jest"
   },
   "dependencies": {
     "@types/node": "^14.14.9",
@@ -17,5 +18,9 @@
     "ts-node": "^8.8.1",
     "typescript": "^4.1.2",
     "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4"
   }
 }

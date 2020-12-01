@@ -29,6 +29,20 @@
             "env": {
                 "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
             }
-        }
+        },{
+            "type": "node",
+            "request": "launch",
+            "name": "Jest Current File",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
+            "args": [
+                "${file}",
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "windows": {
+                "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+            }
+        },
     ]
 }

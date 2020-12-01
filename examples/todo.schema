@@ -1,0 +1,30 @@
+
+@create("public") 
+type User @model {
+  createdAt: DateTime!
+  id: ID! @isUnique
+  updatedAt: DateTime!
+  email: String @isUnique
+  password: String
+  token: String
+  refreshToken: String
+  roles: [UserRole] @relation(name: "RoleOnUser")
+  todos: [Todo] @relation(name: "TodosOnUser")
+}
+
+type UserRole @model {
+  id: ID! @isUnique
+  role: String @isUnique
+  users: [User] @relation(name: "RoleOnUser")
+}
+
+@all(filter:"user_every.id={{userId}}")
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+type Todo @model {
+  id: ID! @isUnique
+  name: String
+  isDone: Boolean
+  user: User! @relation(name: "TodosOnUser")
+}
+

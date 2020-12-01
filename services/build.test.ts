@@ -1,8 +1,4 @@
-
-import { 
-  schemaExport,
-  schemaExportWorker,
-} from '../schema.exporter';
+import * as fs from 'fs'
 
 import {
   getModelsFromSchema,
@@ -15,21 +11,21 @@ import {
   genereateSchemaModelPayloads,
   generateMutationAddingsAndRemovings,
   cleanApplayedRelations,
-} from './generators/schema';
+} from '../bd/generators/schema';
 
 import {
   createMongoModel,
   generateModels,
-} from './generators/model';
+} from '../bd/generators/model';
 
 import {
   generateStructure,
   writeToFile,
 } from './common/files';
-import { generateEntry, generateEntryWorker } from './generators/entry';
-import { generateServices } from './generators/service';
-import { generateResolvers } from './generators/resolvers';
-import { generateDataloaders } from './generators/dataloaders';
+import { generateEntry, generateEntryWorker } from '../bd/generators/entry';
+import { generateServices } from '../bd/generators/service';
+import { generateResolvers } from '../bd/generators/resolvers';
+import { generateDataloaders } from '../bd/generators/dataloaders';
 
 const importedModelFileForSchema = `
 type File @model {
@@ -119,15 +115,6 @@ const testLinesTest1 = [
 ];
 
 describe('Schema Export', () => {
-
-  it('get models', async () => {
-    const result = await schemaExport('./graphql/schema.graphcool', './graphql/generated/entry/schema.graphcool');
-  });
-
-  it('get models', async () => {
-    const result = await schemaExportWorker(importedSchema);
-  });
-
   it('get models from schema', async () => {
 
     const models = await getModelsFromSchema(importedSchema);
@@ -135,7 +122,7 @@ describe('Schema Export', () => {
     expect(models.length).toEqual(6);
   });
 
-  describe('inputs', async () => {
+  describe('inputs',  () => {
     it('student have two imputs', async () => {
       const models = await getModelsFromSchema(`
       ${importedModelClassForSchema}
@@ -155,7 +142,7 @@ name: String!
 `);
     });
   });
-  describe('mutations', async () => {
+  describe('mutations', () => {
     it('todo item have userId: ID instad user: User', async () => {
       const models = await getModelsFromSchema(importedSchema);
       const result = generateInputParamsForMutationModel(models[1]);
@@ -301,7 +288,7 @@ type RemoveFromImageTodoItemOnTodoItemPayload {
     });
 
   });
-  describe('modul', async () => {
+  describe('modul', () => {
     it('model', async () => {
       const structure = generateStructure('test');
       const models = await getModelsFromSchema(importedSchema);
@@ -316,7 +303,7 @@ type RemoveFromImageTodoItemOnTodoItemPayload {
 
     it('entry', async () => {
       const structure = generateStructure('entry');
-      const schema = await schemaExport('./graphql/schema.graphcool', './graphql/generated/entry/schema.graphcool');
+      const schema = await  fs.readFileSync('../examples/todo.schema', { encoding: 'utf8' })
       const models = await getModelsFromSchema(schema);
       const testModel = models[1];
       const result = createMongoModel(structure, testModel);
