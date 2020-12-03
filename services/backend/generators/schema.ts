@@ -15,6 +15,7 @@ import {
 import { writeToFile } from '../../common/files';
 import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../common/utils';
 import logger from '../../log'
+import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('schema')
 
 let applayedRelations = [];
@@ -385,8 +386,8 @@ scalar DateTime
   return result;
 };
 
-export const generateSchema = async (structure: Structure, models: SchemaModel[]) => {
+export const generateSchema = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
   log.trace('generateSchema', models)
   const body = generateSchemaAsString(models);
-  writeToFile(structure.gen, `graphql.schema`, body);
+  backendDirectory.genWrite(`graphql.schema`, body)
 };

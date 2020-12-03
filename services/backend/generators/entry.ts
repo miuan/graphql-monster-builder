@@ -1,11 +1,12 @@
 import { Structure, SchemaModel, SchemaModelRelationType } from '../../common/types';
 import { writeToFile, templateToText, templateFileToText } from '../../common/files';
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+import { BackendDirectory } from '../backendDirectory';
 
 
-export const generateEntry = async (structure: Structure, models: SchemaModel[]) => {
-  const body = generateEntryWorker(structure, models);
-  writeToFile(structure.gen, `entry`, body);
+export const generateEntry = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
+  const body = generateEntryWorker(backendDirectory.structure, models);
+  backendDirectory.genWrite(`entry`, body);
 };
 
 const genAddingAndRemovingsForModel = (model: SchemaModel) => {

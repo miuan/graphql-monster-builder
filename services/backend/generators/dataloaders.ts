@@ -2,15 +2,16 @@ import { writeToFile } from '../../common/files';
 import { Structure, SchemaModel } from '../../common/types';
 
 import logger from '../../log'
+import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('dataloaders')
 
-export const generateDataloaders = async (structure: Structure, models: SchemaModel[]) => {
+export const generateDataloaders = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
   log.info('generate Dataloaders for all models')
-  const body = generateDataloadersWorker(structure, models);
-  writeToFile(structure.gen, `dataloaders`, body);
+  const body = generateDataloadersWorker(models);
+  backendDirectory.genWrite( `dataloaders`, body);
 };
 
-export const generateDataloadersWorker = (structure: Structure, models: SchemaModel[]):string => {
+export const generateDataloadersWorker = (models: SchemaModel[]):string => {
   let body = `
   import * as DataLoader from 'dataloader';
  

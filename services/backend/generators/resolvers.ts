@@ -15,6 +15,7 @@ import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
 import { relatedParamName1Id, relatedParamName1, relatedParamName2Id, relatedParamName2 } from './schema';
 
 import logger from '../../log'
+import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('resolvers')
 
 const defaultMembers = [
@@ -152,17 +153,17 @@ export const generateProtectionFromParam = (protection : SchemaModelProtectionPa
 
 
 
-export const generateResolverToFile = (structure: Structure, model: SchemaModel) => {
+export const generateResolverToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
   const str = createResolver(model);
 
-  writeToFile(structure.resolvers, `${model.modelName}`, str);
+  backendDirectory.resolversWrite(`${model.modelName}`, str);
 };
 
 
-export const generateResolvers = (structure: Structure, models: SchemaModel[]) => {
+export const generateResolvers = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
   log.trace('generateResolvers')
   for (const model of models) {
     log.info(`Generate resolver for model: ${model.modelName}`)
-    generateResolverToFile(structure, model);
+    generateResolverToFile(backendDirectory, model);
   }
 };

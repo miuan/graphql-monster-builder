@@ -19,7 +19,6 @@ import {
 } from './backend/generators/model';
 
 import {
-  generateStructure,
   writeToFile,
 } from './common/files';
 import { generateEntry, generateEntryWorker } from './backend/generators/entry';

@@ -16,13 +16,15 @@ const defaultMembers = [
 ];
 
 import logger from '../../log'
+import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('model')
 
 export const createMongoModel = (structure: Structure, model : SchemaModel) => {
   const modelName = model.modelName;
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
   const varName =  lower + 'Schema';
-  let result = `import { Document, Schema, Model, model } from 'mongoose';
+  let result = `import { Schema, Model, model } from 'mongoose'
+  import { ${modelName}Model } from '../model-types.ts'
   
 const ${varName}: Schema = new Schema(
 {
@@ -97,7 +99,7 @@ ${varName}.post('update', function() {
   }
 })
 
-export const ${lower}Model: Model<Document> = model<Document>('${structure.id}_${modelName}', ${varName});`;
+export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>('${structure.id}_${modelName}', ${varName});`;
   return result;
 };
 
@@ -118,17 +120,17 @@ export const transformTypeToMongoType = (structure: Structure, member : SchemaMo
   }
 };
 
-export const generateMongoModelToFile = (structure: Structure, model: SchemaModel) => {
-  const str = createMongoModel(structure, model);
+export const generateMongoModelToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
+  const str = createMongoModel(backendDirectory.structure, model);
 
-  writeToFile(structure.models, `${model.modelName}`, str);
+  backendDirectory.modelsWrite(`${model.modelName}`, str);
 };
 
 
-export const generateModels = (structure: Structure, models: SchemaModel[]) => {
+export const generateModels = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
   log.trace('generateModels')
   for (const model of models) {
     log.info(`Generate model: ${model.modelName}`)
-    generateMongoModelToFile(structure, model);
+    generateMongoModelToFile(backendDirectory, model);
   }
 };

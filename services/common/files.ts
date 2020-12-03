@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 import loglevel from '../log'
+import { setupModelsRelations } from '../parser/relations';
 const log = loglevel.getLogger('files')
 
 import {
@@ -8,30 +9,9 @@ import {
   StructureItem,
 } from './types';
 
-export const STRUCTURE = {
-  schema: { 
-    dir: `ID/`,
-    modules: ['schema.protectql'],
-  },
-  gen: { 
-    dir: `ID/gen/`,
-    modules: [],
-  },
-  models: { 
-    dir:`ID/gen/models/`, 
-    modules: [],
-  },
-  resolvers: { 
-    dir:`ID/gen/resolvers/`, 
-    modules: [],
-  },
-  services: { 
-    dir:'ID/gen/services/', 
-    modules: [],
-  },
-};
 
-export const removeDirs = async (dir) => {
+
+export const removeDirs = (dir) => {
   if(!fs.existsSync(dir)){
     return
   } else if(!fs.lstatSync(dir).isDirectory()) {
@@ -93,30 +73,8 @@ export const createDirs = (structure: Structure, baseDir: string = '') => {
   }
 };
 
-export const generateStructure = (id, baseDir: string = './graphql/generated/'): Structure => {
-  const structure: Structure = JSON.parse(JSON.stringify(STRUCTURE)) as Structure;
-  
-  const outDir = id
-  structure.id = id.replace('../', '');
 
-
-  for (const str in structure) {
-    if (str === 'id') {
-      continue;
-    }
-
-    const item = structure[str];
-    item.dir = path.join(baseDir, item.dir.replace('ID', outDir));
-  }
-
-  removeDirs(path.join(baseDir, outDir, 'gen'));
-  createDirs(structure);
-
-  return structure;
-};
-
-
-export const writeToFile = (item: StructureItem, name: string, content: string) => {
+export const writeToFile = (item: StructureItem, name: string, content: string): boolean => {
   const nameWithExt = name.indexOf('.') === -1 ? `${name}.ts` : name;
   const fullName = path.join(item.dir, nameWithExt);
 
@@ -126,6 +84,8 @@ export const writeToFile = (item: StructureItem, name: string, content: string) 
     fs.writeFileSync(fullName, content);
     item.modules.push(name);
   }
+
+  return true
 };
 
 

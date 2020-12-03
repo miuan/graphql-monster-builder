@@ -1,0 +1,32 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[` 1`] = `
+"
+    // type for model: \`Todo\`
+    interface TodoModel extends Document {
+		name: String
+		isDone: Boolean
+    }
+  "
+`;
+
+exports[`typescript-type generateTypescriptTypes should call 2x createTypescriptType and 1x writeToFile inside generateTypescriptTypes 1`] = `
+Array [
+  "model-types.ts",
+  "import { Document } from 'mongoose'
+
+    // type for model: \`Todo\`
+    interface TodoModel extends Document {
+		name: String
+		isDone: Boolean
+    }
+  
+    // type for model: \`User\`
+    interface UserModel extends Document {
+		email: String
+		password: Boolean
+		todos: Todo[]
+    }
+  ",
+]
+`;

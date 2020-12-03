@@ -12,6 +12,7 @@ import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
 import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema';
 
 import logger from '../../log'
+import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('service')
 
 const defaultMembers = [
@@ -260,17 +261,17 @@ export const conversionsIdsToField = (members: SchemaModelMember[]) => {
   return result;
 };
 
-export const generateServiceToFile = (structure: Structure, model: SchemaModel) => {
+export const generateServiceToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
   const str = createService(model);
 
-  writeToFile(structure.services, `${model.modelName}`, str);
+  backendDirectory.servicesWrite(`${model.modelName}`, str);
 };
 
 
-export const generateServices = (structure: Structure, models: SchemaModel[]) => {
+export const generateServices = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
   log.trace('generateServices')
   for (const model of models) {
     log.info(`Generate service for model: ${model.modelName}`)
-    generateServiceToFile(structure, model);
+    generateServiceToFile(backendDirectory, model);
   }
 };
