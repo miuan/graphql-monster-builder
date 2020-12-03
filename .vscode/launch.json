@@ -9,7 +9,7 @@
             "type": "node",
             "request": "launch",
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["./index.ts", "-bd", "-d", "./examples/simple.schema", "../server"],
+            "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "../server2"],
             "cwd": "${workspaceFolder}",
             "internalConsoleOptions": "openOnSessionStart",
             "skipFiles": ["<node_internals>/**", "node_modules/**"],

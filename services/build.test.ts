@@ -174,48 +174,14 @@ name: String!
       // tslint:disable-next-line:max-line-length
       expect(result).toEqual('completed: Boolean, title: String, userId: ID');
     });
-
-    it('generate mutations for add and remove totod on user', async () => {
-      cleanApplayedRelations();
-      const models = await getModelsFromSchema(importedSchema);
-      genereateSchemaModelPayloads(models[1]);
-      const result = generateMutationAddingsAndRemovings(models[1]);
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toEqual(`addToTodoItemOnUser(userUserId: ID!, todoItemsTodoItemId: ID!): AddToTodoItemOnUserPayload
-removeFromTodoItemOnUser(userUserId: ID!, todoItemsTodoItemId: ID!): RemoveFromTodoItemOnUserPayload
-`);
-    });
-
-    
+ 
     it('todo item have payloads for Add and Remove', async () => {
       cleanApplayedRelations();
       const models = await getModelsFromSchema(importedSchema);
       const result = genereateSchemaModelPayloads(models[1]);
 
       // tslint:disable-next-line:max-line-length
-      expect(result).toEqual(
-`# on model TodoItem - user
-type AddToTodoItemOnUserPayload {
-  userUser: User
-  todoItemsTodoItem: TodoItem
-}
-
-type RemoveFromTodoItemOnUserPayload {
-  userUser: User
-  todoItemsTodoItem: TodoItem
-}
-# on model TodoItem - images
-type AddToImageTodoItemOnTodoItemPayload {
-  imagesImageTodoItem: ImageTodoItem
-  todoTodoItem: TodoItem
-}
-
-type RemoveFromImageTodoItemOnTodoItemPayload {
-  imagesImageTodoItem: ImageTodoItem
-  todoTodoItem: TodoItem
-}
-`);
+      expect(result).toMatchSnapshot();
     });
   });
 
@@ -288,35 +254,5 @@ type RemoveFromImageTodoItemOnTodoItemPayload {
     });
 
   });
-  describe('modul', () => {
-    it('model', async () => {
-      const structure = generateStructure('test');
-      const models = await getModelsFromSchema(importedSchema);
-
-      const testModel = models[1];
-      const result = createMongoModel(structure, testModel);
-
-      generateModels(structure, models);
-      // tslint:disable-next-line:max-line-length
-      // expect(result).toEqual('completed: Boolean, title: String, userId: ID, imagesIds: [ID!], images: [TodoItemimagesImageTodoItem!]');
-    });
-
-    it('entry', async () => {
-      const structure = generateStructure('entry');
-      const schema = await  fs.readFileSync('../examples/todo.schema', { encoding: 'utf8' })
-      const models = await getModelsFromSchema(schema);
-      const testModel = models[1];
-      const result = createMongoModel(structure, testModel);
-
-      generateModels(structure, models);
-      generateServices(structure, models);
-      generateResolvers(structure, models);
-      generateDataloaders(structure, models);
-      const body = generateEntryWorker(structure, models);
-
-      generateEntry(structure, models);
-      // tslint:disable-next-line:max-line-length
-      // expect(result).toEqual('completed: Boolean, title: String, userId: ID, imagesIds: [ID!], images: [TodoItemimagesImageTodoItem!]');
-    });
-  });
+  
 });
