@@ -3,11 +3,11 @@ import {
   SchemaModelRelationType,
   Structure,
   SchemaModelMember,
-} from '../../services/common/types';
+} from '../../common/types';
 
 import {
   writeToFile,
-} from '../../services/common/files';
+} from '../../common/files';
 
 const defaultMembers = [
   'createdAt',
@@ -15,7 +15,7 @@ const defaultMembers = [
   'id',
 ];
 
-import logger from '../../services/log'
+import logger from '../../log'
 const log = logger.getLogger('model')
 
 export const createMongoModel = (structure: Structure, model : SchemaModel) => {

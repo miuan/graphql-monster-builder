@@ -3,15 +3,15 @@ import {
   SchemaModelRelationType,
   Structure,
   SchemaModelMember,
-} from '../../services/common/types';
+} from '../../common/types';
 
 import {
   writeToFile, templateFileToText,
-} from '../../services/common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils';
+} from '../../common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
 import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema';
 
-import logger from '../../services/log'
+import logger from '../../log'
 const log = logger.getLogger('service')
 
 const defaultMembers = [

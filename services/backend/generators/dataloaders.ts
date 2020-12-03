@@ -1,7 +1,7 @@
-import { writeToFile } from '../../services/common/files';
-import { Structure, SchemaModel } from '../../services/common/types';
+import { writeToFile } from '../../common/files';
+import { Structure, SchemaModel } from '../../common/types';
 
-import logger from '../../services/log'
+import logger from '../../log'
 const log = logger.getLogger('dataloaders')
 
 export const generateDataloaders = async (structure: Structure, models: SchemaModel[]) => {

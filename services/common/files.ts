@@ -142,7 +142,7 @@ export const templateToText = (text: string, params: any) => {
 }
 
 export const templateFileToText = (fileName: string, params: any = null): string => {
-  const templateFilePath = `./bd/templates/${fileName}`;
+  const templateFilePath = `./services/backend/templates/${fileName}`;
   let text = fs.readFileSync(templateFilePath).toString();
   
   
