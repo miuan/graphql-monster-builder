@@ -81,7 +81,7 @@ export const writeToFile = (item: StructureItem, name: string, content: string):
   // some files should not be overrided 
   // for example the package.json 
   if(!fs.existsSync(fullName)){
-    fs.writeFileSync(fullName, content);
+    fs.writeFileSync(fullName, content)
     item.modules.push(name);
   }
 

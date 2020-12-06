@@ -98,8 +98,11 @@ export const createResolver = (model : SchemaModel) => {
     _RESOLVERS_ADD_REMOVE_: serviceAddRemove,
   })
 
+  const modelUpperName = modelName[0].toUpperCase() + modelName.substr(1)
+
   let result = templateToText(file, {
     _MODEL_NAME_: modelName,
+    _MODEL_UPPER_NAME_: modelUpperName,
     _MODEL_LOWER_NAME_: lower,
     _PROTECT_ALL_: protectionAll,
     _PROTECT_ONE_: protectionOne,
@@ -116,12 +119,14 @@ export const createResolver = (model : SchemaModel) => {
 export const generateProtection = (protection : SchemaModelProtectionParam[]) => {
   let result = '';
   for (const protectionParam of protection) {
-    result += '&& !' + generateProtectionFromParam(protectionParam) + '\n';
+    result += '&& ! (' + generateProtectionFromParam(protectionParam) + ') ';
   }
 
-  result = 'if(' + result.substr(3) + `){
-    ctx.throw(401, 'Unauhorized');
-  }`;
+  result = `
+      if(${result.substr(3)}){
+        ctx.throw(401, 'Unauthorized');
+      }
+  `;
 
   return result;
 };
