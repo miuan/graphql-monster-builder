@@ -36,6 +36,15 @@ export const _MODEL_LOWER_NAME_One = (entry, protections) => {
 export const _MODEL_LOWER_NAME_Create = (entry, protections) => {
   return async (root, data, ctx) => {
     _PROTECT_CREATE_;
+    const presentProtectedFields = protections.checkDataContainProtectedFields(data)
+    if(presentProtectedFields && presentProtectedFields.length) {
+      ctx.throw(403, {
+        type: 'ReachProtectedFields',
+        message: 'Trying to update protected fields, which they are just read only',
+        presentProtectedFields
+      });
+    }
+
     if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create']) {
       data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx });
     }
@@ -53,6 +62,17 @@ export const _MODEL_LOWER_NAME_Create = (entry, protections) => {
 export const _MODEL_LOWER_NAME_Update = (entry, protections) => {
   return async (root, data, ctx) => {
     _PROTECT_UPDATE_;
+
+    // any fields start with double underscore are protected, example __port, __readolny, ...
+    const presentProtectedFields = protections.checkDataContainProtectedFields(data)
+    if(presentProtectedFields && presentProtectedFields.length) {
+      ctx.throw(403, {
+        type: 'ReachProtectedFields',
+        message: 'Trying to update protected fields, which they are just read only',
+        presentProtectedFields
+      });
+    }
+
     if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update']) {
       data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx });
     }

@@ -129,7 +129,7 @@ export const generateProtections = (entry, modelName) => {
           return false
         }
 
-        // TODO: is catch if secure filter is behind one $and example: filter: {$and:[{user: {{userId}}}]}
+        // TODO: INPORTANT! is catch if secure filter is behind one $and example: filter: {$and:[{user: {{userId}}}]}
         //       but not catch if is under depper $and ... example filter: {$and:[{$and:[{user: {{userId}}}]]}
         let AND = null
         if(dataFilter.AND) {
@@ -159,6 +159,7 @@ export const generateProtections = (entry, modelName) => {
       }
       return false
     },
+    checkDataContainProtectedFields
   };
 };
 
@@ -250,4 +251,37 @@ export const filterGen = (filter) => {
   }
   
   return obj
+}
+
+class ReachProtectedFields extends Error {
+  fields: any
+
+  constructor(protectedFields) {
+    super(`Reach protected fields`)
+    this.fields = protectedFields
+  }
+}
+
+/**
+ * should return any field with name starts double underscore example  `__port`, `__readolny`
+ * 
+ * @param data - data to check
+ * @param path - actual path in data
+ */
+export const checkDataContainProtectedFields = (data, path='/') => {
+
+  let founded = []
+  const keys = Object.keys(data)
+  if(keys.length > 0){
+    for(const fieldName of keys){
+      if(/^__/.test(fieldName)){
+        founded.push({name: fieldName, path: path})
+      } else if(typeof(data[fieldName]) != 'string') {
+        let fundedInDeep = checkDataContainProtectedFields(data[fieldName], `${path}${fieldName}/`)
+        founded.push(...fundedInDeep)
+      }
+    }
+  }
+
+  return founded
 }
