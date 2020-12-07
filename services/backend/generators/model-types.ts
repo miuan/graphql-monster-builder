@@ -30,7 +30,7 @@ export const createModelTypeFromModel = (model : SchemaModel) => {
 
   return `
     // type for model: \`${modelName}\`
-    interface ${modelName}Model extends Document {${modelMembers}
+    export interface ${modelName}Model extends Document {${modelMembers}
     }
   `
 }
@@ -39,7 +39,7 @@ export const transformMemberTypeToTypescriptType = (member : SchemaModelMember) 
   let ttype
 
   if (member.relation) {
-     ttype = `${member.relation.relatedModel.modelName}`;
+     ttype = `${member.relation.relatedModel.modelName}Model`;
   } else if (member.type === 'DateTime') {
     ttype = 'Date';
   } else if (member.type === 'Int') {

@@ -24,7 +24,7 @@ export const createMongoModel = (structure: Structure, model : SchemaModel) => {
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
   const varName =  lower + 'Schema';
   let result = `import { Schema, Model, model } from 'mongoose'
-  import { ${modelName}Model } from '../model-types.ts'
+  import { ${modelName}Model } from '../model-types'
   
 const ${varName}: Schema = new Schema(
 {
