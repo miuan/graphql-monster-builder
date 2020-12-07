@@ -224,7 +224,7 @@ export const extractMemberFromLine = (line: string, row: number): SchemaModelMem
     throw `The member name '${name}' on line:${row} is reserved, reserved words: ${MONGOSEE_RESERVED_WORDS}`;
   }
 
-  if (!/^[A-Za-z]/.test(name)) {
+  if (!/^[_A-Za-z]/.test(name)) {
     throw `The member name '${name}' on line:${row} should start with regular character '[A-Za-z]'`;
   }
 

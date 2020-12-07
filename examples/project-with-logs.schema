@@ -41,6 +41,7 @@ type Project @model {
   id: ID! @isUnique
   name: String
   models: String
+  __port: Int
   user: User! @relation(name: "ProjectOnUser")
   logs: [ProjectLogs] @relation(name: "ProjectOnProjectLog")
 }

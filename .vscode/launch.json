@@ -5,11 +5,11 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Build simple to server",
+            "name": "Build project to server",
             "type": "node",
             "request": "launch",
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "./server-test"],
+            "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "../server"],
             "cwd": "${workspaceFolder}",
             "internalConsoleOptions": "openOnSessionStart",
             "skipFiles": ["<node_internals>/**", "node_modules/**"],
