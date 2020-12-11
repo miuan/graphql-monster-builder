@@ -1,13 +1,13 @@
-import { Structure, SchemaModel, SchemaModelRelationType } from '../../common/types';
-import { writeToFile, templateToText, templateFileToText } from '../../common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
-import { BackendDirectory } from '../backendDirectory';
+import { Structure, SchemaModel, SchemaModelRelationType } from '../../common/types'
+import { writeToFile, templateToText, templateFileToText } from '../../common/files'
+import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
+import { BackendDirectory } from '../backendDirectory'
 
 
 export const generateEntry = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
-  const body = generateEntryWorker(backendDirectory.structure, models);
-  backendDirectory.genWrite(`entry`, body);
-};
+  const body = generateEntryWorker(backendDirectory.structure, models)
+  backendDirectory.genWrite(`entry`, body)
+}
 
 const genAddingAndRemovingsForModel = (model: SchemaModel) => {
   let result = ''
@@ -15,8 +15,8 @@ const genAddingAndRemovingsForModel = (model: SchemaModel) => {
     const relatedMember = member.relation && getOnlyOneRelatedMember(member)
 
     if (member.relation && relatedMember) {
-      const lower = firstToLower(relatedMember.modelName);
-      const relationName = member.relation.name;
+      const lower = firstToLower(relatedMember.modelName)
+      const relationName = member.relation.name
       const funcAddToName = `addTo${relationName}`
       const funcRemoveFromName = `removeFrom${relationName}`
 
@@ -28,72 +28,72 @@ const genAddingAndRemovingsForModel = (model: SchemaModel) => {
 }
 
 export const generateEntryWorker = (structure: Structure, models: SchemaModel[]):string => {
-  let body:string = '';
-  let modelsBody = '';
-  let services = '';
-  let resolvers = '';
+  let body:string = ''
+  let modelsBody = ''
+  let services = ''
+  let resolvers = ''
   
 
   for (const model of structure.models.modules) {
-    const lower = model.charAt(0).toLowerCase() + model.slice(1);
-    const modelName = `${lower}Model`;
-    body += `import { ${modelName } } from './models/${model}';\n`;
-    modelsBody += `entry.models['${lower}'] = ${modelName};\n`;
+    const lower = model.charAt(0).toLowerCase() + model.slice(1)
+    const modelName = `${lower}Model`
+    body += `import { ${modelName } } from './models/${model}'\n`
+    modelsBody += `entry.models['${lower}'] = ${modelName}\n`
   }
-  body += '\n';
+  body += '\n'
 
   for (const model of structure.services.modules) {
-    const lower = model.charAt(0).toLowerCase() + model.slice(1);
-    const modelName = `${lower}Service`;
-    body += `import { generate${model}Service } from './services/${model}';\n`;
-    services += `entry.services['${lower}'] = generate${model}Service(entry);\n`;
+    const lower = model.charAt(0).toLowerCase() + model.slice(1)
+    const modelName = `${lower}Service`
+    body += `import { generate${model}Service } from './services/${model}'\n`
+    services += `entry.services['${lower}'] = generate${model}Service(entry)\n`
   }
-  body += '\n';
+  body += '\n'
 
   for (const model of structure.resolvers.modules) {
-    const lower = model.charAt(0).toLowerCase() + model.slice(1);
-    const modelName = `${lower}Service`;
-    body += `import { generate${model}Resolver } from './resolvers/${model}';\n`;
-    resolvers += `entry.resolvers['${lower}'] = generate${model}Resolver(entry);\n`;
+    const lower = model.charAt(0).toLowerCase() + model.slice(1)
+    const modelName = `${lower}Service`
+    body += `import { generate${model}Resolver } from './resolvers/${model}'\n`
+    resolvers += `entry.resolvers['${lower}'] = generate${model}Resolver(entry)\n`
   }
 
-  const resolver = createResolvers(structure, models);
+  const resolver = createResolvers(structure, models)
 
   body += templateFileToText('entry.tmpl.ts', {
     _MODELS_BODY_: modelsBody,
     _SERVICES_: services,
     _RE1SOLVERS_: resolvers,
     _RESOLVER_: resolver
-  });
+  })
 
-  return body;
-};
+  return body
+}
 
 
 
 
 export const createResolvers = (structure: Structure, models: SchemaModel[]) => {
-  let queries = '';
-  let dataloaders = '';
+  let queries = ''
+  let dataloaders = ''
 
   for (const modul of structure.resolvers.modules) {
-    const lower = modul.charAt(0).toLowerCase() + modul.slice(1);
-    queries += `\t\t${modul}: entry.resolvers['${lower}'].one,\n`;
-    queries += `\t\tall${modul}s: entry.resolvers['${lower}'].all,\n`;
+    const lower = modul.charAt(0).toLowerCase() + modul.slice(1)
+    queries += `\t\t${modul}: entry.resolvers['${lower}'].one,\n`
+    queries += `\t\tall${modul}s: entry.resolvers['${lower}'].all,\n`
   }
 
-  let mutations = '';
+  let mutations = ''
 
   for (const modul of structure.resolvers.modules) {
-    const lower = modul.charAt(0).toLowerCase() + modul.slice(1);
-    mutations += `\t\tcreate${modul}: entry.resolvers['${lower}'].create,\n`;
-    mutations += `\t\tupdate${modul}: entry.resolvers['${lower}'].update,\n`;
-    mutations += `\t\tdelete${modul}: entry.resolvers['${lower}'].remove,\n`;
+    const lower = modul.charAt(0).toLowerCase() + modul.slice(1)
+    mutations += `\t\tcreate${modul}: entry.resolvers['${lower}'].create,\n`
+    mutations += `\t\tupdate${modul}: entry.resolvers['${lower}'].update,\n`
+    mutations += `\t\tdelete${modul}: entry.resolvers['${lower}'].remove,\n`
   }
 
   for (const model of models) {
     mutations += genAddingAndRemovingsForModel(model)
-    dataloaders += generateDataloadersForResolver(model);
+    dataloaders += generateDataloadersForResolver(model)
   }
   
   const body = `
@@ -110,33 +110,33 @@ export const createResolvers = (structure: Structure, models: SchemaModel[]) => 
     }
     ${dataloaders}
   }
-  `;
+  `
 
-  return body;
-};
+  return body
+}
 
 export const createQueryResolvers = (modules) => {
   
-};
+}
 
 
 export const generateDataloadersForResolver = (model: SchemaModel) => {
   let body = `
-  ,${model.modelName}: {`;
+  ,${model.modelName}: {`
 
-  const memberWithRelation = model.members.filter(m => m.relation);
+  const memberWithRelation = model.members.filter(m => m.relation)
   for (const member of memberWithRelation) {
-    const memberName = member.name;
-    const memberModelName = member.relation.relatedModel.modelName;
-    const lower = memberModelName.charAt(0).toLowerCase() + memberModelName.slice(1);
+    const memberName = member.name
+    const memberModelName = member.relation.relatedModel.modelName
+    const lower = memberModelName.charAt(0).toLowerCase() + memberModelName.slice(1)
     const many = 
         member.relation.type === SchemaModelRelationType.MANY_TO_MANY 
-        || member.relation.type === SchemaModelRelationType.MANY_TO_ONE;
+        || member.relation.type === SchemaModelRelationType.MANY_TO_ONE
     body += `\n\t\t${memberName}: async (root, data, ctx) => {
-      return await entry.dataloaders['${lower}'](ctx, root.${memberName},${many});
-    },`;
+      return await entry.dataloaders['${lower}'](ctx, root.${memberName},${many})
+    },`
   }
   body += `
-}`;
-  return body;
-};
+}`
+  return body
+}

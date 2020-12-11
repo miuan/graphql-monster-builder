@@ -52,7 +52,7 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
         this.baseDir = baseDir
 
         const outDir = projectName
-        this.structure.id = projectName.replace('../', '');
+        this.structure.id = projectName.replace('../', '').replace('./', '');
       
         for (const str in this.structure) {
           if (str === 'id') {

@@ -1,13 +1,13 @@
-import { generateDataloaders } from './dataloaders';
-import * as extras from './extras';
+import { generateDataloaders } from './dataloaders'
+import * as extras from './extras'
 
-let hooks;
+let hooks
 
 try {
   hooks = require('../services/entryHooks.ts').hooks
 } catch( ex ) {
   hooks = {}
-  console.log('missing ../services/entryHooks.ts');
+  console.log('missing ../services/entryHooks.ts')
 }
 
 export const generateResolver = (setting = {}) => {
@@ -20,20 +20,20 @@ export const generateResolver = (setting = {}) => {
       services: {},
       resolvers: {}
     },
-  };
+  }
 
   if( hooks.services ){
     for( const serviceHookName in hooks.services ) {
-      console.log('Register ' + serviceHookName + ' for service');
-      entry.hooks.services[serviceHookName] = hooks.services[serviceHookName];
+      console.log('Register ' + serviceHookName + ' for service')
+      entry.hooks.services[serviceHookName] = hooks.services[serviceHookName]
     }
   }
   
 
   if( hooks.resolvers ){
     for( const serviceHookName in hooks.resolvers ) {
-      console.log('Register ' + serviceHookName + ' for resolver');
-      entry.hooks.resolvers[serviceHookName] = hooks.resolvers[serviceHookName];
+      console.log('Register ' + serviceHookName + ' for resolver')
+      entry.hooks.resolvers[serviceHookName] = hooks.resolvers[serviceHookName]
     }
   }
   
@@ -42,12 +42,12 @@ export const generateResolver = (setting = {}) => {
 _SERVICES_
 _RE1SOLVERS_
   
-  generateDataloaders(entry);
+  generateDataloaders(entry)
 
-  const resolver = _RESOLVER_
+  const resolvers = _RESOLVER_
 
   return {
     entry,
-    resolver,
-  };
-};
+    resolvers,
+  }
+}
