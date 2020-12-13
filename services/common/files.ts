@@ -102,9 +102,9 @@ export const templateToText = (text: string, params: any) => {
 }
 
 export const templateFileToText = (fileName: string, params: any = null): string => {
-  const templateFilePath = `./services/backend/templates/${fileName}`;
+  const templateFilePath = path.join(__dirname, '../../', 'services/backend/templates', fileName)
+  //const templateFilePath = `services/backend/templates/${fileName}`;
   let text = fs.readFileSync(templateFilePath).toString();
-  
   
   return templateToText(text, params);
 };

@@ -31,7 +31,7 @@ export const getModelsFromSchema = async (schema): Promise<SchemaModel[]> => {
       const modelName = matched[1];
 
       if (!/^[A-Z]/.test(modelName)) {
-        throw `The model name '${modelName}' on line:${row} should start with capital leter '[A-Z]'`;
+        throw `Line: ${row} The model name '${modelName}' should start with capital leter '[A-Z]'`;
       }
 
       currentModel = {
@@ -54,13 +54,32 @@ export const getModelsFromSchema = async (schema): Promise<SchemaModel[]> => {
       currentModel.members.push(member);
     } else if (!currentModel && line) {
       scanProtectionLine(line, currentProtection, row);
-      
     }
   }
 
+
   setupModelsRelations(models);
+  checkForErrorsInModels(models)
   return models;
 };
+
+export const checkForErrorsInModels = (models: SchemaModel[]) => {
+
+  for(const model of models){
+    let presenceOfId = false
+    for(const member of model.members){
+      if(member.name == 'id' && member.modelName == 'ID' && member.isUnique && member.isRequired){
+        presenceOfId = true
+      }
+    }
+    if(!presenceOfId){
+      throw `Line: ${model.start} Model ${model.modelName} missing identificator add property 'id: ID! @isUnique'`
+    } else if (!model.members || model.members.length < 2){
+      throw `Line: ${model.start} Model ${model.modelName} have only identificator, add more properties example: 'name: String'`
+    }
+  }
+}
+
 
 export const scanProtectionLine = (line: String, protection:SchemaModelProtection, row: number) => {
   const units = line.split(' ');

@@ -14,10 +14,14 @@ import { BackendDirectory } from './backend/backendDirectory';
 export const exportAs = async (name, from, base='.') => {
   
   const importedSchema = fs.readFileSync(from, { encoding: 'utf8' });
+  return exportAsFromString(name, importedSchema, base)
+}
+
+export const exportAsFromString = async (name, importedSchema, outDir='.', rebase='') => {
   const models = await getModelsFromSchema(importedSchema);
  
   const backendDirectory = new BackendDirectory()
-  backendDirectory.init(name, base)
+  backendDirectory.init(name, outDir)
   backendDirectory.prepareDirectory()
 
   generateSchema(backendDirectory, models);
@@ -30,14 +34,14 @@ export const exportAs = async (name, from, base='.') => {
   generateEntry(backendDirectory, models);
 
 
-  const server = templateFileToText('server.ts', null);
+  const server = templateFileToText(`server.ts`, null);
   backendDirectory.write(`server`, server);
 
-  backendDirectory.genWrite( `schemaLoad`, templateFileToText('schemaLoad.ts', null));
-  backendDirectory.genWrite( `extras`, templateFileToText('extras.ts', null));
-  backendDirectory.genWrite( `services/db`, templateFileToText('db.ts', null));
+  backendDirectory.genWrite( `schemaLoad`, templateFileToText(`schemaLoad.ts`, null));
+  backendDirectory.genWrite( `extras`, templateFileToText(`extras.ts`, null));
+  backendDirectory.genWrite( `services/db`, templateFileToText(`db.ts`, null));
   backendDirectory.genWrite( `source.schema`, importedSchema);
-  backendDirectory.write( `package.json`, templateFileToText('package.json', null));
+  backendDirectory.write( `package.json`, templateFileToText(`package.json`, null));
   
   // writeToFile(structure.gen, 'models.json', JSON.stringify(models))
 };

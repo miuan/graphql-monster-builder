@@ -107,7 +107,7 @@ export const createService = (model : SchemaModel) => {
 
   const {result: serviceAddRemove, connect: serviceAddRemoveConnect} = modelCreateAddRemoveLinks(model)
 
-  let result = templateFileToText('service.ts',{
+  let result = templateFileToText(`service.ts`,{
     _MODEL_NAME_: modelName,
     _LOWER_NAME_: lower,
     VAR_NAME: varName,
@@ -121,7 +121,6 @@ export const createService = (model : SchemaModel) => {
     _EXTRA_ACTION_AFTER_UPDATE_: '',
     _SERVICE_ADD_REMOVE_CONNECT_: serviceAddRemoveConnect,
     _SERVICE_ADD_REMOVE_: serviceAddRemove,
-    
   });
   result += '';
   return result;

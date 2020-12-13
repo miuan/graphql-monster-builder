@@ -9,7 +9,7 @@ export const setupModelsRelations = (models: SchemaModel[]) => {
         const another = searchModelsRelationsInModels(relationName, models, [model.modelName]);
         if (!another) {
           member.relation.error = `Unknow relation to '${relationName}'`;
-          continue;
+          throw new Error(`Line: ${member.row} Relation '${relationName}' doesn't have mate`)
         }
 
         const anotherMember = another.member; 
