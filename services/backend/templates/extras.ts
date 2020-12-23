@@ -285,3 +285,35 @@ export const checkDataContainProtectedFields = (data, path='/') => {
 
   return founded
 }
+
+export const createUser = async (entry, email: string, password: string, rolesIds: string[] = []) => {
+  const userModel = entry.models['user']
+  const userService = entry.services['user']
+
+  let user = await userModel.findOne({email: email})
+
+  if(!user) {
+    // call service instead of simple model
+    // because we want also create relation between user <- and -> roles
+    user = await userService.create({email: email, _password: password, rolesIds})
+    console.log(`User with email: ${email} and with pass: ${password} [CREATED]`, user)
+  } else {
+    user = await userService.update({_password: password, rolesIds}, user.id)
+    console.log(`Update pass (${password}) to already existed user with email: ${email}`, user)
+  }
+
+  return user
+}
+
+export const createRole = async (entry, role: string) => {
+  const userRoleModel = entry.models['userRole']
+  let userRole = await userRoleModel.findOne({role})
+  if(!userRole){
+    userRole = await userRoleModel.create({role})
+    console.log(`Role with name: ${role} [CREATED]`, userRole)
+  } else {
+    console.log(`Role with name: ${role} already exist`, userRole)
+  }
+  
+  return userRole
+}
