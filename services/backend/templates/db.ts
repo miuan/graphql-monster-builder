@@ -55,3 +55,11 @@ export const close = (cb) => {
 export const disconnect = () => {
   mongoose.disconnect()
 }
+
+export const disconnectAndWait = async () => {
+  mongoose.disconnect()
+
+  while(status.status != 'disconnected'){
+    await new Promise((resolved, rejected) => setTimeout(resolved, 100))
+  }
+}

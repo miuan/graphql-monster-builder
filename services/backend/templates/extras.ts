@@ -53,6 +53,21 @@ export const generateLogin = (entry) => {
   };
 };
 
+export const generateParentLogin = (entry) => async (ctx) => {
+  if(ctx.query.parentAccessToken != process.env.PARENT_ACCESS_TOKEN){
+    throw 'Unknown parent access token'
+  }
+  
+  const adminEmail = process.env.ADMIN_EMAIL
+
+  const user = await entry.models['user'].findOne({ email: adminEmail })
+  if(!user.token) {
+    genPasswordAndTokens(user)
+    await user.save()
+  }
+  ctx.send({token: user.token})
+}
+
 export const generateChangePassword = (entry) => {
   return async (root, data, ctx) => {
     const userModel = entry.models['user'];
@@ -64,7 +79,7 @@ export const generateChangePassword = (entry) => {
     }
 
     if (!bcrypt.compareSync(data.oldPassword, user._password)) {
-      throw `Old password id different than is currently used`;
+      throw `Old password is different than is currently used`;
     }
 
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -274,7 +289,7 @@ export const checkDataContainProtectedFields = (data, path='/') => {
   const keys = Object.keys(data)
   if(keys.length > 0){
     for(const fieldName of keys){
-      if(/^__/.test(fieldName)){
+      if(/^__/.test(fieldName) || /^_/.test(fieldName)){
         founded.push({name: fieldName, path: path})
       } else if(typeof(data[fieldName]) != 'string') {
         let fundedInDeep = checkDataContainProtectedFields(data[fieldName], `${path}${fieldName}/`)
@@ -284,4 +299,36 @@ export const checkDataContainProtectedFields = (data, path='/') => {
   }
 
   return founded
+}
+
+export const createUser = async (entry, email: string, password: string, rolesIds: string[] = []) => {
+  const userModel = entry.models['user']
+  const userService = entry.services['user']
+
+  let user = await userModel.findOne({email: email})
+
+  if(!user) {
+    // call service instead of simple model
+    // because we want also create relation between user <- and -> roles
+    user = await userService.create({email: email, _password: password, rolesIds})
+    console.log(`User with email: ${email} and with pass: ${password} [CREATED]`, user)
+  } else {
+    user = await userService.update({_password: password, rolesIds}, user.id)
+    console.log(`Update pass (${password}) to already existed user with email: ${email}`, user)
+  }
+
+  return user
+}
+
+export const createRole = async (entry, role: string) => {
+  const userRoleModel = entry.models['userRole']
+  let userRole = await userRoleModel.findOne({role})
+  if(!userRole){
+    userRole = await userRoleModel.create({role})
+    console.log(`Role with name: ${role} [CREATED]`, userRole)
+  } else {
+    console.log(`Role with name: ${role} already exist`, userRole)
+  }
+  
+  return userRole
 }

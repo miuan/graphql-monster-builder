@@ -57,8 +57,9 @@ const ${varName}: Schema = new Schema(
   }
 
   if (modelName === 'User') {
-    result += `_password: { type: Schema.Types.String, required: true},\n`;
-    result += `_reset_password_token: { type: Schema.Types.String},\n`;
+    result += `_password: { type: Schema.Types.String, required: true},\n`
+    result += `_reset_password_token: { type: Schema.Types.String},\n`
+    result += `_parent_access_token: { type: Schema.Types.String},\n`
   }
 
   result += 

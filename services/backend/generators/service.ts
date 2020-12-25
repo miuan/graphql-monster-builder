@@ -142,20 +142,20 @@ export const disconnectLinkedModels = (members: SchemaModelMember[]) => {
     const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
     const relatedMemberName = relatedMember.name;
     const varLinkedIds = `${member.name}LinkedIds`;
-    const lower = relatedMemberName.charAt(0).toLowerCase() + relatedMemberName.slice(1);
+    const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1)
     
 
     result += `
     if(${varLinkedIds} && ${varLinkedIds}.length > 0) {`;
     if (relatedMember.relation.type === relatedToMany) {
       result += `
-        await entry.models['${lower}'].update({}, {
+        await entry.models['${lower}'].updateMany({}, {
           $pullAll: {${relatedMemberName}: [updatedModel.id]}
         })
       `;
     } else {
       result += `
-      await entry.models['${lower}'].update({
+      await entry.models['${lower}'].updateMany({
         ${relatedMemberName}: updatedModel.id
       }, {
         ${relatedMemberName}: null

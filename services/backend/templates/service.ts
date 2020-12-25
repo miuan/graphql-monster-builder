@@ -77,8 +77,9 @@ export const _LOWER_NAME_Update = (entry) => {
     _EXTRA_ACTION_BEFORE_UPDATE_;
 
     let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true });
+    // disconnect all relations
     _DISCONNECT_RELATIONS_;
-
+    // connect all relations
     _CONNECT_RELATION_UPDATE_;
 
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Update']) {
