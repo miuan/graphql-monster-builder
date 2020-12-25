@@ -1,6 +1,7 @@
 node_modules
 test*
-server*
+#server will igner server.ts from templates
+#server*
 
 .env.local
 .env.*.local
