@@ -42,6 +42,19 @@
             "env": {
                 "NODE_ENV": "development"
             }
-        }
+        },
+        {
+           "name": "Build project to server",
+           "type": "node",
+           "request": "launch",
+           "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+           "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "${workspaceFolder}/server-test"],
+           "cwd": "${workspaceFolder}/builder",
+           "internalConsoleOptions": "openOnSessionStart",
+           "skipFiles": ["<node_internals>/**", "node_modules/**"],
+           "env": {
+               "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
+           }
+       },
     ]
 }

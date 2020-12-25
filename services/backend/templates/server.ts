@@ -111,7 +111,7 @@ const {entry, resolvers} = generateResolver({})
 ////////////////////////////////////////////////////////////////////////////////////////
 // PARENT ACCESS
 const parentAccess = new Router()
-parentAccess.post(`/parent/:parentToken/user/:userId`, generateParentLogin(entry))
+parentAccess.post(`/parent/:parentAccessToken/user/:parentUserId`, generateParentLogin(entry))
 app.use(parentAccess.routes())
 app.use(parentAccess.allowedMethods())
 

@@ -36,7 +36,8 @@ describe('extras', () => {
             const sendStub = jest.fn()
             const genPasswordAndTokensStub = jest.spyOn(extras, 'genPasswordAndTokens').mockImplementation(()=>{})
             
-            process.env.PARENT_ACCESS_TOKEN = '123'
+            process.env.PARENT_ACCESS_TOKEN = '7674123'
+            process.env.PARENT_ACCESS_USER_ID = '4321123'
             process.env.ADMIN_EMAIL = 'admin@email.com'
             const parentLogin = extras.generateParentLogin({
                 models: {
@@ -46,15 +47,19 @@ describe('extras', () => {
                 }
             })
 
-            await parentLogin({
-                query: {parentAccessToken: '123'},
-                send: sendStub
-            })
+            const ctx = {
+                params: {
+                    parentAccessToken: '7674123',
+                    parentUserId: '4321123'
+                },
+                body: null
+            }
+
+            await parentLogin(ctx)
 
             expect(findOneStub).toBeCalledWith({email: 'admin@email.com'})
             expect(genPasswordAndTokensStub).not.toBeCalled()
-            expect(sendStub).toBeCalledWith({token: '1'})
-            expect(saveStub).not.toBeCalled()
+            expect(ctx.body).toEqual({token: '1'})
         })
 
         it('should pass and generate new tokens', async () => {
@@ -67,8 +72,10 @@ describe('extras', () => {
                 user.token = 'genPasswordAndTokensStub-token-1'
             })
             
-            process.env.PARENT_ACCESS_TOKEN = '123'
+            process.env.PARENT_ACCESS_TOKEN = '7674123'
+            process.env.PARENT_ACCESS_USER_ID = '4321123'
             process.env.ADMIN_EMAIL = 'admin@email.com'
+
             const parentLogin = extras.generateParentLogin({
                 models: {
                     user: {
@@ -77,16 +84,22 @@ describe('extras', () => {
                 }
             })
             
-            await parentLogin({
-                query: {parentAccessToken: '123'},
-                send: sendStub
-            })
+            const ctx = {
+                params: {
+                    parentAccessToken: '7674123',
+                    parentUserId: '4321123'
+                },
+                body: null
+            }
+
+            await parentLogin(ctx)
 
             expect(findOneStub).toBeCalledWith({email: 'admin@email.com'})
             expect(genPasswordAndTokensStub).toBeCalled()
-            expect(sendStub).toBeCalledWith({token: 'genPasswordAndTokensStub-token-1'})
+            expect(ctx.body).toEqual({token: 'genPasswordAndTokensStub-token-1'})
         })
-        it('should fail', async () => {
+
+        it('should fail wrong parent access token', async () => {
             const saveStub = jest.fn()
             const findOneStub = jest.fn().mockImplementation(()=>({
                 token: '1', 
@@ -106,7 +119,40 @@ describe('extras', () => {
             })
 
             await expect( parentLogin({
-                query: {parentAccessToken: 'wrong123'},
+                params: {parentAccessToken: 'wrong123'},
+                send: sendStub
+            })).rejects.toEqual('Unknown parent access token')
+
+            expect(findOneStub).not.toBeCalled()
+            expect(genPasswordAndTokensStub).not.toBeCalled()
+            expect(sendStub).not.toBeCalled()
+        })
+
+        it('should fail wrong access user id', async () => {
+            const saveStub = jest.fn()
+            const findOneStub = jest.fn().mockImplementation(()=>({
+                token: '1', 
+                save:saveStub
+            }))
+            const sendStub = jest.fn()
+            const genPasswordAndTokensStub = jest.spyOn(extras, 'genPasswordAndTokens').mockImplementation(()=>{})
+            
+            process.env.PARENT_ACCESS_TOKEN = '123'
+            process.env.PARENT_ACCESS_USER_ID = '123'
+            process.env.ADMIN_EMAIL = 'admin@email.com'
+            const parentLogin = extras.generateParentLogin({
+                models: {
+                    user: {
+                        findOne: findOneStub
+                    }
+                }
+            })
+
+            await expect( parentLogin({
+                params: {
+                    parentAccessToken: '123',
+                    parentUserId: 'wrong123'
+                },
                 send: sendStub
             })).rejects.toEqual('Unknown parent access token')
 

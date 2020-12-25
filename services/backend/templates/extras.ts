@@ -54,7 +54,8 @@ export const generateLogin = (entry) => {
 };
 
 export const generateParentLogin = (entry) => async (ctx) => {
-  if(ctx.query.parentAccessToken != process.env.PARENT_ACCESS_TOKEN){
+  if(ctx.params.parentAccessToken != process.env.PARENT_ACCESS_TOKEN
+    || ctx.params.parentUserId != process.env.PARENT_ACCESS_USER_ID){
     throw 'Unknown parent access token'
   }
   
@@ -65,7 +66,7 @@ export const generateParentLogin = (entry) => async (ctx) => {
     genPasswordAndTokens(user)
     await user.save()
   }
-  ctx.send({token: user.token})
+  ctx.body = {token: user.token}
 }
 
 export const generateChangePassword = (entry) => {

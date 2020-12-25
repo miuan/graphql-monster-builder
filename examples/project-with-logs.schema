@@ -42,6 +42,7 @@ type Project @model {
   name: String
   models: String
   _port: Int
+  _parent_access_token: String
   user: User! @relation(name: "ProjectOnUser")
   logs: [ProjectLogs] @relation(name: "ProjectOnProjectLog")
 }

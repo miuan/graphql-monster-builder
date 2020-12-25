@@ -26,16 +26,21 @@ describe('StructureOperator', () => {
         (<any>files.createDirs).mockRestore()
     })
 
+    it('should handle id for windows path', () => {
+    
+    })
+
     it('should after init all structured item startsWith ../praha3/mainProject', () => {
         const structureOperator = new BackendDirectory()
         structureOperator.init('mainProject', '../praha3')
 
         for (const str in structureOperator.structure) {
             if (str === 'id') {
-                continue;
+                continue
             }
 
-            expect(structureOperator.structure[str].dir).toMatch(/^..\/praha3\/mainProject/)
+            // (\/|\\) windows \ or unix /
+            expect(structureOperator.structure[str].dir).toMatch(/^..(\/|\\)praha3(\/|\\)mainProject/)
         }
 
         expect(structureOperator.projectName).toEqual('mainProject')
@@ -48,7 +53,8 @@ describe('StructureOperator', () => {
         structureOperator.prepareDirectory()
 
         expect(removeDirsMock).toBeCalledTimes(1)
-        expect(removeDirsMock).toBeCalledWith('../praha4/mainProject2/gen')
+        // (\/|\\) windows \ or unix /
+        expect(removeDirsMock.mock.calls[0][0]).toMatch(/..(\/|\\)praha4(\/|\\)mainProject2(\/|\\)gen/)
         expect(createDirsMock).toBeCalledTimes(1)
         expect(createDirsMock).toBeCalledWith(structureOperator.structure)
         expect(createDirsMock).toHaveBeenCalledAfter(removeDirsMock)
