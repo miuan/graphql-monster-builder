@@ -53,6 +53,21 @@ export const generateLogin = (entry) => {
   };
 };
 
+export const generateParentLogin = (entry) => async (ctx) => {
+  if(ctx.query.parentAccessToken != process.env.PARENT_ACCESS_TOKEN){
+    throw 'Unknown parent access token'
+  }
+  
+  const adminEmail = process.env.ADMIN_EMAIL
+
+  const user = await entry.models['user'].findOne({ email: adminEmail })
+  if(!user.token) {
+    genPasswordAndTokens(user)
+    await user.save()
+  }
+  ctx.send({token: user.token})
+}
+
 export const generateChangePassword = (entry) => {
   return async (root, data, ctx) => {
     const userModel = entry.models['user'];
@@ -64,7 +79,7 @@ export const generateChangePassword = (entry) => {
     }
 
     if (!bcrypt.compareSync(data.oldPassword, user._password)) {
-      throw `Old password id different than is currently used`;
+      throw `Old password is different than is currently used`;
     }
 
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -274,7 +289,7 @@ export const checkDataContainProtectedFields = (data, path='/') => {
   const keys = Object.keys(data)
   if(keys.length > 0){
     for(const fieldName of keys){
-      if(/^__/.test(fieldName)){
+      if(/^__/.test(fieldName) || /^_/.test(fieldName)){
         founded.push({name: fieldName, path: path})
       } else if(typeof(data[fieldName]) != 'string') {
         let fundedInDeep = checkDataContainProtectedFields(data[fieldName], `${path}${fieldName}/`)

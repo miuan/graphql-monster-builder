@@ -17,6 +17,19 @@
                 "NODE_ENV": "development",
                 "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
             }
+        },{
+            "name": "Client start",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["./server.ts"],
+            "cwd": "${workspaceFolder}/__clients__/5fd50a065e3272ce35bf1475-client",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "NODE_ENV": "development",
+                "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
+            }
         },
         {
             "name": "Launch frontend",
