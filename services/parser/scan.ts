@@ -51,7 +51,10 @@ export const getModelsFromSchema = async (schema): Promise<SchemaModel[]> => {
     } else if (currentModel && line) {
       // ** ADD MEMBERS TO CURRENT MODEL **
       const member = extractMemberFromLine(line, row);
-      currentModel.members.push(member);
+      // maybe is empty line check it
+      if(member) {
+        currentModel.members.push(member)
+      }
     } else if (!currentModel && line) {
       scanProtectionLine(line, currentProtection, row);
     }
@@ -235,6 +238,12 @@ export const generateBaseProtection = (): SchemaModelProtection  => {
 
 export const extractMemberFromLine = (line: string, row: number): SchemaModelMember => {
   const nameAndType = line.trim().split(':');
+
+  // empty line we can skip
+  if(line.length < 2){
+    return null
+  }
+
   const name = nameAndType[0];
   const typeParams = nameAndType[1].trim().split(' ');
   

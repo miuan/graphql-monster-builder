@@ -201,69 +201,69 @@ const filterANDOR = (filter, operator) => {
 }
 
 
-export const filterGen = (filter) => {
+export const filterGen = (filters) => {
 
-  console.log('DEBUG:FILTER', filter)
+  console.log('DEBUG:FILTER', filters)
   let obj = {}
 
-  if(!filter){
+  if(!filters){
     return obj
-  } else if(filter.AND) {
-    return filterANDOR(filter.AND, '$and')
-  } else if(filter.OR) {
-    return filterANDOR(filter.OR, '$or')
+  } else if(filters.AND) {
+    return filterANDOR(filters.AND, '$and')
+  } else if(filters.OR) {
+    return filterANDOR(filters.OR, '$or')
   } 
 
-  if(Object.keys(filter).length > 0) {
-    for(const f in filter){
-      const ff = filter[f]
+  if(Object.keys(filters).length > 0) {
+    for(const filterKey in filters){
+      const filter = filters[filterKey]
 
-      if(/_every$/.test(f)){
-        obj[f.substr(0, f.length-6)] = filterGen(ff)
-      } else if(/_none$/.test(f)){
-        obj[f.substr(0, f.length-5)] = {'$not': filterGen(ff)}
-      } else if(/_not_contains$/.test(f)){
-        obj[f.substr(0, f.length-13)] = {$not: { "$regex": ff, "$options": "i" }}
-      } else if(/_contains$/.test(f)){
-        obj[f.substr(0, f.length-9)] = { "$regex": ff, "$options": "i" }
-      } else if(/_not$/.test(f)){
-        obj[f.substr(0, f.length-4)] = { $ne: ff }
-      } else if(/_not_in$/.test(f)){
-        obj[f.substr(0, f.length-7)] = { $not: { $in: ff } }
-      } else if(/_in$/.test(f)){
-        obj[f.substr(0, f.length-3)] = { $in: ff }
-      } else if(/_not_starts_with$/.test(f)){
-        obj[f.substr(0, f.length-16)] = {$not: { "$regex": `^${ff}`, "$options": "i" }}
-      } else if(/_starts_with$/.test(f)){
-        obj[f.substr(0, f.length-12)] = { "$regex": `^${ff}`, "$options": "i" }
-      } else if(/_not_ends_with$/.test(f)){
-        obj[f.substr(0, f.length-14)] = {$not: { "$regex": `${ff}$`, "$options": "i" }}
-      } else if(/_ends_with$/.test(f)){
-        obj[f.substr(0, f.length-10)] = { "$regex": `${ff}$`, "$options": "i" }
-      } else if(/_lt$/.test(f)){
-        obj[f.substr(0, f.length-3)] = { "$lt": ff }
-      } else if(/_lt$/.test(f)){
-        obj[f.substr(0, f.length-3)] = { "$lt": ff }
-      } else if(/_lte$/.test(f)){
-        obj[f.substr(0, f.length-4)] = { "$lte": ff }
-      } else if(/_gt$/.test(f)){
-        obj[f.substr(0, f.length-3)] = { "$gt": ff }
-      } else if(/_gte$/.test(f)){
-        obj[f.substr(0, f.length-4)] = { "$gte": ff }
-      } else if(f == 'id') {
-        obj['_id'] = ff
-      } else if(typeof ff == 'string' || typeof ff == 'number') {
-        obj = {...filter}
+      if(/_every$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-6)] = filterGen(filter)
+      } else if(/_none$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-5)] = {'$not': filterGen(filter)}
+      } else if(/_not_contains$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-13)] = {$not: { "$regex": filter, "$options": "i" }}
+      } else if(/_contains$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-9)] = { "$regex": filter, "$options": "i" }
+      } else if(/_not$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-4)] = { $ne: filter }
+      } else if(/_not_in$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-7)] = { $not: { $in: filter } }
+      } else if(/_in$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-3)] = { $in: filter }
+      } else if(/_not_starts_with$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-16)] = {$not: { "$regex": `^${filter}`, "$options": "i" }}
+      } else if(/_starts_with$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-12)] = { "$regex": `^${filter}`, "$options": "i" }
+      } else if(/_not_ends_with$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-14)] = {$not: { "$regex": `${filter}$`, "$options": "i" }}
+      } else if(/_ends_with$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-10)] = { "$regex": `${filter}$`, "$options": "i" }
+      } else if(/_lt$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-3)] = { "$lt": filter }
+      } else if(/_lt$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-3)] = { "$lt": filter }
+      } else if(/_lte$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-4)] = { "$lte": filter }
+      } else if(/_gt$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-3)] = { "$gt": filter }
+      } else if(/_gte$/.test(filterKey)){
+        obj[filterKey.substr(0, filterKey.length-4)] = { "$gte": filter }
+      } else if(filterKey == 'id') {
+        obj['_id'] = filter
+      } else if(typeof filter == 'string' || typeof filter == 'number' || typeof filter == 'boolean') {
+        obj = {...filters}
       } else {
         // TODO: stop going deeper than just object.id
         //       mongoose can't query populated fields
         //       https://stackoverflow.com/questions/17535587/mongoose-query-a-populated-field
         //       posible show message is funciton of prepaid version
-        return filterGen(ff)
+        return filterGen(filter)
       }
     }
   } else {
-    return filter
+    return filters
   }
   
   return obj
