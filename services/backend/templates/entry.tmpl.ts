@@ -4,10 +4,15 @@ import * as extras from './extras'
 let hooks
 
 try {
-  hooks = require('../services/entryHooks.ts').hooks
+  hooks = require(`${process.cwd()}/services/entryHooks.ts`).hooks
 } catch( ex ) {
-  hooks = {}
-  console.log('missing ../services/entryHooks.ts')
+  if(ex.code == 'MODULE_NOT_FOUND') {
+    hooks = {}
+    console.log(`missing ${process.cwd()}/services/entryHooks.ts`)
+  } else {
+    console.error(ex)
+    throw ex
+  }
 }
 
 export const generateResolver = (setting = {}) => {

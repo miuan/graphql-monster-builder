@@ -51,7 +51,6 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
         this.projectName = projectName
         this.baseDir = baseDir
 
-        const outDir = projectName
         this.structure.id = projectName.replace('../', '').replace('./', '');
       
         for (const str in this.structure) {
@@ -60,7 +59,7 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
           }
       
           const item = this.structure[str];
-          item.dir = path.join(baseDir, item.dir.replace('ID', outDir));
+          item.dir = item.dir.replace('ID', this.baseDir);
         }
     }
 
@@ -72,7 +71,7 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
             throw new Error('this.projectName or this.baseDir are empty, call init() fist')
         }
 
-        files.removeDirs(path.join(this.baseDir, this.projectName, 'gen'));
+        files.removeDirs(path.join(this.baseDir, 'gen'));
         files.createDirs(this.structure)
     }
     

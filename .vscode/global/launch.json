@@ -23,7 +23,7 @@
             "request": "launch",
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
             "args": ["./server.ts"],
-            "cwd": "${workspaceFolder}/__clients__/5fd50a065e3272ce35bf1475-client",
+            "cwd": "${workspaceFolder}/__clients__/5fe638b3399d7c4ee4e658d0-client",
             "internalConsoleOptions": "openOnSessionStart",
             "skipFiles": ["<node_internals>/**", "node_modules/**"],
             "env": {
@@ -43,18 +43,48 @@
                 "NODE_ENV": "development"
             }
         },
-        {
-           "name": "Build project to server",
-           "type": "node",
-           "request": "launch",
-           "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-           "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "${workspaceFolder}/server-test"],
-           "cwd": "${workspaceFolder}/builder",
-           "internalConsoleOptions": "openOnSessionStart",
-           "skipFiles": ["<node_internals>/**", "node_modules/**"],
-           "env": {
-               "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
-           }
-       },
+         {
+            "name": "Build project to server",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "../server"],
+            "cwd": "${workspaceFolder}/builder",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
+            }
+        },{
+            "type": "node",
+            "request": "launch",
+            "name": "Builder jest",
+            "program": "${workspaceFolder}/builder/node_modules/.bin/jest",
+            "args": [
+                "extras.spec.ts"
+            ],
+            "cwd": "${workspaceFolder}/builder",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "windows": {
+                "program": "${workspaceFolder}/builder/node_modules/jest/bin/jest",
+            },
+        },{
+            "type": "node",
+            "request": "launch",
+            "name": "Server jest",
+            "program": "${workspaceFolder}/server/node_modules/.bin/jest",
+            "args": [
+                "proxyClients.spec.ts"
+            ],
+            "cwd": "${workspaceFolder}/server",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "windows": {
+                "program": "${workspaceFolder}/server/node_modules/jest/bin/jest",
+            },
+        }
     ]
 }

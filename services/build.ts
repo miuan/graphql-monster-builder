@@ -33,7 +33,6 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', rebas
 
   generateEntry(backendDirectory, models);
 
-
   const server = templateFileToText(`server.ts`, null);
   backendDirectory.write(`server`, server);
 
@@ -43,9 +42,4 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', rebas
   backendDirectory.genWrite( `source.schema`, importedSchema);
   backendDirectory.write( `package.json`, templateFileToText(`package.json`, null));
   
-  // writeToFile(structure.gen, 'models.json', JSON.stringify(models))
-};
-
-
-
-
+}

@@ -41,8 +41,14 @@ type Project @model {
   id: ID! @isUnique
   name: String
   models: String
+   _self_dir: String
+  _vesions: [String]
   _port: Int
   _parent_access_token: String
+  _jwt_token_secret: String
+  _error: String
+  _status: String
+  _admin_user_id: String
   user: User! @relation(name: "ProjectOnUser")
   logs: [ProjectLogs] @relation(name: "ProjectOnProjectLog")
 }

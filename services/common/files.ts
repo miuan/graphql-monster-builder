@@ -11,7 +11,7 @@ import {
 
 
 
-export const removeDirs = (dir) => {
+export const removeDirs = (dir, force = false) => {
   if(!fs.existsSync(dir)){
     return
   } else if(!fs.lstatSync(dir).isDirectory()) {
@@ -64,7 +64,7 @@ export const createDirs = (structure: Structure, baseDir: string = '') => {
     const dir = path.join(baseDir, structure[str].dir);
     // if node modules stays then rm on root dir was not removed
     try {
-      fs.mkdirSync(dir)
+      fs.mkdirSync(dir, { recursive: true })
       log.info(`Create dir: ${dir}`)
     } catch (ex) {
 
