@@ -27,14 +27,13 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
   for (const model of models) {
     const name = model.modelName;
     // tslint:disable-next-line:max-line-length
-    result += `  all${name}s(filter: ${name}Filter, orderBy: ${name}OrderBy, skip: Int, first: Int, last: Int): [${name}!]!\n`;
+    result += `  all${name}s(filter: ${name}Filter): [${name}!]!\n`;
   }
 
   for (const model of models) {
     result += `  ${model.modelName}(id: ID): ${model.modelName}\n`;
   }
 
-  result += `   login(email: String!, password: String!): User\n`;
 
   result += '}\n\n';
 
@@ -167,10 +166,13 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
     result += generateMutationAddingsAndRemovings(model);
   }
 
-  result += `   refreshToken(userId: ID!, refreshToken: String!): User\n`;
-  result += `   changePassword(userId: ID!, oldPassword: String!, newPassword: String!): User\n`;
-  result += `   forgotPassword(email: String!): String\n`;
-  result += `   resetPassword(token: String!, password: String): User\n`;
+  result += `   login_v1(email: String!, password: String!): UserToken\n`
+  result += `   register_v1(email: String!, password: String!): UserToken\n`
+  result += `   logout_v1(userId: ID!): LogoutStatus\n`;
+  result += `   refreshToken_v1(userId: ID!, refreshToken: String!): UserToken\n`;
+  result += `   changePassword_v1(userId: ID!, oldPassword: String!, newPassword: String!): UserToken\n`;
+  result += `   forgotPassword_v1(email: String!): ForgotPasswordStatus\n`;
+  result += `   forgotPasswordReset_v1(token: String!, password: String): UserToken\n`;
   
   result += '}\n\n';
 
@@ -195,7 +197,7 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
 
   for (const member of model.members) {
     const mame = member.name;
-    if (nmf.indexOf(mame) === -1) {
+    if (nmf.indexOf(mame) === -1 && !member.isReadonly) {
 
       if (member.relation) {
         if (excludeRelationToModel === member.modelName) {
@@ -306,7 +308,7 @@ export const generateSchameFilter = (model: SchemaModel) => {
 };
 
 export const generateSchemaModel = (model: SchemaModel) => {
-  let result = `type ${model.modelName} implements Node {\n`;
+  let result = `type ${model.modelName} {\n`;
   
   for (const member of model.members) {
     result += `  ${member.name}: ${member.type}`;
@@ -357,33 +359,59 @@ export const generateSchemaInputsForModel = (modelName: string, relatedModel: Sc
 
 
 export const generateSchemaAsString = (models: SchemaModel[]):string => {
-  let result = '';
+  let orders = ''
+  let filters = ''
+  let generatedModels = ''
+  let queriesAndMutations = ''
 
   for (const model of models) {
-    result += generateSchemaOrder(model);
+    orders += generateSchemaOrder(model);
   }
 
   for (const model of models) {
-    result += generateSchameFilter(model);
+    filters += generateSchameFilter(model);
   }
 
-  result += `# An object with an ID
-interface Node {
-  # The id of the object.
-  id: ID!
-}
-
-scalar DateTime
-  `;
   for (const model of models) {
-    result += generateSchemaModel(model);
+    generatedModels += generateSchemaModel(model);
   }
 
-  result += generateSchemaQueries(models);
-  result += generateSchemaInputs(models);
-  result += genereateSchemaPayloads(models);
-  result += generateSchemaMutations(models);
-  return result;
+  queriesAndMutations += generateSchemaQueries(models)
+  queriesAndMutations += generateSchemaInputs(models)
+  queriesAndMutations += genereateSchemaPayloads(models)
+  queriesAndMutations += generateSchemaMutations(models)
+
+  return `
+  ${orders}
+
+  ${filters}
+
+  ${generatedModels}
+
+  type UserToken {
+    token: String!
+    refreshToken: String!
+    user: User!
+  }
+
+  type ForgotPasswordStatus {
+    status: String!
+  }
+
+  type LogoutStatus {
+    status: String!
+  }
+
+  ${queriesAndMutations}
+
+  # An object with an ID
+  interface Node {
+    # The id of the object.
+    id: ID!
+  }
+  
+  scalar DateTime
+    `;
 };
 
 export const generateSchema = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {

@@ -57,9 +57,12 @@ const ${varName}: Schema = new Schema(
   }
 
   if (modelName === 'User') {
-    result += `_password: { type: Schema.Types.String, required: true},\n`
-    result += `_reset_password_token: { type: Schema.Types.String},\n`
-    result += `_parent_access_token: { type: Schema.Types.String},\n`
+    result += `__token: { type: Schema.Types.String, required: false},\n`
+    result += `__refreshToken: { type: Schema.Types.String, required: false},\n`
+    result += `__verifiedToken: { type: Schema.Types.String, required: false},\n`
+    result += `__password: { type: Schema.Types.String, required: true},\n`
+    result += `__resetPasswordToken: { type: Schema.Types.String},\n`
+    result += `__parent_access_token: { type: Schema.Types.String},\n`
   }
 
   result += 

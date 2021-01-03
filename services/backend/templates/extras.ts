@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt-nodejs';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
+import * as crypto from 'crypto'
 
 export const generateHash = function (password) {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
@@ -29,29 +30,84 @@ export const generateTokenJWT = (tokenizeData, opts?): string => {
 export const genPasswordAndTokens = (userData) => {
   // TODO: schort the expire date
   const options = { expiresIn: '365d' };
-  userData.token = generateTokenJWT({ id: userData.id, role: userData.role }, options);
-  userData.refreshToken = generateTokenJWT({ id: userData.id }, options);
-};
+  userData.__token = generateTokenJWT({ id: userData.id, role: userData.role }, options);
+  userData.__refreshToken = generateTokenJWT({ id: userData.id }, options);
+}
 
 
 export const checkPasswordIsNotIncluded = (userData) => {
+  if (userData.email) {
+    throw 'User can change password only in mutation changePassword_v1(old, new)';
+  }
+
   if (userData.password) {
-    throw 'User can change password only in userChangePasswordMutation(old, new)';
+    throw 'User can change password only in mutation changePassword_v1(old, new)';
   }
 };
 
-export const generateLogin = (entry) => {
-  return async (root, data, ctx) => {
-    
-    const user = await entry.models['user'].findOne({ email: data.email });
+export const generateLogin = (entry) => async (root, data, ctx) => {
+  const user = await entry.models['user'].findOne({ email: data.email });
 
-    if (user && bcrypt.compareSync(data.password, user._password)) {
-      return user;
+  if (user && bcrypt.compareSync(data.password, user._password)) {
+    if(!user.token) {
+      genPasswordAndTokens(user)
+      await user.save()
     }
 
-    throw 'Email or password is not correct';
-  };
-};
+    return {
+      token: user.__token,
+      refreshToken: user.__refreshToken,
+      user
+    };
+  }
+
+  throw 'Email or password is not correct';
+}
+
+export const generateRegister = (entry) => async (root, {email, password}, ctx) => {
+  const userModel = await entry.models['user']
+  
+  const existing = await userModel.findOne({ email }, {'_email': 1})
+  if(existing){
+    throw `User with email: ${existing._email} already exist`;
+  }
+
+  const user = {
+    _email: email
+  } as any
+
+  if(password) {
+    user.__password = generateHash(password);
+    user._password = '******';
+    user.__verifiedToken = crypto.randomBytes(64).toString('hex')
+  }
+
+  genPasswordAndTokens(user)
+
+  const createdUser = await userModel.create(user);
+  
+  return {
+    token: createdUser.__token,
+    refreshToken: createdUser.__refreshToken,
+    user:createdUser
+  }
+}
+
+export const generateLogout = (entry) => async (root, {email, password}, ctx) => {
+  const userModel = await entry.models['user']
+  const user = ctx.state.user
+  if(user){
+    const existing = await userModel.findById(user.id, {'__token': 1, '__refreshToken': 1})
+    existing.__token = ''
+    existing.__refreshToken = ''
+    await existing.save()
+  }
+  
+  return {
+    status: 'ok'
+  }
+}
+
 
 export const generateParentLogin = (entry) => async (ctx) => {
   if(ctx.params.parentAccessToken != process.env.PARENT_ACCESS_TOKEN

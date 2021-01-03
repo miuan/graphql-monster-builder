@@ -61,24 +61,83 @@ export const getModelsFromSchema = async (schema): Promise<SchemaModel[]> => {
   }
 
 
-  setupModelsRelations(models);
+  setupModelsRelations(models)
   checkForErrorsInModels(models)
+  addMissingFieldIntoModels(models)
+  
   return models;
 };
 
-export const checkForErrorsInModels = (models: SchemaModel[]) => {
+
+export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
+  let presenceOfRoleModel = false
+  let presenceOfUserModel = false
+
+  models.push({
+    modelName: 'UserRole',
+    protection: {
+      all: [],
+      one: [],
+      create: [],
+      update: [],
+      remove:[]
+    },
+    members: [],
+    start: -1,
+    end: -1,
+  })
 
   for(const model of models){
     let presenceOfId = false
+    let presenceOfEmail = model.modelName !== 'User'
+    let presenceOfPassword =  model.modelName !== 'User'
+    let presenceOfVerification =  model.modelName !== 'User'
+    let presenceOfUserRelationToRole = model.modelName !== 'User'
+    let presenceOfRoleName = model.modelName !== 'UserRole'
+    let presenceOfRoleRelationToUser = model.modelName !== 'UserRole'
+   
+
     for(const member of model.members){
-      if(member.name == 'id' && member.modelName == 'ID' && member.isUnique && member.isRequired){
-        presenceOfId = true
-      }
+      if(member.name == 'id') presenceOfId = true
+      else if(member.name == 'email') presenceOfEmail = true
+      else if(member.name == 'password') presenceOfPassword = true
+      else if(member.name == 'verified') presenceOfVerification = true
+      else if(member.name == 'roles') presenceOfUserRelationToRole = true
+      else if(member.name == 'name') presenceOfRoleName = true
     }
-    if(!presenceOfId){
-      throw `Line: ${model.start} Model ${model.modelName} missing identificator add property 'id: ID! @isUnique'`
-    } else if (!model.members || model.members.length < 2){
-      throw `Line: ${model.start} Model ${model.modelName} have only identificator, add more properties example: 'name: String'`
+
+    if(!presenceOfId) model.members.push({name: 'id', type: 'ID', modelName: 'ID', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
+    if(!presenceOfEmail) model.members.push({name: 'email', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
+    if(!presenceOfPassword) model.members.push({name: 'password', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: false, isReadonly: true, row: -1, relation: null})
+    if(!presenceOfVerification) model.members.push({name: 'verified', type: 'Boolean', modelName: 'Boolean', isArray: false, isRequired: false, isUnique: false, isReadonly: true, row: -1, relation: null})
+    if(!presenceOfRoleName) model.members.push({name: 'name', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
+    if(!presenceOfUserRelationToRole) model.members.push({name: 'roles', type: '[UserRole]', modelName: 'UserRole', isArray: true, isRequired: true, isUnique: false, isReadonly: false, row: -1, relation: {
+      createFromAnotherModel:true,
+      inputName:'UserrolesUserRole',
+      name:'_RoleOnUser',
+      relatedModel:models.find((m)=>m.modelName=='UserRole'),
+      type:3
+    } as any})
+    if(!presenceOfRoleRelationToUser) model.members.push({name: 'users', type: '[User]', modelName: 'User', isArray: true, isRequired: true, isUnique: false, isReadonly: false, row: -1, relation: {
+      createFromAnotherModel:false,
+      inputName:'UserRoleusersUser',
+      name:'_RoleOnUser',
+      relatedModel:models.find((m)=>m.modelName=='User'),
+      type:3
+    } as any})
+  }
+}
+
+
+export const checkForErrorsInModels = (models: SchemaModel[]) => {
+  let reservedInUser = ['email', 'password', 'verified', 'roles']
+
+  for(const model of models){
+    if(model.modelName == 'UserRole') throw `Line: ${model.start} Model: ${model.modelName} have reserved name and will be add automaticaly`
+    
+    for(const member of model.members){
+      if(model.modelName == 'User' && reservedInUser.indexOf(member.name) != -1) throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInUser} reserved and will be add automaticaly`
+      else if(member.name == 'ID') throw `Line: ${member.row} Model: ${model.modelName} are ID is reserved and will be add automaticaly`
     }
   }
 }
@@ -272,8 +331,11 @@ export const extractMemberFromLine = (line: string, row: number): SchemaModelMem
   member.isArray = member.type.startsWith('[');
 
   if (typeParams.length > 1) {
-    const params = '@' + line.split('@')[1];
-    extractMemberFromLineParams(member, params);
+    const splited = line.split('@')
+    splited.shift()
+    for(const param of splited){
+      extractMemberFromLineParams(member, `@${param.trim()}`)
+    }
   }
 
   return member;

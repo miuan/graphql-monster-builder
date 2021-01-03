@@ -33,8 +33,8 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', rebas
 
   generateEntry(backendDirectory, models);
 
-  const server = templateFileToText(`server.ts`, null);
-  backendDirectory.write(`server`, server);
+  backendDirectory.write(`server`, templateFileToText(`server.ts`, null))
+  backendDirectory.write(`services/sendMail`, templateFileToText(`sendMail.ts`, null))
 
   backendDirectory.genWrite( `schemaLoad`, templateFileToText(`schemaLoad.ts`, null));
   backendDirectory.genWrite( `extras`, templateFileToText(`extras.ts`, null));

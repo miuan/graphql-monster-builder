@@ -28,10 +28,11 @@ export type SchemaModelMember = {
   type: string;
   modelName: string;
   isRequired: boolean;
-  isUnique: boolean;
+  isUnique: boolean | string[];
   relation: SchemaModelRelation;
   isArray: boolean;
   row: number;
+  isReadonly: boolean
 };
 
 export enum SchemaModelProtectionType {
