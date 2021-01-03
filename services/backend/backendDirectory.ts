@@ -23,6 +23,10 @@ export const BACKEND_STRUCTURE = {
         dir:'ID/gen/services/', 
         modules: [],
     },
+    services2: { 
+        dir:'ID/services/', 
+        modules: [],
+    },
 };
   
 export interface BackendStructureOperatorWrite {

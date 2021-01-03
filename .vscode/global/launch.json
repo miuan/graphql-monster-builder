@@ -76,7 +76,7 @@
             "name": "Server jest",
             "program": "${workspaceFolder}/server/node_modules/.bin/jest",
             "args": [
-                "proxyClients.spec.ts"
+                "hotReload.spec.ts"
             ],
             "cwd": "${workspaceFolder}/server",
             "console": "integratedTerminal",

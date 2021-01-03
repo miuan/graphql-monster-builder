@@ -2,6 +2,7 @@ import * as bcrypt from 'bcrypt-nodejs';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
+import {sendMail, EMAIL_WELLCOME_TITLE, EMAIL_WELLCOME_MESSAGE} from '../services/sendMail'
 
 export const generateHash = function (password) {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
@@ -67,29 +68,45 @@ export const generateLogin = (entry) => async (root, data, ctx) => {
 export const generateRegister = (entry) => async (root, {email, password}, ctx) => {
   const userModel = await entry.models['user']
   
-  const existing = await userModel.findOne({ email }, {'_email': 1})
+  const existing = await userModel.findOne({ email }, {'email': 1})
   if(existing){
     throw `User with email: ${existing._email} already exist`;
   }
 
   const user = {
-    _email: email
+    email,
+    __password: generateHash(password),
+    password: '******',
+    verified: false,
+    __verifyToken: crypto.randomBytes(64).toString('hex')
   } as any
-
-  if(password) {
-    user.__password = generateHash(password);
-    user._password = '******';
-    user.__verifiedToken = crypto.randomBytes(64).toString('hex')
-  }
 
   genPasswordAndTokens(user)
 
-  const createdUser = await userModel.create(user);
-  
+  const createdUser = await userModel.create(user)
+  sendMail(email, EMAIL_WELLCOME_TITLE || 'Wellcome in {{SERVICE_NAME}}', EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{service_url}}/email/${createdUser.__verifyToken}/verify">{{service_url}}/verify/{{service_url}}/email/${createdUser.__verifyToken}/verify</a>`)
   return {
     token: createdUser.__token,
     refreshToken: createdUser.__refreshToken,
     user:createdUser
+  }
+}
+
+export const generateVerify = (entry) => async (root, {verifyToken}, ctx) => {
+  const userModel = await entry.models['user']
+  
+  const userForVerify = await userModel.findOne({ __verifyToken: verifyToken })
+  if(!userForVerify){
+    throw `The token seems incorect`
+  }
+
+  userForVerify.verified = true
+  await userForVerify.save()
+
+  return {
+    token: userForVerify.__token,
+    refreshToken: userForVerify.__refreshToken,
+    user: userForVerify 
   }
 }
 

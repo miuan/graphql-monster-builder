@@ -28,6 +28,10 @@ export const removeDirs = (dir, force = false) => {
     return
   }
 
+  if(/^services/.test(dir)) {
+    log.trace(`skip dir: ${dir}`)
+    return
+  }
 
   log.info(`remove dir: '${dir}'`);
   const files = fs.readdirSync(dir);

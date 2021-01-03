@@ -33,13 +33,12 @@ const argv = yargs
 
 (new Promise(async() => {
     log.debug(argv);
-    // await exportAs('protectql', './graphql/protectql.schema');
     const schema = argv._[0]
     const outDir = argv._[1]
     log.info(`Generate schema: '${schema} to ${outDir}`)
     const start = Date.now();
   
-    await exportAs(outDir, schema);
+    await exportAs(outDir, schema, outDir);
     const ms = Date.now() - start;
 
     log.info(`Done in ${ms}ms. Next step:`)
