@@ -171,8 +171,11 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
   result += `   logout_v1(userId: ID!): LogoutStatus\n`;
   result += `   refreshToken_v1(userId: ID!, refreshToken: String!): UserToken\n`;
   result += `   changePassword_v1(userId: ID!, oldPassword: String!, newPassword: String!): UserToken\n`;
-  result += `   forgotPassword_v1(email: String!): ForgotPasswordStatus\n`;
-  result += `   forgotPasswordReset_v1(token: String!, password: String): UserToken\n`;
+  result += `   forgottenPassword_v1(email: String!): ForgottenPasswordStatus\n`;
+  result += `   forgottenPasswordCheck_v1(token: String!): ForgottenPasswordCheckStatus\n`;
+  result += `   forgottenPasswordReset_v1(token: String!, password: String!): UserToken\n`;
+  result += `   verifyEmail_v1(verifyToken: String!): VerifiedUserStatus\n`;
+  result += `   verifyEmailResend_v1(userId: ID!): VerifyEmailResendStatus\n`;
   
   result += '}\n\n';
 
@@ -394,7 +397,24 @@ export const generateSchemaAsString = (models: SchemaModel[]):string => {
     user: User!
   }
 
-  type ForgotPasswordStatus {
+  type VerifiedUserToken {
+    token: String
+    refreshToken: String
+    user: User!
+  }
+
+  type VerifyEmailResendStatus {
+    email: String!
+    status: String!
+  }
+
+  type ForgottenPasswordStatus {
+    email: String!
+    status: String!
+  }
+
+  type ForgottenPasswordCheckStatus {
+    token: String!
     status: String!
   }
 

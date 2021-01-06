@@ -73,18 +73,19 @@ export const generateRegister = (entry) => async (root, {email, password}, ctx) 
     throw `User with email: ${existing._email} already exist`;
   }
 
+  const __verifyToken = await createVerifyToken(userModel)
   const user = {
     email,
     __password: generateHash(password),
     password: '******',
     verified: false,
-    __verifyToken: crypto.randomBytes(64).toString('hex')
+    __verifyToken
   } as any
 
   genPasswordAndTokens(user)
 
   const createdUser = await userModel.create(user)
-  sendMail(email, EMAIL_WELLCOME_TITLE || 'Wellcome in {{SERVICE_NAME}}', EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{service_url}}/email/${createdUser.__verifyToken}/verify">{{service_url}}/verify/{{service_url}}/email/${createdUser.__verifyToken}/verify</a>`)
+  sendVerifyEmail(createdUser)
   return {
     token: createdUser.__token,
     refreshToken: createdUser.__refreshToken,
@@ -97,10 +98,11 @@ export const generateVerify = (entry) => async (root, {verifyToken}, ctx) => {
   
   const userForVerify = await userModel.findOne({ __verifyToken: verifyToken })
   if(!userForVerify){
-    throw `The token seems incorect`
+    throw `The email verify token '${verifyToken}' seems incorect`
   }
 
   userForVerify.verified = true
+  userForVerify.__verifyToken = null
   await userForVerify.save()
 
   return {
@@ -121,25 +123,25 @@ export const generateLogout = (entry) => async (root, {email, password}, ctx) =>
   }
   
   return {
-    status: 'ok'
+    status: 'logout'
   }
 }
 
+export const generateVerifyEmailResend = (entry) => async (root, {user: userId}, ctx) => {
+  const userModel = await entry.models['user']
 
-export const generateParentLogin = (entry) => async (ctx) => {
-  if(ctx.params.parentAccessToken != process.env.PARENT_ACCESS_TOKEN
-    || ctx.params.parentUserId != process.env.PARENT_ACCESS_USER_ID){
-    throw 'Unknown parent access token'
-  }
-  
-  const adminEmail = process.env.ADMIN_EMAIL
-
-  const user = await entry.models['user'].findOne({ email: adminEmail })
-  if(!user.token) {
-    genPasswordAndTokens(user)
+  const user = await userModel.findById(userId)
+  if(!user.__verifyToken){
+    user.__verifyToken = await createVerifyToken(userModel)
     await user.save()
   }
-  ctx.body = {token: user.token}
+
+  sendVerifyEmail(user)
+
+  return {
+    email: user.email,
+    status: `sent`
+  }
 }
 
 export const generateChangePassword = (entry) => {
@@ -158,13 +160,118 @@ export const generateChangePassword = (entry) => {
 
     const updatedUser = await userModel.findByIdAndUpdate(
       data.userId, 
-      { _password:generateHash(data.newPassword) }, 
+      { __password:generateHash(data.newPassword) }, 
       { new: true },
     );
 
     return updatedUser;
   };
-};
+}
+
+export const generateForgottenPassword = (entry) => async (root, {email}, ctx) => {
+  const userModel = await entry.models['user']
+  
+  const user = await userModel.findOne({email})
+
+  if(!user){
+    throw `User with ${email} not found`
+  }
+
+  // check existence of verify token
+  let __forgottenPasswordToken
+  let existingUserWithForgottenPassword = null
+  do {
+    __forgottenPasswordToken = crypto.randomBytes(64).toString('hex')
+    existingUserWithForgottenPassword = await userModel.find({__forgottenPasswordToken})
+  } while(existingUserWithForgottenPassword)
+
+  user.__forgottenPasswordToken = __forgottenPasswordToken
+  
+  await user.save()
+  sendForgottenPasswordEmail(user)
+  
+  return {
+    email: user.email,
+    status: `sent`
+  }
+}
+
+export const generateForgottenPasswordCheck = (entry) => async (root, {forgottenPasswordToken}, ctx) => {
+  const userModel = await entry.models['user']
+  
+  const userWithForgottenPassword = await userModel.findOne({forgottenPasswordToken})
+
+  if(!userWithForgottenPassword){
+    throw `The forgotten password token '${forgottenPasswordToken}' is not valid`
+  }
+
+  return {
+    forgottenPasswordToken,
+    status: `valid`
+  }
+}
+
+export const generateForgottenPasswordReset = (entry) => async (root, {forgottenPasswordToken, password}, ctx) => {
+  const userModel = await entry.models['user']
+  const user = await userModel.findOne({forgottenPasswordToken})
+
+  if(!user){
+    throw `The forgotten password token '${forgottenPasswordToken}' is not valid`
+  }
+
+  user.__password = generateHash(password) 
+  user.__forgottenPasswordToken = null
+  genPasswordAndTokens(user)
+  await user.save()
+
+  return {
+    token: user.__token,
+    refreshToken: user.__refreshToken,
+    user
+  }
+}
+
+const createVerifyToken = async (userModel) => {
+  // check existence of verify token
+  let __verifyToken
+  let existingUserWithVerifyToken = null
+  do {
+    __verifyToken = crypto.randomBytes(64).toString('hex')
+    existingUserWithVerifyToken = await userModel.find({__verifyToken})
+  } while(existingUserWithVerifyToken)
+
+  return __verifyToken
+}
+
+const sendVerifyEmail = async (user) => {
+  const welcome = EMAIL_WELLCOME_TITLE || 'Wellcome in {{SERVICE_NAME}}'
+  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{service_url}}/email/${user.__verifyToken}/verify">{{service_url}}/email/${user.__verifyToken}/verify</a>`
+  return sendMail(user.email, welcome, message)
+}
+
+const sendForgottenPasswordEmail = async (user) => {
+  const welcome = EMAIL_WELLCOME_TITLE || 'Forgotten password {{SERVICE_NAME}}'
+  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{service_url}}/forgotten/${user.__verifyToken}/password">{{service_url}}/forgotten/${user.__verifyToken}/password</a>`
+  return sendMail(user.email, welcome, message)
+}
+
+export const generateParentLogin = (entry) => async (ctx) => {
+  if(ctx.params.parentAccessToken != process.env.PARENT_ACCESS_TOKEN
+    || ctx.params.parentUserId != process.env.PARENT_ACCESS_USER_ID){
+    throw 'Unknown parent access token'
+  }
+  
+  const adminEmail = process.env.ADMIN_EMAIL
+
+  const user = await entry.models['user'].findOne({ email: adminEmail })
+  if(!user.token) {
+    genPasswordAndTokens(user)
+    await user.save()
+  }
+  ctx.body = {token: user.token}
+}
+
+
 
 export const generateProtections = (entry, modelName) => {
   return {

@@ -1,8 +1,12 @@
 import { exec, ExecException } from "child_process"
 
-const EMAIL_FROM = process.env.EMAIL_FROM
-const URL_HOST = process.env.URL_HOST
-
+export const SERVICE_NAME = process.env.SERVICE_NAME
+export const EMAIL_FROM = process.env.EMAIL_FROM
+export const URL_HOST = process.env.URL_HOST
+export const EMAIL_WELLCOME_MESSAGE = process.env.EMAIL_WELLCOME_MESSAGE
+export const EMAIL_WELLCOME_TITLE = process.env.EMAIL_WELLCOME_TITLE
+export const EMAIL_FORGOTTEN_PASSWORD_MESSAGE = process.env.EMAIL_FORGOTTEN_PASSWORD_MESSAGE
+export const EMAIL_FORGOTTEN_PASSWORD_TITLE = process.env.EMAIL_FORGOTTEN_PASSWORD_TITLE
 
 type RunType = [ExecException, string, string]
 export const run = async (cmd): Promise<RunType> => ( new Promise<RunType>((resolve, reject)=>{
@@ -20,8 +24,9 @@ export const run = async (cmd): Promise<RunType> => ( new Promise<RunType>((reso
     })
 )
 
-export const sendMail = async (emailTo, rawMessage) => {
-    const message = rawMessage.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM)
+export const sendMail = async (emailTo, rawTitle, rawMessage) => {
+    const title = rawTitle.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM).replaceAll('{{SERVICE_NAME}}', SERVICE_NAME)
+    const message = rawMessage.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM).replaceAll('{{SERVICE_NAME}}', SERVICE_NAME)
     run(`echo "${message}" | mail -a "Content-type: text/html;\nFrom: ${EMAIL_FROM}" -s "Welcome to ProtectQL" ${emailTo}`)
 }
 

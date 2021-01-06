@@ -108,9 +108,11 @@ export const createResolvers = (structure: Structure, models: SchemaModel[]) => 
       register_v1: extras.generateRegister(entry),
       logout_v1: extras.generateLogout(entry),
       changePassword_v1: extras.generateChangePassword(entry),
-      forgotPassword_v1: extras.generateForgotPassword(entry),
-      forgotPasswordReset_v1: extras.generateForgotPasswordReset(entry),
-      verify_v1: extras.generateVerify(entry)
+      forgottenPassword_v1: extras.generateForgottenPassword(entry),
+      forgottenPasswordCheck_v1: extras.generateForgottenPasswordCheck(entry),
+      forgottenPasswordReset_v1: extras.generateForgottenPasswordReset(entry),
+      verifyEmail_v1: extras.generateVerify(entry),
+      verifyEmailResend_v1: extras.generateVerifyEmailResend(entry)
     }
     ${dataloaders}
   }

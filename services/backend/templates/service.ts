@@ -44,8 +44,7 @@ export const _LOWER_NAME_Create = (entry) => {
 
     _EXTRA_ACTION_BEFORE_CREATE_;
 
-    const model = VAR_NAME(data);
-    let createdModel = await model.save();
+    let createdModel = await VAR_NAME.create(data);
 
     _EXTRA_ACTION_AFTER_CREATE_;
     

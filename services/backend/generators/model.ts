@@ -37,7 +37,7 @@ const ${varName}: Schema = new Schema(
 
     result += `\t\t${member.name}:`;
     
-    let params = `{ type: Schema.Types.${transformTypeToMongoType(structure, member)}`;
+    let params = `{ type: ${transformTypeToMongoType(structure, member)}`;
 
     if (member.isRequired) {
       params += `, required: true`;
@@ -59,9 +59,9 @@ const ${varName}: Schema = new Schema(
   if (modelName === 'User') {
     result += `__token: { type: Schema.Types.String, required: false},\n`
     result += `__refreshToken: { type: Schema.Types.String, required: false},\n`
-    result += `__verifiedToken: { type: Schema.Types.String, required: false},\n`
+    result += `__verifiedToken: { type: Schema.Types.String, required: false, unique: true, index: true},\n`
     result += `__password: { type: Schema.Types.String, required: true},\n`
-    result += `__resetPasswordToken: { type: Schema.Types.String},\n`
+    result += `__resetPasswordToken: { type: Schema.Types.String, unique: true, index: true},\n`
     result += `__parent_access_token: { type: Schema.Types.String},\n`
   }
 
@@ -110,17 +110,17 @@ export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>(
 export const transformTypeToMongoType = (structure: Structure, member : SchemaModelMember) => {
   
   if (member.relation) {
-    let result = 'ObjectId, ';
+    let result = 'Schema.Types.ObjectId, ';
     result += `ref: '${structure.id}_${member.relation.relatedModel.modelName}', index: true`;
     return result;
   } 
   
   if (member.type === 'DateTime') {
-    return 'Date';
+    return 'Schema.Types.Date';
   } else if (member.type === 'Int') {
-    return `Number`;
+    return `Schema.Types.Number`;
   } else {
-    return `${member.type}`;
+    return `Schema.Types.${member.modelName}`;
   }
 };
 
