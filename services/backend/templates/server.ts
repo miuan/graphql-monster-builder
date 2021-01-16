@@ -123,6 +123,7 @@ try {
   const schema = fs.readFileSync('./gen/graphql.schema')
   typeDefs = gql(schema.toString())
 } catch(ex) {
+  throw ex
   console.error('Graphql Error', ex)
 }
 

@@ -174,7 +174,7 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
   result += `   forgottenPassword_v1(email: String!): ForgottenPasswordStatus\n`;
   result += `   forgottenPasswordCheck_v1(token: String!): ForgottenPasswordCheckStatus\n`;
   result += `   forgottenPasswordReset_v1(token: String!, password: String!): UserToken\n`;
-  result += `   verifyEmail_v1(verifyToken: String!): VerifiedUserStatus\n`;
+  result += `   verifyEmail_v1(verifyToken: String!): VerifiedUserToken\n`;
   result += `   verifyEmailResend_v1(userId: ID!): VerifyEmailResendStatus\n`;
   
   result += '}\n\n';

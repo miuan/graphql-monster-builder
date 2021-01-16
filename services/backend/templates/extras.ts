@@ -308,7 +308,7 @@ export const generateProtections = (entry, modelName) => {
         const ctxUser = ctx.state.user;
         const userRoleModel = entry.models['userRole'];
       
-        const userRole = await userRoleModel.findOne({ role: roles[0], users: ctxUser.id });
+        const userRole = await userRoleModel.findOne({ name: roles[0], users: ctxUser.id });
       
         return userRole != null;
       }
@@ -491,24 +491,24 @@ export const createUser = async (entry, email: string, password: string, rolesId
   if(!user) {
     // call service instead of simple model
     // because we want also create relation between user <- and -> roles
-    user = await userService.create({email: email, _password: password, rolesIds})
+    user = await userService.create({email: email, __password: password, password:'*****', rolesIds})
     console.log(`User with email: ${email} and with pass: ${password} [CREATED]`, user)
   } else {
-    user = await userService.update({_password: password, rolesIds}, user.id)
+    user = await userService.update({__password: password, rolesIds}, user.id)
     console.log(`Update pass (${password}) to already existed user with email: ${email}`, user)
   }
 
   return user
 }
 
-export const createRole = async (entry, role: string) => {
+export const createRole = async (entry, name: string) => {
   const userRoleModel = entry.models['userRole']
-  let userRole = await userRoleModel.findOne({role})
+  let userRole = await userRoleModel.findOne({name})
   if(!userRole){
-    userRole = await userRoleModel.create({role})
-    console.log(`Role with name: ${role} [CREATED]`, userRole)
+    userRole = await userRoleModel.create({name})
+    console.log(`Role with name: ${name} [CREATED]`, userRole)
   } else {
-    console.log(`Role with name: ${role} already exist`, userRole)
+    console.log(`Role with name: ${name} already exist`, userRole)
   }
   
   return userRole

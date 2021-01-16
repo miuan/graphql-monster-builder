@@ -87,7 +87,18 @@ export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
       update: [adminRole],
       remove:[adminRole]
     },
-    members: [],
+    members: [{
+      name:'name',
+      modelName: 'String',
+      type: 'String',
+      isRequired: true,
+      isUnique: true,
+      relation: null,
+      isArray: false,
+      row:-1,
+      isReadonly: false
+
+    }],
     start: -1,
     end: -1,
   })
