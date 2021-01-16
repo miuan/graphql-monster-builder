@@ -27,7 +27,7 @@ export const run = async (cmd): Promise<RunType> => ( new Promise<RunType>((reso
 export const sendMail = async (emailTo, rawTitle, rawMessage) => {
     const title = rawTitle.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM).replaceAll('{{SERVICE_NAME}}', SERVICE_NAME)
     const message = rawMessage.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM).replaceAll('{{SERVICE_NAME}}', SERVICE_NAME)
-    run(`echo "${message}" | mail -a "Content-type: text/html;\nFrom: ${EMAIL_FROM}" -s "Welcome to ProtectQL" ${emailTo}`)
+    run(`echo "${message}" | mail -a "Content-type: text/html;\nFrom: ${EMAIL_FROM}" -s "${title}" ${emailTo}`)
 }
 
 export default sendMail

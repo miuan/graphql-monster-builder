@@ -4,58 +4,86 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-       
         {
-            "name": "Build test-server project",
-            "type": "node",
-            "request": "launch",
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "./test-server"],
-            "cwd": "${workspaceFolder}",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": ["<node_internals>/**", "node_modules/**"],
-            "env": {
-                "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
-            }
-        },
-        {
-            "name": "Launch test-service",
+           "name": "Build project to server",
+           "type": "node",
+           "request": "launch",
+           "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+           "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "../server"],
+           "cwd": "${workspaceFolder}/builder",
+           "internalConsoleOptions": "openOnSessionStart",
+           "skipFiles": ["<node_internals>/**", "node_modules/**"],
+           "env": {
+               "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
+           }
+       },{
+            "name": "Server start",
             "type": "node",
             "request": "launch",
             "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
             "args": ["./server.ts"],
-            "cwd": "${workspaceFolder}/test-server",
+            "cwd": "${workspaceFolder}/server/",
             "internalConsoleOptions": "openOnSessionStart",
             "skipFiles": ["<node_internals>/**", "node_modules/**"],
             "env": {
-                "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
+                "NODE_ENV": "development",
+                "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
+            }
+        },{
+            "name": "Client start",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["./server.ts"],
+            "cwd": "${workspaceFolder}/__clients__/5fe638b3399d7c4ee4e658d0-client",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "NODE_ENV": "development",
+                "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
+            }
+        },
+        {
+            "name": "Launch frontend",
+            "type": "node-terminal",
+            "request": "launch",
+            "command":"npm start",
+            "cwd": "${workspaceFolder}/frontend",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "NODE_ENV": "development"
             }
         },{
             "type": "node",
             "request": "launch",
-            "name": "Jest Current File",
-            "program": "${workspaceFolder}/node_modules/.bin/jest",
+            "name": "Builder jest",
+            "program": "${workspaceFolder}/builder/node_modules/.bin/jest",
             "args": [
-                "${file}",
+                "extras.spec.ts"
             ],
+            "cwd": "${workspaceFolder}/builder",
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
             "disableOptimisticBPs": true,
             "windows": {
-                "program": "${workspaceFolder}/node_modules/jest/bin/jest",
-            }
-        }, {
-            "name": "Build project to server",
+                "program": "${workspaceFolder}/builder/node_modules/jest/bin/jest",
+            },
+        },{
             "type": "node",
             "request": "launch",
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "../server-test"],
-            "cwd": "${workspaceFolder}",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": ["<node_internals>/**", "node_modules/**"],
-            "env": {
-                "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
-            }
-        },
+            "name": "Server jest",
+            "program": "${workspaceFolder}/server/node_modules/.bin/jest",
+            "args": [
+                "hotReload.spec.ts"
+            ],
+            "cwd": "${workspaceFolder}/server",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "disableOptimisticBPs": true,
+            "windows": {
+                "program": "${workspaceFolder}/server/node_modules/jest/bin/jest",
+            },
+        }
     ]
 }
