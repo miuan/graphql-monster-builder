@@ -59,9 +59,9 @@ const ${varName}: Schema = new Schema(
   if (modelName === 'User') {
     result += `__token: { type: Schema.Types.String, required: false},\n`
     result += `__refreshToken: { type: Schema.Types.String, required: false},\n`
-    result += `__verifiedToken: { type: Schema.Types.String, required: false, unique: true, index: true},\n`
+    result += `__verifyToken: { type: Schema.Types.String, required: false},\n`
     result += `__password: { type: Schema.Types.String, required: true},\n`
-    result += `__resetPasswordToken: { type: Schema.Types.String, unique: true, index: true},\n`
+    result += `__resetPasswordToken: { type: Schema.Types.String},\n`
     result += `__parent_access_token: { type: Schema.Types.String},\n`
   }
 
@@ -102,7 +102,25 @@ ${varName}.post('update', function() {
     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
   }
 })
+`
 
+if(modelName === 'User'){
+  // https://docs.mongodb.com/manual/core/index-partial/#examples
+  result += `
+  ${varName}.index(
+    { __resetPasswordToken: 1 },
+    { unique: true, partialFilterExpression: { __resetPasswordToken: { $exists: true } } }
+  )
+
+  ${varName}.index(
+    { __verifyToken: 1 },
+    { unique: true, partialFilterExpression: { __verifyToken: { $exists: true } } }
+  )
+ 
+`
+}
+
+result +=`
 export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>('${structure.id}_${modelName}', ${varName});`;
   return result;
 };

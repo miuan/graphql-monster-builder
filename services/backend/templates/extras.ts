@@ -49,8 +49,8 @@ export const checkPasswordIsNotIncluded = (userData) => {
 export const generateLogin = (entry) => async (root, data, ctx) => {
   const user = await entry.models['user'].findOne({ email: data.email });
 
-  if (user && bcrypt.compareSync(data.password, user._password)) {
-    if(!user.token) {
+  if (user && bcrypt.compareSync(data.password, user.__password)) {
+    if(!user.__token) {
       genPasswordAndTokens(user)
       await user.save()
     }
@@ -70,7 +70,7 @@ export const generateRegister = (entry) => async (root, {email, password}, ctx) 
   
   const existing = await userModel.findOne({ email }, {'email': 1})
   if(existing){
-    throw `User with email: ${existing._email} already exist`;
+    throw `User with email: ${existing.email} already exist`;
   }
 
   const __verifyToken = await createVerifyToken(userModel)
@@ -98,7 +98,7 @@ export const generateVerify = (entry) => async (root, {verifyToken}, ctx) => {
   
   const userForVerify = await userModel.findOne({ __verifyToken: verifyToken })
   if(!userForVerify){
-    throw `The email verify token '${verifyToken}' seems incorect`
+    throw `The email verify token '${verifyToken}' is incorect`
   }
 
   userForVerify.verified = true
@@ -237,7 +237,7 @@ const createVerifyToken = async (userModel) => {
   let existingUserWithVerifyToken = null
   do {
     __verifyToken = crypto.randomBytes(64).toString('hex')
-    existingUserWithVerifyToken = await userModel.find({__verifyToken})
+    existingUserWithVerifyToken = await userModel.findOne({__verifyToken})
   } while(existingUserWithVerifyToken)
 
   return __verifyToken

@@ -25,8 +25,8 @@ export const run = async (cmd): Promise<RunType> => ( new Promise<RunType>((reso
 )
 
 export const sendMail = async (emailTo, rawTitle, rawMessage) => {
-    const title = rawTitle.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM).replaceAll('{{SERVICE_NAME}}', SERVICE_NAME)
-    const message = rawMessage.replaceAll('{{URL_HOST}}', URL_HOST).replaceAll('{{EMAIL_FROM}}', EMAIL_FROM).replaceAll('{{SERVICE_NAME}}', SERVICE_NAME)
+    const title = rawTitle.replace(/{{URL_HOST}}/g, URL_HOST).replace(/{{EMAIL_FROM}}/g, EMAIL_FROM).replace(/{{SERVICE_NAME}}/g, SERVICE_NAME)
+    const message = rawMessage.replace(/{{URL_HOST}}/g, URL_HOST).replace(/{{EMAIL_FROM}}/g, EMAIL_FROM).replace(/{{SERVICE_NAME}}/g, SERVICE_NAME)
     run(`echo "${message}" | mail -a "Content-type: text/html;\nFrom: ${EMAIL_FROM}" -s "${title}" ${emailTo}`)
 }
 
