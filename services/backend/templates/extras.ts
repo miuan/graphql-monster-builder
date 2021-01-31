@@ -30,10 +30,12 @@ export const generateTokenJWT = (tokenizeData, opts?): string => {
 };
 
 export const genPasswordAndTokens = (userData) => {
+  if(!userData.id){
+    throw 'Call genPasswordAndTokens withou user.id'
+  }
   // TODO: schort the expire date
-  const options = { expiresIn: '365d' };
-  userData.__token = generateTokenJWT({ id: userData.id, role: userData.role }, options);
-  userData.__refreshToken = generateTokenJWT({ id: userData.id }, options);
+  userData.__token = generateTokenJWT({ id: userData.id, roles: userData.roles || [] }, {expiresIn: '1h'});
+  userData.__refreshToken = generateTokenJWT({ id: userData.id }, {expiresIn: '365d'});
 }
 
 
@@ -148,28 +150,33 @@ export const generateVerifyEmailResend = (entry) => async (root, {user: userId},
   }
 }
 
-export const generateChangePassword = (entry) => {
-  return async (root, data, ctx) => {
-    const userModel = entry.models['user'];
-    const user = await userModel.findById(data.userId);
+export const generateChangePassword = (entry) => async (root, data, ctx) => {
+    if (!ctx || !ctx.state || !ctx.state.user) {
+      throw `Unauthorized`;
+    }
 
-    console.log(data, user);
-    if (!user) {
+    const userModel = entry.models['user'];
+    const userForUpdate = await userModel.findById(ctx.state.user.id);
+
+    console.log(data, userForUpdate);
+    if (!userForUpdate) {
       throw `Unknown user with id: ${data.userId}`;
     }
 
-    if (!bcrypt.compareSync(data.oldPassword, user._password)) {
-      throw `Old password is different than is currently used`;
+    if (!bcrypt.compareSync(data.oldPassword, userForUpdate.__password)) {
+      throw `Unauthorized`;
     }
 
-    const updatedUser = await userModel.findByIdAndUpdate(
-      data.userId, 
-      { __password:generateHash(data.newPassword) }, 
-      { new: true },
-    );
+    userForUpdate.__password = generateHash(data.newPassword)
+    genPasswordAndTokens(userForUpdate)
 
-    return updatedUser;
-  };
+    userForUpdate.save()
+
+    return {
+      token: userForUpdate.__token,
+      refreshToken: userForUpdate.__refreshToken,
+      user: userForUpdate 
+    }
 }
 
 export const generateForgottenPassword = (entry) => async (root, {email}, ctx) => {
