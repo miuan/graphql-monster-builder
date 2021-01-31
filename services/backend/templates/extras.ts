@@ -23,8 +23,9 @@ export const generateTokenJWT = (tokenizeData, opts?): string => {
     };
   }
 
+  
   const tokenJWT = jwt.sign(tokenizeData, process.env.JWT_TOKEN_SECRET || 'protectql_test_secret', options);
-
+  console.log('generateTokenJWT', tokenizeData, tokenJWT)
   return tokenJWT;
 };
 
@@ -82,9 +83,12 @@ export const generateRegister = (entry) => async (root, {email, password}, ctx) 
     __verifyToken
   } as any
 
-  genPasswordAndTokens(user)
-
   const createdUser = await userModel.create(user)
+  // user have to be in DB to have his ID for generate token
+  genPasswordAndTokens(createdUser)
+  // save the tokens into model
+  createdUser.save()
+  
   sendVerifyEmail(createdUser)
   return {
     token: createdUser.__token,
@@ -97,12 +101,12 @@ export const generateVerify = (entry) => async (root, {verifyToken}, ctx) => {
   const userModel = await entry.models['user']
   
   const userForVerify = await userModel.findOne({ __verifyToken: verifyToken })
-  if(!userForVerify){
+  if(!userForVerify && !userForVerify.verified){
     throw `The email verify token '${verifyToken}' is incorect`
   }
 
   userForVerify.verified = true
-  userForVerify.__verifyToken = null
+  userForVerify.__verifyToken = undefined
   await userForVerify.save()
 
   return {
@@ -220,7 +224,7 @@ export const generateForgottenPasswordReset = (entry) => async (root, {forgotten
   }
 
   user.__password = generateHash(password) 
-  user.__forgottenPasswordToken = null
+  user.__forgottenPasswordToken = undefined
   genPasswordAndTokens(user)
   await user.save()
 
