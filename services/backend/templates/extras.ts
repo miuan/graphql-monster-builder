@@ -189,14 +189,14 @@ export const generateForgottenPassword = (entry) => async (root, {email}, ctx) =
   }
 
   // check existence of verify token
-  let __forgottenPasswordToken
-  let existingUserWithForgottenPassword = null
+  let __resetPasswordToken
+  let existingUserWithResetPasswordToken = null
   do {
-    __forgottenPasswordToken = crypto.randomBytes(64).toString('hex')
-    existingUserWithForgottenPassword = await userModel.find({__forgottenPasswordToken})
-  } while(existingUserWithForgottenPassword)
+    __resetPasswordToken = crypto.randomBytes(64).toString('hex')
+    existingUserWithResetPasswordToken = await userModel.findOne({__forgottenPasswordToken: __resetPasswordToken})
+  } while(existingUserWithResetPasswordToken)
 
-  user.__forgottenPasswordToken = __forgottenPasswordToken
+  user.__resetPasswordToken = __resetPasswordToken
   
   await user.save()
   sendForgottenPasswordEmail(user)
