@@ -53,10 +53,11 @@ export const generateLogin = (entry) => async (root, data, ctx) => {
   const user = await entry.models['user'].findOne({ email: data.email });
 
   if (user && bcrypt.compareSync(data.password, user.__password)) {
-    if(!user.__token) {
+    // in login allways generate new token
+    // if(!user.__token) {
       genPasswordAndTokens(user)
       await user.save()
-    }
+    //}
 
     return {
       token: user.__token,
@@ -96,6 +97,23 @@ export const generateRegister = (entry) => async (root, {email, password}, ctx) 
     token: createdUser.__token,
     refreshToken: createdUser.__refreshToken,
     user:createdUser
+  }
+}
+
+export const generateRefreshToken = (entry) => async (root, {userId: _id, token: __token, refreshToken: __refreshToken}, ctx) =>{
+  const userModel = await entry.models['user']
+  
+  const userAboutToRefresh = await userModel.findOne({ _id, __token, __refreshToken }, {'__token': 1, '__refreshToken':1})
+  if(!userAboutToRefresh){
+    throw `Unauthorized`;
+  }
+
+  genPasswordAndTokens(userAboutToRefresh)
+  await userAboutToRefresh.save()
+
+  return {
+    token: userAboutToRefresh.__token,
+    refreshToken: userAboutToRefresh.__refreshToken,
   }
 }
 

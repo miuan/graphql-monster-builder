@@ -169,7 +169,7 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
   result += `   login_v1(email: String!, password: String!): UserToken\n`
   result += `   register_v1(email: String!, password: String!): UserToken\n`
   result += `   logout_v1(userId: ID!): LogoutStatus\n`;
-  result += `   refreshToken_v1(userId: ID!, refreshToken: String!): UserToken\n`;
+  result += `   refreshToken_v1(userId: ID!, token: String!, refreshToken: String!): UserToken\n`;
   result += `   changePassword_v1(userId: ID!, oldPassword: String!, newPassword: String!): UserToken\n`;
   result += `   forgottenPassword_v1(email: String!): ForgottenPasswordStatus\n`;
   result += `   forgottenPasswordCheck_v1(token: String!): ForgottenPasswordCheckStatus\n`;
