@@ -197,6 +197,8 @@ export const generateChangePassword = (entry) => async (root, data, ctx) => {
     }
 }
 
+const RESET_PASSWORD_TOKEN_SIZE = 64
+
 export const generateForgottenPassword = (entry) => async (root, {email}, ctx) => {
   const userModel = await entry.models['user']
   
@@ -210,7 +212,7 @@ export const generateForgottenPassword = (entry) => async (root, {email}, ctx) =
   let __resetPasswordToken
   let existingUserWithResetPasswordToken = null
   do {
-    __resetPasswordToken = crypto.randomBytes(64).toString('hex')
+    __resetPasswordToken = crypto.randomBytes(RESET_PASSWORD_TOKEN_SIZE).toString('hex')
     existingUserWithResetPasswordToken = await userModel.findOne({__forgottenPasswordToken: __resetPasswordToken})
   } while(existingUserWithResetPasswordToken)
 
@@ -225,31 +227,31 @@ export const generateForgottenPassword = (entry) => async (root, {email}, ctx) =
   }
 }
 
-export const generateForgottenPasswordCheck = (entry) => async (root, {forgottenPasswordToken}, ctx) => {
+export const generateForgottenPasswordCheck = (entry) => async (root, {token}, ctx) => {
   const userModel = await entry.models['user']
   
-  const userWithForgottenPassword = await userModel.findOne({forgottenPasswordToken})
+  const userWithForgottenPassword = token.length/2 === RESET_PASSWORD_TOKEN_SIZE ? await userModel.findOne({__resetPasswordToken: token}) : null
 
   if(!userWithForgottenPassword){
-    throw `The forgotten password token '${forgottenPasswordToken}' is not valid`
+    throw `The forgotten password token '${token}' is not valid`
   }
 
   return {
-    forgottenPasswordToken,
+    token,
     status: `valid`
   }
 }
 
-export const generateForgottenPasswordReset = (entry) => async (root, {forgottenPasswordToken, password}, ctx) => {
+export const generateForgottenPasswordReset = (entry) => async (root, {token, password}, ctx) => {
   const userModel = await entry.models['user']
-  const user = await userModel.findOne({forgottenPasswordToken})
+  const user = token.length/2 === RESET_PASSWORD_TOKEN_SIZE ? await userModel.findOne({__resetPasswordToken: token}) : null
 
   if(!user){
-    throw `The forgotten password token '${forgottenPasswordToken}' is not valid`
+    throw `The forgotten password token '${token}' is not valid`
   }
 
   user.__password = generateHash(password) 
-  user.__forgottenPasswordToken = undefined
+  user.__resetPasswordToken = undefined
   genPasswordAndTokens(user)
   await user.save()
 
