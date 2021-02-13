@@ -151,10 +151,15 @@ export const generateLogout = (entry) => async (root, {email, password}, ctx) =>
   }
 }
 
-export const generateVerifyEmailResend = (entry) => async (root, {user: userId}, ctx) => {
+export const generateVerifyEmailResend = (entry) => async (root, {userId}, ctx) => {
   const userModel = await entry.models['user']
 
   const user = await userModel.findById(userId)
+
+  if(!user){
+    throw new Error(`Unknown user with id:'${userId}'`)
+  }
+
   if(!user.__verifyToken){
     user.__verifyToken = await createVerifyToken(userModel)
     await user.save()
@@ -276,13 +281,13 @@ const createVerifyToken = async (userModel) => {
 
 const sendVerifyEmail = async (user) => {
   const welcome = EMAIL_WELLCOME_TITLE || 'Wellcome in {{SERVICE_NAME}}'
-  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{service_url}}/email/${user.__verifyToken}/verify">{{service_url}}/email/${user.__verifyToken}/verify</a>`
+  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{SERVICE_URL}}/email/${user.__verifyToken}/verify">{{SERVICE_URL}}/email/${user.__verifyToken}/verify</a>`
   return sendMail(user.email, welcome, message)
 }
 
 const sendForgottenPasswordEmail = async (user) => {
-  const welcome = EMAIL_WELLCOME_TITLE || 'Forgotten password {{SERVICE_NAME}}'
-  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{service_url}}/forgotten/${user.__verifyToken}/password">{{service_url}}/forgotten/${user.__verifyToken}/password</a>`
+  const welcome = EMAIL_WELLCOME_TITLE || 'Forgotten password {{SERVICE_NAME}} Request'
+  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password">{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password</a>`
   return sendMail(user.email, welcome, message)
 }
 
