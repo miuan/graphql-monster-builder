@@ -354,5 +354,9 @@ export const extractMemberFromLine = (line: string, row: number): SchemaModelMem
     }
   }
 
+  if(!member.relation &&  !['ID','Boolean','String', 'Number','Date'].includes(member.modelName)){
+    throw new Error(`Line ${row}: Unknown type ${member.modelName}`)
+  }
+
   return member;
 };
