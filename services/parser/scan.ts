@@ -71,12 +71,29 @@ export const getModelsFromSchema = async (schema): Promise<SchemaModel[]> => {
 
 export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
   let presenceOfRoleModel = false
-  let presenceOfUserModel = false
+  let presenceOfUserModel = models.find((m)=>m.modelName=='User')
 
   const adminRole:SchemaModelProtectionParam = {
     roles:['admin'],
     type: 3
   } as any
+
+
+  if(!presenceOfUserModel){
+    models.push({
+      modelName: 'User',
+      protection: {
+        all: [adminRole],
+        one: [adminRole],
+        create: [adminRole],
+        update: [adminRole],
+        remove:[adminRole]
+      },
+      members: [],
+      start: -1,
+      end: -1,
+    })
+  }
 
   models.push({
     modelName: 'UserRole',
