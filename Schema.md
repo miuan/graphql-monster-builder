@@ -1,3 +1,10 @@
+# Menu
+
+1. [Model](#model)
+1. [Fields](#fields)
+1. [Relations](#relations)
+1. [Model Permissions](#model-permissions)
+
 
 
 # Model
@@ -46,7 +53,7 @@ type User @model {
 
 ### UserRole
 
-Model user role looks like, this model you can anyhow modify or extend
+This model you can't modify or extend, but is look like this
 
 ```
 type UserRole @model {
@@ -105,6 +112,16 @@ emit: String # not possible is reserved
 | Number     | A signed 32‐bit integer or A signed double-precision floating-point value        |
 | Date     | objects represent a single moment in time in a platform-independent format.        |
 
+## Arrays
+
+Each field can be described as array
+```
+field1: [String] # this field is array of strings
+field2: [Number] # this field is array of numbers
+field3: [Boolean] # this field is array of boolens
+field4: [Date] # this field is array of dates
+```
+
 ## Field modificators
 
 | Syntax      | Description |
@@ -140,3 +157,141 @@ type Todo @model {
 ```
 
 # Relations
+Each model can be connected to another model with following relations
+
+- one to one
+- many to one
+- one to many
+- many to many
+
+## modificator
+
+```
+field: RelatedModelType @releation(name: "relation-name")
+```
+
+First the releation field have to be a same type as connected object. Also must be mark with @relation modificator. Relation modificator have parameter name what describe unique key to recognize connection on booth sides.
+
+## one to one - example
+
+One user will have one Todo
+
+```
+type Todo @model {
+ user: User @relation(name: "TodoOnUser")
+}
+
+type User @model {
+ todo: Todo @relation(name: "TodoOnUser")
+}
+```
+
+## one to many - example
+
+One user will have multiple Todos
+
+```
+type Todo @model {
+ user: User @relation(name: "TodoOnUser")
+}
+
+type User @model {
+ todo: [Todo] @relation(name: "TodoOnUser")
+}
+```
+
+## many to many - example
+
+One Users can have multiple Todos what can be related to multiple Users
+```
+type Todo @model {
+ user: [User] @relation(name: "TodoOnUser")
+}
+
+type User @model {
+ todo: [Todo] @relation(name: "TodoOnUser")
+}
+```
+
+## More relation to different object - example
+
+```
+type Todo @model {
+ user: User @relation(name: "TodoOnUser")
+}
+
+type Project @model {
+ user: User @relation(name: "ProjectOnUser")
+}
+
+type User @model {
+ todo: [Todo] @relation(name: "TodoOnUser")
+ project: [Project] @relation(name: "ProjectOnUser")
+}
+```
+
+# Model Permissions
+
+Echa model can have described his own permissions for each operation
+
+| Action      | Description |
+| ----------- | ----------- |
+| @one     |  permission about read one model by ID       |
+| @all      |  permission about read all models       |
+| @create      | permission about create a model      |
+| @update     | permission about update a existing model      |
+| @delete     | permission about delete a existing model       |
+
+| Tag values      | Description |
+| ----------- | ----------- |
+| public     |  anybody can do the action       |
+| user      |  any loged user can do the action       |
+| owner      | only owner of a model      |
+| role     | only user who is sign to a role (group)     |
+| filter     | only if the filter are aplied       |
+
+Lets take a look on our first model Todo 
+
+```
+# @create(role:"admin") - these are default invisible setting
+# @one(role:"admin") @update(role:"admin") @remove(role:"admin") - these are default invisible setting
+# @all(role:"admin") - these are default invisible setting
+type Todo @model {
+    name: String!
+    done: Boolean!
+}
+```
+
+by default is every operation sign only for admin, but we can add some setting
+
+```
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+@all(filter:"user_every.id={{userId}}")
+type Todo @model {
+    name: String!
+    done: Boolean!
+}
+```
+
+Now the model can be created by any loged user, get one, update or delete, can only user who created this object. And last but also important see all objects is possible only with `user_every.id` filter applied thats mean, user can see only his own models. 
+
+Note: admin still keeps all the roles, and can anything
+
+## Another role
+
+You can add another role for example `TodosRole` what you can add some user who will have this priviledge, then you can add this role to permision to do some actions
+
+
+```
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+@all(filter:"user_every.id={{userId}}")
+@all(role:"TodosRole") # we add some extra permisions for TodosRole
+type Todo @model {
+    name: String!
+    done: Boolean!
+}
+```
+
+now all the objects of Todo can see also a user who is sign to TodosRole  
