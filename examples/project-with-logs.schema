@@ -3,7 +3,8 @@
 # }
 
 type File @model {
-  email: String @isUnique(combinationWith:"Milan",andCombinationWith:"Karel", andCombinationWith:"Karel3", andCombinationWith:"Karel4", andCombinationWith:"Karel5") @readonly 
+  name: String!
+  email: String @isUnique(combinationWith:"Milan",andCombinationWith:"Karel", andCombinationWith:"Karel3", andCombinationWith:"Karel4", andCombinationWith:"Karel5") @isReadonly 
 }
 
 @create("public") 
@@ -19,6 +20,7 @@ type User @model {
   createdAt: DateTime!
   id: ID! @isUnique
   updatedAt: DateTime!
+  _projectLimit: Int @default(3)
 # email: String @isUnique @isReadonly
 # password: String @isReadonly
 # verified: Boolean @isReadonly
@@ -43,7 +45,6 @@ type Project @model {
   models: String
    _self_dir: String
   _vesions: [String]
-  _port: Int
   _parent_access_token: String
   _jwt_token_secret: String
   _error: String

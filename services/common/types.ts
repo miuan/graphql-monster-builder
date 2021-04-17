@@ -33,6 +33,7 @@ export type SchemaModelMember = {
   isArray: boolean;
   row: number;
   isReadonly: boolean
+  default?: number | string
 };
 
 export enum SchemaModelProtectionType {

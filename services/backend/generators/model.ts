@@ -46,6 +46,11 @@ const ${varName}: Schema = new Schema(
     if (member.isUnique) {
       params += `, unique: true`;
     }
+
+    if (member.default) {
+      params += `, default: '${member.default}'`;
+    }
+
     params += ' }';
 
     if (member.isArray) {

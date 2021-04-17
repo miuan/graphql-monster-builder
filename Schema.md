@@ -109,7 +109,7 @@ emit: String # not possible is reserved
 | __ID__      |  The ID scalar type represents a unique identifier, often used to refetch an object or as the key for a cache. The ID type is serialized in the same way as a String; however, defining it as an ID signifies that it is not intended to be human‐readable.       |
 | String      | A UTF‐8 character sequence       |
 | Boolean     | __true__ or __false__.        |
-| Number     | A signed 32‐bit integer or A signed double-precision floating-point value        |
+| Int      | A signed 32‐bit integer or A signed double-precision floating-point value        |
 | Date     | objects represent a single moment in time in a platform-independent format.        |
 
 ## Arrays
@@ -117,7 +117,7 @@ emit: String # not possible is reserved
 Each field can be described as array
 ```
 field1: [String] # this field is array of strings
-field2: [Number] # this field is array of numbers
+field2: [Int] # this field is array of numbers
 field3: [Boolean] # this field is array of boolens
 field4: [Date] # this field is array of dates
 ```
@@ -130,6 +130,7 @@ field4: [Date] # this field is array of dates
 | @isReadonly      |  Object can be set only when is created       |
 | @isUnique      | Field is unique       |
 | @relation     | A special type descriptive the object is actualy relations to another object      |
+| @default     | describe default field value      |
 
 ### Examples
 
@@ -142,6 +143,7 @@ field5: String @isUnique               # this field is unique
 field6: String @isUnique               # this field is mandatory and unique
 field7: String @isUnique @isReadonly   # this field is optional, unique and readolny
 field8: String! @isUnique @isReadonly  # this field is mandatory, unique and readonly
+field9: String @default("hello")       # this field is optional, but the default value will be "hello"
 ```
 
 ### Unique can be combination of multiple fields
@@ -155,6 +157,7 @@ type Todo @model {
 }
 
 ```
+
 
 # Relations
 Each model can be connected to another model with following relations
