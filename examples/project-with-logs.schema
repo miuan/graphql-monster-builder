@@ -41,7 +41,7 @@ type User @model {
 @one("owner") @update("owner") @remove("owner")
 type Project @model {
   id: ID! @isUnique
-  name: String
+  name: String! @isUnique(combinationWith:"user")
   models: String
    _self_dir: String
   _vesions: [String]

@@ -43,7 +43,7 @@ const ${varName}: Schema = new Schema(
       params += `, required: true`;
     }
 
-    if (member.isUnique) {
+    if (member.isUnique === true) {
       params += `, unique: true`;
     }
 
@@ -123,6 +123,18 @@ if(modelName === 'User'){
   )
  
 `
+}
+
+// indexes
+for (const member of model.members) {
+  const isUnique = member.isUnique
+  if(isUnique && isUnique[0]){
+    result += `${varName}.index({ ${member.name}: 1`
+    for(const c of isUnique as string[]){
+      result += `,${c}: 1`
+    }
+    result += `}, { unique: true });`
+  }
 }
 
 result +=`
