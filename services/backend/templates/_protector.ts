@@ -503,7 +503,7 @@ export const tokenVerify = (token): LoginInfo => {
     throw 'token missing';
   }
 
-  const decoded = jwt.verify(token, process.env.JWT_TOKEN_SECRET || 'pwc_test_secret') as LoginInfo;
+  const decoded = jwt.verify(token, process.env.JWT_TOKEN_SECRET || 'protectql_test_secret') as LoginInfo;
 
   return decoded;
 };
@@ -521,7 +521,7 @@ export const tokenRefresh = async (token: String, refreshToken: string, opts?): 
 
   const options = opts || {};
 
-  const decoded = jwt.decode(token, process.env.JWT_TOKEN_SECRET || 'pwc_test_secret');
+  const decoded = jwt.decode(token, process.env.JWT_TOKEN_SECRET || 'protectql_test_secret');
 
 
   // find password for this user-object

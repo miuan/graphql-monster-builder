@@ -280,14 +280,14 @@ const createVerifyToken = async (userModel) => {
 }
 
 const sendVerifyEmail = async (user) => {
-  const welcome = EMAIL_WELLCOME_TITLE || 'Wellcome in {{SERVICE_NAME}}'
-  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{SERVICE_URL}}/email/${user.__verifyToken}/verify">{{SERVICE_URL}}/email/${user.__verifyToken}/verify</a>`
+  const welcome = EMAIL_WELLCOME_TITLE() || 'Wellcome in {{SERVICE_NAME}}'
+  const message = EMAIL_WELLCOME_MESSAGE() || `Please verify your email by click to this <a href="{{SERVICE_URL}}/email/${user.__verifyToken}/verify">{{SERVICE_URL}}/email/${user.__verifyToken}/verify</a>`
   return sendMail(user.email, welcome, message)
 }
 
 const sendForgottenPasswordEmail = async (user) => {
-  const welcome = EMAIL_WELLCOME_TITLE || 'Forgotten password {{SERVICE_NAME}} Request'
-  const message = EMAIL_WELLCOME_MESSAGE || `Please verify your email by click to this <a href="{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password">{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password</a>`
+  const welcome = EMAIL_WELLCOME_TITLE() || 'Forgotten password {{SERVICE_NAME}} Request'
+  const message = EMAIL_WELLCOME_MESSAGE() || `Please verify your email by click to this <a href="{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password">{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password</a>`
   return sendMail(user.email, welcome, message)
 }
 

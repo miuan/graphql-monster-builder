@@ -26,7 +26,6 @@ type User @model {
 # verified: Boolean @isReadonly
 # roles: [UserRole] @relation(name: "RoleOnUser")
   projects: [Project] @relation(name: "ProjectOnUser")
-  logs: [ProjectLogs] @relation(name: "ProjectLogOnUser")
 }
 
 #type UserRole @model {
@@ -34,6 +33,10 @@ type User @model {
 #  role: String @isUnique
 #  users: [User] @relation(name: "RoleOnUser")
 #}
+
+
+
+
 
 @all(filter:"user_every.id={{userId}}")
 @all(role:"project",filter:"name=project")
@@ -50,19 +53,38 @@ type Project @model {
   _error: String
   _status: String
   _admin_user_id: String
+
+  fullExpired: DateTime @isReadonly
+  emailSetting: ProjectEmailSetting @relation(name: "EmailSettingOnProject")
+  login3PartySetting: Project3PartyLoginSetting @relation(name: "Login3PartySettingOnProject")
   user: User! @relation(name: "ProjectOnUser")
-  logs: [ProjectLogs] @relation(name: "ProjectOnProjectLog")
 }
 
 @all(filter:"user_every.id={{userId}}")
 @all(role:"project",filter:"name=project")
 @create("user") 
 @one("owner") @update("owner") @remove("owner")
-type ProjectLogs @model {
-  id: ID! @isUnique
-  type: String
-  log: String
-  project: Project! @relation(name: "ProjectOnProjectLog")
-  user: User! @relation(name: "ProjectLogOnUser")
+type ProjectEmailSetting @model {
+  email: String!
+  welcomeTitle: String
+  welcomeMessage: String
+  forgottenPasswordTitle: String
+  forgottenPasswordMessage: String
+  project: Project @relation(name: "EmailSettingOnProject")
 }
+
+@all(filter:"user_every.id={{userId}}")
+@all(role:"project",filter:"name=project")
+@create("user") 
+@one("owner") @update("owner") @remove("owner")
+type Project3PartyLoginSetting @model {
+  facebookId: String
+  facebookSecret: String
+  gmailId: String
+  gmailSecret: String
+  githubId: String
+  githubSecret: String
+  project: Project @relation(name: "Login3PartySettingOnProject")
+}
+
 
