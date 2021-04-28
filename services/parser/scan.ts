@@ -166,11 +166,20 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
   let reservedInUser = ['email', 'password', 'verified', 'roles']
 
   for(const model of models){
+    const memberList = []
     if(model.modelName == 'UserRole') throw `Line: ${model.start} Model: ${model.modelName} have reserved name and will be add automaticaly`
     
     for(const member of model.members){
       if(model.modelName == 'User' && reservedInUser.indexOf(member.name) != -1) throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInUser} reserved and will be add automaticaly`
       else if(member.name == 'ID') throw `Line: ${member.row} Model: ${model.modelName} are ID is reserved and will be add automaticaly`
+
+      if(memberList.includes(member.name)){
+        const previous = model.members.find((m)=>m.name == member.name)
+
+        throw new Error(`Line: ${member.row} In model: '${model.modelName}' is duplicate field name: '${member.name}' previously used also on Line: ${previous.row}. Inside model have to be every field name unique`)
+      }
+
+      memberList.push(member.name)
     }
   }
 }

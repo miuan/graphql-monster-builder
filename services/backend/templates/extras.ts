@@ -2,7 +2,7 @@ import * as bcrypt from 'bcrypt-nodejs';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
-import {sendMail, EMAIL_WELLCOME_TITLE, EMAIL_WELLCOME_MESSAGE} from '../services/sendMail'
+import {sendMail, EMAIL_WELLCOME_TITLE, EMAIL_WELLCOME_MESSAGE, EMAIL_FORGOTTEN_PASSWORD_TITLE, EMAIL_FORGOTTEN_PASSWORD_MESSAGE } from '../services/sendMail'
 
 export const generateHash = function (password) {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
@@ -286,8 +286,8 @@ const sendVerifyEmail = async (user) => {
 }
 
 const sendForgottenPasswordEmail = async (user) => {
-  const welcome = EMAIL_WELLCOME_TITLE() || 'Forgotten password {{SERVICE_NAME}} Request'
-  const message = EMAIL_WELLCOME_MESSAGE() || `Please verify your email by click to this <a href="{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password">{{SERVICE_URL}}/forgotten/${user.__verifyToken}/password</a>`
+  const welcome = EMAIL_FORGOTTEN_PASSWORD_TITLE() || 'Change password request for {{SERVICE_NAME}}'
+  const message = EMAIL_FORGOTTEN_PASSWORD_MESSAGE() || `We recaive request about reset Your password. If is not your action, please ignore this message. If you want reset your password follow instruction on this link <a href="{{SERVICE_URL}}/forgotten-password/${user.__resetPasswordToken}">{{SERVICE_URL}}/forgotten-password/${user.__resetPasswordToken}</a>`
   return sendMail(user.email, welcome, message)
 }
 
