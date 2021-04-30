@@ -12,52 +12,54 @@ import { extractMemberFromLineParams } from './members';
 import { setupModelsRelations } from './relations';
 
 
-export const getModelsFromSchema = async (schema): Promise<SchemaModel[]> => {
-  const lines = schema.split('\n');
+export const getModelsFromSchema = (schema): SchemaModel[] => {
+  const rows = schema.split('\n');
 
   let currentModel: SchemaModel = null;
   let currentProtection : SchemaModelProtection = generateBaseProtection();
   const models: SchemaModel[] = [] as SchemaModel[];
 
   const regexp = new RegExp('type ([A-Za-z0-9]*) @model {');
-  for (const r in lines) {
-    const row: number = Number(r);
-    const line = lines[row];
-    const matched = line.match(regexp);
-    if (line.indexOf('#') === 0) {
+  let lineNumber = 1
+  for (const currentRow of rows) {
+    
+    const matched = currentRow.match(regexp);
+    if (currentRow.indexOf('#') === 0) {
       // ** COMMENTS
     } else if (matched && matched.length === 2) {
       // ** START WITH LOADING MEMBER TO MODEL **
       const modelName = matched[1];
 
       if (!/^[A-Z]/.test(modelName)) {
-        throw `Line: ${row} The model name '${modelName}' should start with capital leter '[A-Z]'`;
+        throw `Line ${lineNumber}: The model name '${modelName}' should start with capital leter '[A-Z]'`;
       }
 
       currentModel = {
         modelName,
-        start: row,
-        end: row,
+        start: lineNumber,
+        end: lineNumber,
         members: [],
       } as SchemaModel;
 
-    } else if (currentModel && line === '}') {
+    } else if (currentModel && currentRow === '}') {
       // ** CLOSE LOADING MEMBERS TO MODEL **
-      currentModel.end = row;
+      currentModel.end = lineNumber;
       models.push(currentModel);
       currentModel.protection = currentProtection;
       currentProtection = generateBaseProtection();
       currentModel = null;
-    } else if (currentModel && line) {
+    } else if (currentModel && currentRow) {
       // ** ADD MEMBERS TO CURRENT MODEL **
-      const member = extractMemberFromLine(line, row);
+      const member = extractMemberFromLine(currentRow, lineNumber);
       // maybe is empty line check it
       if(member) {
         currentModel.members.push(member)
-      }
-    } else if (!currentModel && line) {
-      scanProtectionLine(line, currentProtection, row);
+      }  
+    } else if (!currentModel && currentRow) {
+      scanProtectionLine(currentRow, currentProtection, lineNumber);
     }
+
+    lineNumber++;
   }
 
 
@@ -164,23 +166,32 @@ export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
 
 export const checkForErrorsInModels = (models: SchemaModel[]) => {
   let reservedInUser = ['email', 'password', 'verified', 'roles']
+  let modelsList = []
 
   for(const model of models){
     const memberList = []
-    if(model.modelName == 'UserRole') throw `Line: ${model.start} Model: ${model.modelName} have reserved name and will be add automaticaly`
+    
+    if(modelsList.includes(model.modelName)){
+      const previous = models.find((m)=>m.modelName == model.modelName)
+
+      throw new Error(`Line ${model.start}: Model name '${model.modelName}' is already use in Line ${previous.start}. Inside schema have to be every model named uniquely`)
+    }
+
+    if(model.modelName == 'UserRole') throw `Line ${model.start}: Model with name '${model.modelName}' have reserved name and will be add automaticaly`
     
     for(const member of model.members){
       if(model.modelName == 'User' && reservedInUser.indexOf(member.name) != -1) throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInUser} reserved and will be add automaticaly`
-      else if(member.name == 'ID') throw `Line: ${member.row} Model: ${model.modelName} are ID is reserved and will be add automaticaly`
+      else if(member.name == 'ID') throw `Line ${member.row}: Model with name '${model.modelName}' are ID is reserved and will be add automaticaly`
 
       if(memberList.includes(member.name)){
         const previous = model.members.find((m)=>m.name == member.name)
 
-        throw new Error(`Line: ${member.row} In model: '${model.modelName}' is duplicate field name: '${member.name}' previously used also on Line: ${previous.row}. Inside model have to be every field name unique`)
+        throw new Error(`Line ${member.row}: In model with name '${model.modelName}' is duplicate field name: '${member.name}' previously used also on Line: ${previous.row}. Inside model have to be every field named uniquely`)
       }
 
       memberList.push(member.name)
     }
+    modelsList.push(model.modelName)
   }
 }
 
@@ -210,7 +221,7 @@ export const scanProtectionUnit = (unit: string, protection:SchemaModelProtectio
 
   if (params.length < 1 || params[0].length < 1) {
     // tslint:disable-next-line:max-line-length
-    throw `Protection '${unit}' on row: ${row} have empty type, basic supported types are 'public','user','owner','role'`;
+    throw `Line ${row}: Protection '${unit}' have empty type, basic supported types are 'public','user','owner','role'`;
   }
 
   let mainParams;
@@ -266,7 +277,7 @@ export const protectionCheckTheParameter = (param:SchemaModelProtectionParam, ty
     });
   } else {
     // tslint:disable-next-line:max-line-length
-    throw `Protection '${unit}' on row: ${row} have unknow parameter name '${typeName}' supported types are 'public','user','owner','role', 'filter'`;
+    throw `Line ${row}: Protection '${unit}' have unknow parameter name '${typeName}' supported types are 'public','user','owner','role', 'filter'`;
   }
 };
 
@@ -337,28 +348,28 @@ export const generateBaseProtection = (): SchemaModelProtection  => {
 };
 
 
-export const extractMemberFromLine = (line: string, row: number): SchemaModelMember => {
-  const nameAndType = line.trim().split(':');
+export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
+  const nameAndType = row.trim().split(':');
 
   // empty line we can skip
-  if(line.length < 2){
+  if(nameAndType.length < 2){
     return null
   }
 
   const name = nameAndType[0];
   const typeParams = nameAndType[1].trim().split(' ');
-  
+ 
   // https://mongoosejs.com/docs/api.html#schema_Schema.reserved
   if (MONGOSEE_RESERVED_WORDS.indexOf(name) !== -1) {
-    throw `The member name '${name}' on line:${row} is reserved, reserved words: ${MONGOSEE_RESERVED_WORDS}`;
+    throw `Line ${lineNumber}: The member name '${name}' is reserved, reserved words: ${MONGOSEE_RESERVED_WORDS}`;
   }
 
   if (!/^[_A-Za-z]/.test(name)) {
-    throw `The member name '${name}' on line:${row} should start with regular character '[A-Za-z]'`;
+    throw `Line ${lineNumber}: The member name '${name}' should start with regular character '[A-Za-z]'`;
   }
 
   const member: SchemaModelMember = {
-    row,
+    row: lineNumber,
     name,
     isRequired: false,
     isUnique: false,
@@ -373,7 +384,7 @@ export const extractMemberFromLine = (line: string, row: number): SchemaModelMem
   member.isArray = member.type.startsWith('[');
 
   if (typeParams.length > 1) {
-    const splited = line.split('@')
+    const splited = row.split('@')
     splited.shift()
     for(const param of splited){
       extractMemberFromLineParams(member, `@${param.trim()}`)
@@ -381,7 +392,7 @@ export const extractMemberFromLine = (line: string, row: number): SchemaModelMem
   }
 
   if(!member.relation &&  !['ID','Boolean','String', 'Int','DateTime'].includes(member.modelName)){
-    throw new Error(`Line ${row}: Unknown type ${member.modelName}`)
+    throw new Error(`Line ${lineNumber}: Unknown type ${member.modelName}`)
   }
 
   return member;
