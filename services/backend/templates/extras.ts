@@ -508,7 +508,7 @@ export const checkDataContainProtectedFields = (data, path='/') => {
     for(const fieldName of keys){
       if(/^__/.test(fieldName) || /^_/.test(fieldName)){
         founded.push({name: fieldName, path: path})
-      } else if(typeof(data[fieldName]) != 'string') {
+      } else if(data[fieldName] && typeof(data[fieldName]) === 'object') {
         let fundedInDeep = checkDataContainProtectedFields(data[fieldName], `${path}${fieldName}/`)
         founded.push(...fundedInDeep)
       }
