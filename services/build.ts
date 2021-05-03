@@ -23,6 +23,8 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', confi
  
   const backendDirectory = new BackendDirectory()
   backendDirectory.init(name, outDir)
+  // TODO: in some times 'services/' is not used,
+  //       so not create directory what is not necessary
   backendDirectory.prepareDirectory()
 
   generateSchema(backendDirectory, models);
@@ -34,11 +36,13 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', confi
 
   generateEntry(backendDirectory, models);
 
-  backendDirectory.write(`server`, templateFileToText(`server.ts`, null))
-  backendDirectory.write(`services/sendMail`, _.get(config, 'templates.sendMail') || templateFileToText(`sendMail.ts`, null))
+  backendDirectory.writeWithConfig('server', config)
+  backendDirectory.writeWithConfig('sendMail', config, 'services')
+  backendDirectory.writeWithConfig('passport', config, 'services')
+  backendDirectory.writeWithConfig('extras', config, 'gen');
 
   backendDirectory.genWrite( `schemaLoad`, templateFileToText(`schemaLoad.ts`, null));
-  backendDirectory.genWrite( `extras`, templateFileToText(`extras.ts`, null));
+
   backendDirectory.genWrite( `services/db`, templateFileToText(`db.ts`, null));
   backendDirectory.genWrite( `source.schema`, importedSchema);
   backendDirectory.write( `package.json`, templateFileToText(`package.json`, null));

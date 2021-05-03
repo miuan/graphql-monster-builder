@@ -8,8 +8,6 @@ import * as Koa from 'koa'
 import * as Router from 'koa-router'
 import * as cors from '@koa/cors'
 import * as koaBody from 'koa-body'
-import * as jwt from 'koa-jwt'
-
 // tslint:disable-next-line:import-name
 
 import * as mongoDB from './gen/services/db'
@@ -18,6 +16,8 @@ import { createUser, createRole, generateParentLogin } from './gen/extras'
 
 // server specific 
 import * as proxy from 'koa-proxy'
+
+import allPassportSetup from './services/passport'
 
 const app: Koa = new Koa()
 
@@ -32,7 +32,7 @@ if (!process.env.PORT) {
 
 console.info(`ENVIRONMENT:  process - ${process.env.NODE_ENV}  app - ${app.env}`)
 
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3001
 
 // handle errors
 app.use(async (ctx, next) => {
@@ -99,12 +99,7 @@ app.use(async (ctx, next) => {
   await next()
 })
 
-app.use(jwt({
-  secret: process.env.JWT_TOKEN_SECRET || 'protectql_test_secret',
-  passthrough: true,
-}).unless({
-  path: [/^\/v1\/graphiql/, /^\/public/],
-}))
+allPassportSetup(app)
 
 const {entry, resolvers} = generateResolver({})
 
