@@ -10,6 +10,7 @@ import { Schema } from 'inspector';
 import { generateSchema } from './backend/generators/schema';
 import { generateModelTypes } from './backend/generators/model-types';
 import { BackendDirectory } from './backend/backendDirectory';
+import * as _ from 'lodash'
 
 export const exportAs = async (name, from, base='.') => {
   
@@ -17,7 +18,7 @@ export const exportAs = async (name, from, base='.') => {
   return exportAsFromString(name, importedSchema, base)
 }
 
-export const exportAsFromString = async (name, importedSchema, outDir='.', rebase='') => {
+export const exportAsFromString = async (name, importedSchema, outDir='.', config={}) => {
   const models = await getModelsFromSchema(importedSchema);
  
   const backendDirectory = new BackendDirectory()
@@ -34,7 +35,7 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', rebas
   generateEntry(backendDirectory, models);
 
   backendDirectory.write(`server`, templateFileToText(`server.ts`, null))
-  backendDirectory.write(`services/sendMail`, templateFileToText(`sendMail.ts`, null))
+  backendDirectory.write(`services/sendMail`, _.get(config, 'templates.sendMail') || templateFileToText(`sendMail.ts`, null))
 
   backendDirectory.genWrite( `schemaLoad`, templateFileToText(`schemaLoad.ts`, null));
   backendDirectory.genWrite( `extras`, templateFileToText(`extras.ts`, null));
