@@ -67,7 +67,7 @@ const checkErrorsInConfForStrategy = (config) => {
         result.push('Callback URL is empty')
     }
 
-    if(config.callbackURL && (!config.callbackURL?.startsWith('http://') || !config.callbackURL?.startsWith('https://'))){
+    if(config.callbackURL && !config.callbackURL?.startsWith('http://') && !config.callbackURL?.startsWith('https://')){
         result.push(`Callback URL should start with 'http://' or 'https://'`)
     }
 
@@ -82,7 +82,7 @@ const setupStrategy = (passport, Strategy, name, config, cb) => {
     // configured with errors
     const errors = checkErrorsInConfForStrategy(config)
     if(errors){
-        console.log(`Strategy with name: ${name} have followed errors`, errors)
+        console.log(`ERROR: Strategy with name: ${name} have followed errors`, errors)
         return false
     }
     
@@ -174,11 +174,13 @@ export const othersSetup = (authRouter, name=null) => {
     if(facebookConnect){
         authRouter.get('/facebook', passport.authenticate(facebookName));
         authRouter.get('/facebook/callback', passport.authenticate(facebookName), go);
+        console.log(`Strategy for Facebook with name: ${facebookName} registrated on '/facebook/callback'`)
     }
 
     if(githubConnect){
         authRouter.get('/github', passport.authenticate(githubName, { scope: [ 'user:email' ] }));
         authRouter.get('/github/callback', passport.authenticate(githubName, { failureRedirect: '/login' }), go);
+        console.log(`Strategy for Github with name: ${githubName} registrated on '/github/callback'`)
     }
 
     
@@ -188,6 +190,7 @@ export const othersSetup = (authRouter, name=null) => {
             'https://www.googleapis.com/auth/userinfo.email'
         ] }));
         authRouter.get('/google/callback', passport.authenticate(googleName, { failureRedirect: '/login' }), go);
+        console.log(`Strategy for Google with name: ${googleName} registrated on '/google/callback'`)
     }
 }
 
