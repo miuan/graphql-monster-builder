@@ -59,10 +59,18 @@ export const generateInputNameAndFindRelatedModel = (models, { model, member }) 
   // find model what is related to member.type
   member.relation.relatedModel = models.find(m => (m.modelName === modelName));
 
+  
+
   if (!member.relation.relatedModel) {
-    throw `Model name '${modelName}'\
+    throw `Line ${member.row}: Model name '${modelName}'\
 mention in relation '${member.relation.name}'\
 in member ${member.name} doesn't exist`;
+  }
+
+  // Check if relation type have a member to connect back to model
+  const relatedMember = member.relation.relatedModel.members.find(m => m.relation && m.relation.name === member.relation.name);
+  if (!relatedMember) {
+    throw `Line ${member.row}: Model '${member.relation.relatedModel.modelName}'\ (start at line: ${member.relation.relatedModel.start}) doesn't have any member what have relation with name: '${member.relation.name}'`;
   }
 
   const noCreateFromAnother = NO_CREATE_FROM_ANOTHER_MODEL.some(m => m === modelName);

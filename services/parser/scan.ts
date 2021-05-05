@@ -13,7 +13,7 @@ import { setupModelsRelations } from './relations';
 
 
 export const getModelsFromSchema = (schema): SchemaModel[] => {
-  const rows = schema.split('\n');
+  const rows = schema.split('\n').map((r)=>r.trim());
 
   let currentModel: SchemaModel = null;
   let currentProtection : SchemaModelProtection = generateBaseProtection();
