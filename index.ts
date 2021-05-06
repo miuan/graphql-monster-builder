@@ -3,19 +3,20 @@ import * as yargs from 'yargs'
 // NOTE: loger need to be fist 
 //       before any custom lib
 import log, {setupLogLevel} from './services/log'
-import { exportAs } from './services/build'
+
+import { frontendFromSchema } from './frontend/frontend';
+import { exportAs } from './services/backend/build';
 
 const argv = yargs
     .usage('Usage: $0 <command> [options] path/to/schema.file [desctination/folder]')
     .example('$0 -bd -d models.schema ../server', 'create server')
     .example('$0 -fd -d models.schema ../frontend', 'create client')
     
-    .command('frontend', 'build client from schema', {
-        client: {
-            description: 'the year to check for',
-            alias: 'fd',
-            type: 'string',
-        }
+    .option('frontend', {
+        alias: 'fd',
+        description: 'build client from schema',
+        type: 'boolean',
+        default: false,
     }).option('backend', {
         alias: 'bd',
         description: 'build server from schema',
@@ -38,7 +39,9 @@ const argv = yargs
     log.info(`Generate schema: '${schema} to ${outDir}`)
     const start = Date.now();
   
-    await exportAs(outDir, schema, outDir);
+    if(argv.fd) await frontendFromSchema(outDir, schema, outDir);
+    else await exportAs(outDir, schema, outDir);
+    
     const ms = Date.now() - start;
 
     log.info(`Done in ${ms}ms. Next step:`)

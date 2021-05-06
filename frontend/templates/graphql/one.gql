@@ -1,0 +1,5 @@
+#import "./fragment.gql"
+
+query QUERY_NAME($id:ID){ QUERY_TYPE(id:$id) {
+      ...QUERY_FRAGMENT
+    }}

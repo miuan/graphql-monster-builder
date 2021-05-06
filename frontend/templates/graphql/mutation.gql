@@ -1,0 +1,10 @@
+#import "./fragment.gql"
+
+mutation MUTATION_NAME(INPUTS) {
+    MUTATION_NAME(
+      PARAMS
+      ) {
+     ...FRAGMENT_NAME
+      
+    }
+  }

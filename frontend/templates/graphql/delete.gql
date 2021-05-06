@@ -1,0 +1,5 @@
+  mutation deleteMODEL_NAME($id: ID!) {
+    deleteMODEL_NAME(id: $id) {
+      id
+    }
+  }

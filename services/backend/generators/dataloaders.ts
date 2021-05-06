@@ -1,5 +1,5 @@
 import { writeToFile } from '../../common/files';
-import { Structure, SchemaModel } from '../../common/types';
+import { StructureBackend, SchemaModel } from '../../common/types';
 
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory';

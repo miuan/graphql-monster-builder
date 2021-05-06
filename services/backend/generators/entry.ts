@@ -1,4 +1,4 @@
-import { Structure, SchemaModel, SchemaModelRelationType } from '../../common/types'
+import { StructureBackend, SchemaModel, SchemaModelRelationType } from '../../common/types'
 import { writeToFile, templateToText, templateFileToText } from '../../common/files'
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
 import { BackendDirectory } from '../backendDirectory'
@@ -27,7 +27,7 @@ const genAddingAndRemovingsForModel = (model: SchemaModel) => {
   return result
 }
 
-export const generateEntryWorker = (structure: Structure, models: SchemaModel[]):string => {
+export const generateEntryWorker = (structure: StructureBackend, models: SchemaModel[]):string => {
   let body:string = ''
   let modelsBody = ''
   let services = ''
@@ -72,7 +72,7 @@ export const generateEntryWorker = (structure: Structure, models: SchemaModel[])
 
 
 
-export const createResolvers = (structure: Structure, models: SchemaModel[]) => {
+export const createResolvers = (structure: StructureBackend, models: SchemaModel[]) => {
   let queries = ''
   let dataloaders = ''
 

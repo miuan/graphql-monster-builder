@@ -1,6 +1,6 @@
 import path = require("path")
 import * as files from "../common/files"
-import { Structure } from "../common/types"
+import { StructureBackend } from "../common/types"
   
 export const BACKEND_STRUCTURE = {
     schema: { 
@@ -38,12 +38,12 @@ export interface BackendStructureOperatorWrite {
 }
 
 export class BackendDirectory implements BackendStructureOperatorWrite {
-    structure: Structure
+    structure: StructureBackend
     baseDir: string
     projectName: string
 
     constructor() {
-        this.structure = JSON.parse(JSON.stringify(BACKEND_STRUCTURE)) as Structure
+        this.structure = JSON.parse(JSON.stringify(BACKEND_STRUCTURE)) as StructureBackend
     }
 
     /**

@@ -75,13 +75,21 @@ export type StructureItem = {
   modules: string[];
 };
 
-
 export type Structure = {
   id: string;
+};
+
+export type StructureBackend = Structure & {
   index: StructureItem;
   schema: StructureItem;
   gen: StructureItem;
   models: StructureItem;
   resolvers: StructureItem;
   services: StructureItem;
+};
+
+export type StructureFrontend = Structure & {
+  index: StructureItem;
+  gen: StructureItem;
+  graphql: StructureItem;
 };

@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import {
   getModelsFromSchema,
   extractMemberFromLine,
-} from './parser/scan';
+} from '../parser/scan';
 
 import {
   generateInputParamsForMutationModel,
@@ -11,20 +11,20 @@ import {
   genereateSchemaModelPayloads,
   generateMutationAddingsAndRemovings,
   cleanApplayedRelations,
-} from './backend/generators/schema';
+} from './generators/schema';
 
 import {
   createMongoModel,
   generateModels,
-} from './backend/generators/model';
+} from './generators/model';
 
 import {
   writeToFile,
-} from './common/files';
-import { generateEntry, generateEntryWorker } from './backend/generators/entry';
-import { generateServices } from './backend/generators/service';
-import { generateResolvers } from './backend/generators/resolvers';
-import { generateDataloaders } from './backend/generators/dataloaders';
+} from '../common/files';
+import { generateEntry, generateEntryWorker } from './generators/entry';
+import { generateServices } from './generators/service';
+import { generateResolvers } from './generators/resolvers';
+import { generateDataloaders } from './generators/dataloaders';
 
 const importedModelFileForSchema = `
 type File @model {

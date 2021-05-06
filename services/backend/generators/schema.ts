@@ -7,7 +7,7 @@ import {
 } from '../../common/constatns';
 
 import {
-  Structure,
+  StructureBackend,
   SchemaModel,
   SchemaModelRelationType,
   SchemaModelMember,

@@ -1,7 +1,7 @@
 import {
   SchemaModel,
   SchemaModelRelationType,
-  Structure,
+  StructureBackend,
   SchemaModelMember,
   SchemaModelProtection,
   SchemaModelProtectionParam,

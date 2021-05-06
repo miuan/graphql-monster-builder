@@ -1,13 +1,8 @@
 import {
   SchemaModel,
-  SchemaModelRelationType,
-  Structure,
   SchemaModelMember,
 } from '../../common/types';
 
-import {
-  writeToFile,
-} from '../../common/files';
 
 const defaultMembers = [
   'createdAt',

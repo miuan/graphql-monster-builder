@@ -1,8 +1,5 @@
-import { SchemaModel, SchemaModelMember, SchemaModelRelation, Structure, StructureItem } from "../../common/types"
+import { SchemaModel, SchemaModelMember, SchemaModelRelation } from "../../common/types"
 import { createModelTypeFromModel, generateModelTypes, transformMemberTypeToTypescriptType } from "./model-types"
-import {
-    writeToFile,
-  } from '../../common/files';
 import { BackendDirectory } from "../backendDirectory";
 
 describe('typescript-type', ()=>{

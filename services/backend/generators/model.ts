@@ -1,7 +1,7 @@
 import {
   SchemaModel,
   SchemaModelRelationType,
-  Structure,
+  StructureBackend,
   SchemaModelMember,
 } from '../../common/types';
 
@@ -19,7 +19,7 @@ import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('model')
 
-export const createMongoModel = (structure: Structure, model : SchemaModel) => {
+export const createMongoModel = (structure: StructureBackend, model : SchemaModel) => {
   const modelName = model.modelName;
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
   const varName =  lower + 'Schema';
@@ -142,7 +142,7 @@ export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>(
   return result;
 };
 
-export const transformTypeToMongoType = (structure: Structure, member : SchemaModelMember) => {
+export const transformTypeToMongoType = (structure: StructureBackend, member : SchemaModelMember) => {
   
   if (member.relation) {
     let result = 'Schema.Types.ObjectId, ';

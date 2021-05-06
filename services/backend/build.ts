@@ -1,15 +1,15 @@
-import { templateFileToText} from './common/files';
-import { getModelsFromSchema } from './parser/scan';
-import { generateModels } from './backend/generators/model';
-import { generateServices } from './backend/generators/service';
-import { generateResolvers } from './backend/generators/resolvers';
-import { generateDataloaders } from './backend/generators/dataloaders';
-import { generateEntry } from './backend/generators/entry';
+import { templateFileToText} from '../common/files';
+import { getModelsFromSchema } from '../parser/scan';
+import { generateModels } from '../backend/generators/model';
+import { generateServices } from '../backend/generators/service';
+import { generateResolvers } from '../backend/generators/resolvers';
+import { generateDataloaders } from '../backend/generators/dataloaders';
+import { generateEntry } from '../backend/generators/entry';
 import * as fs from 'fs';
 import { Schema } from 'inspector';
-import { generateSchema } from './backend/generators/schema';
-import { generateModelTypes } from './backend/generators/model-types';
-import { BackendDirectory } from './backend/backendDirectory';
+import { generateSchema } from '../backend/generators/schema';
+import { generateModelTypes } from '../backend/generators/model-types';
+import { BackendDirectory } from '../backend/backendDirectory';
 import * as _ from 'lodash'
 
 export const exportAs = async (name, from, base='.') => {
