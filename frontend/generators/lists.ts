@@ -5,7 +5,7 @@ import * as _ from 'lodash'
 
 function getFields(members: SchemaModelMember[]) {
     let fields = '';
-    for (const member of members.filter(m => !m.relation)) {
+    for (const member of members.filter(m => !m.relation && m.name != 'id')) {
         fields += `,\n{name: '${member.name}', title:'${_.upperFirst(member.name)}'}`;
     }
 

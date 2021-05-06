@@ -9,7 +9,9 @@ export const CREATE_MUTATION = loader('./graphql/create.gql')
 export const UPDATE_MUTATION = loader('./graphql/update.gql')
 export const ONE_QUERY = loader('./graphql/one.gql');
 
-export const FIELDS = [MODEL_FIELDS]
+export const FIELDS = [
+MODEL_FIELDS
+]
 
 export type MODEL_NAMEEditType = {
     name?: string, 

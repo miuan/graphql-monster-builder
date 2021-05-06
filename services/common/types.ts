@@ -32,8 +32,10 @@ export type SchemaModelMember = {
   relation: SchemaModelRelation;
   isArray: boolean;
   row: number;
-  isReadonly: boolean
+  isReadonly: boolean;
   default?: number | string
+  regExp?: string
+  placeholder?: string
 };
 
 export enum SchemaModelProtectionType {

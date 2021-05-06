@@ -56,6 +56,28 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
     member.default = (matched && matched.length > 1 && matched[1]) || (matchedNumber && matchedNumber.length > 1 && Number(matchedNumber[1]))
   }
 
+  else if (params.startsWith('@placeholder')) {
+    const regexp = new RegExp(/(?<=")(?:\\.|[^"\\])*(?=")/);
+    const matched = params.match(regexp);
+
+    if(!matched) {
+      throw new Error(`Line: ${member.row}: modificator @placeholder must have a text value in double-qutes like @placeholder("placeholder-value")`)
+    }
+
+    member.placeholder = matched[0]
+  }
+
+  else if (params.startsWith('@regExp')) {
+    const regexp = new RegExp(/(?<=")(?:\\.|[^"\\])*(?=")/);
+    const matched = params.match(regexp);
+
+    if(!matched) {
+      throw new Error(`Line: ${member.row}: modificator @regExp must have a text value in double-qutes like @regExp("regExp-value")`)
+    }
+
+    member.regExp = matched[0]
+  }
+
   else {
     throw new Error(`Line: ${member.row}: unknown param '${params}'`)
   }
