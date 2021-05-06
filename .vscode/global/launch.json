@@ -5,21 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Attach to Chrome",
-            "port": 9222,
-            "request": "attach",
-            "type": "pwa-chrome",
-            "url": "<url of the open browser tab to connect to>",
-            "webRoot": "${workspaceFolder}/frontend/build"
-        },
-        {
-            "type": "chrome",
-            "request": "launch",
-            "name": "Frontend:Debug",
-            "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/frontend"
-        },
-        {
             "name": "Frontend:Start",
             "type": "node-terminal",
             "request": "launch",
@@ -33,7 +18,27 @@
             }
         },
         {
-           "name": "Build protectql.schema for server",
+            "name": "Frontend:Debug",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/frontend"
+        },{
+            "name": "Server:start",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+            "args": ["./server.ts"],
+            "cwd": "${workspaceFolder}/server/",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "NODE_ENV": "development",
+                "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
+            }
+        },
+        {
+           "name": "Server:Gen:Protectql.schema",
            "type": "node",
            "request": "launch",
            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
@@ -46,7 +51,7 @@
            }
        },
         {
-           "name": "Build example project to server",
+           "name": "Server:Gen:Example/protectql.schema",
            "type": "node",
            "request": "launch",
            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
@@ -58,22 +63,24 @@
                "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
            }
        },{
-            "name": "Server start",
+        "type": "node",
+        "request": "launch",
+        "name": "Server:Test",
+        "program": "${workspaceFolder}/server/node_modules/.bin/jest",
+        "args": [
+            "hotReload.spec.ts"
+        ],
+        "cwd": "${workspaceFolder}/server",
+        "console": "integratedTerminal",
+        "internalConsoleOptions": "neverOpen",
+        "disableOptimisticBPs": true,
+        "windows": {
+            "program": "${workspaceFolder}/server/node_modules/jest/bin/jest",
+        },
+    },{
             "type": "node",
             "request": "launch",
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["./server.ts"],
-            "cwd": "${workspaceFolder}/server/",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": ["<node_internals>/**", "node_modules/**"],
-            "env": {
-                "NODE_ENV": "development",
-                "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
-            }
-        },{
-            "type": "node",
-            "request": "launch",
-            "name": "Builder jest",
+            "name": "Builder:Test",
             "program": "${workspaceFolder}/builder/node_modules/.bin/jest",
             "args": [
                 "extras.spec.ts"
@@ -85,24 +92,9 @@
             "windows": {
                 "program": "${workspaceFolder}/builder/node_modules/jest/bin/jest",
             },
-        },{
-            "type": "node",
-            "request": "launch",
-            "name": "Server jest",
-            "program": "${workspaceFolder}/server/node_modules/.bin/jest",
-            "args": [
-                "hotReload.spec.ts"
-            ],
-            "cwd": "${workspaceFolder}/server",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "disableOptimisticBPs": true,
-            "windows": {
-                "program": "${workspaceFolder}/server/node_modules/jest/bin/jest",
-            },
         },
         {
-            "name": "Mojefirma:LAUNCH",
+            "name": "Mojefirma:Start",
             "type": "node-terminal",
             "request": "launch",
             "command":"npm start",
@@ -117,16 +109,16 @@
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Mojefirma:DEBUG",
+            "name": "Mojefirma:Debug",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/templates/moje-doklady-online"
         },
         {
-           "name": "Mojefirma:GenFrontend",
+           "name": "Mojefirma:Gen",
            "type": "node",
            "request": "launch",
            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-           "args": ["./index.ts","--frontend", "../templates/moje-doklady-online/protectql.schema", "../server333"],
+           "args": ["./index.ts","--frontend", "../templates/moje-doklady-online/protectql.schema", "../templates/moje-doklady-online"],
            "cwd": "${workspaceFolder}/builder",
            "internalConsoleOptions": "openOnSessionStart",
            "skipFiles": ["<node_internals>/**", "node_modules/**"],

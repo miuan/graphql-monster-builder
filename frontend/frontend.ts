@@ -6,6 +6,8 @@ import { FrontendDirectory } from './frontendDirectory';
 import generateMutations from './generators/mutations';
 import generateFragments from './generators/fragments';
 import generateQueries from './generators/queries';
+import generateLists from './generators/lists';
+import generateEdits from './generators/edits';
 
 export const frontendFromSchema = async (name, from, base='.') => {
   
@@ -41,6 +43,8 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', confi
   generateMutations(frontendDirectory, models)
   generateFragments(frontendDirectory, models)
   generateQueries(frontendDirectory, models)
+  generateLists(frontendDirectory, models)
+  generateEdits(frontendDirectory, models)
 }
 
 

@@ -42,7 +42,7 @@ function updateMutation(model: SchemaModel) {
 }
 
 function createMutation(model: SchemaModel) {
-    let { params, inputs } = getInputParams(model.members.filter((m=>m.name !== 'user')));
+    let { params, inputs } = getInputParams(model.members.filter((m=>(m.name !== 'user' && m.name !== 'id'))));
 
     const userPresent = model.members.filter((m=>m.name == 'user'))[0]
 

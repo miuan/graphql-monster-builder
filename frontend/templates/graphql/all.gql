@@ -1,6 +1,6 @@
-  #import "./fragment.gql"
-  
-  query allMODEL_NAMEs($filter: MODEL_NAMEFilter){ 
-    allMODEL_NAMEs(filter: $filter) {
-      ...QUERY_FRAGMENT
-    }}
+#import "./fragment.gql"
+
+query allMODEL_NAMEs($filter: MODEL_NAMEFilter){ 
+  allMODEL_NAMEs(filter: $filter) {
+    ...QUERY_FRAGMENT
+  }}

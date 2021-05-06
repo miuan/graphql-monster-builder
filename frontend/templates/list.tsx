@@ -1,42 +1,42 @@
-import React from './react'
-import {Link} from './react-router-dom'
-import gql from './graphql-tag';
-import { useQuery } from './@apollo/client';
-import { ListRow, IListRowItem } from './row';
+import React from "react";
+import { loader } from "graphql.macro";
+
+import FilteredList from "../../components/List/FilteredList";
+import { useUserState } from "../../app/userContext";
 
 
-const USER_PROJECTS_QUERY = gql`
-  query allProjects($userId:ID){ allProjects(filter:{AND:[{user_every:{id:$userId}}]}) {
-      id
-      name
-    }}
-`;
 
-const ALL_PROJECTS_QUERY = gql`
-  query allProjects($userId:ID){ allProjects {
-      id
-      name
-    }}
-`;
+export const USER_LIST_QUERY = loader('./graphql/all.gql')
+export const DELETE_MUTATION = loader('./graphql/delete.gql')
+export const ADMIN_LIST_QUERY = USER_LIST_QUERY
 
-export interface IProjectList {
-    userId?: string
+export const FIELDS = [MODEL_FIELDS]
+
+
+export type MODEL_NAMEListType = {
+  adminMode?: boolean, 
+  name?: string, 
+  fields?: any
+  allQuery?: any,
+  adminQuery?: any,
+  deleteMutation?: any
 }
 
-export const ProjectList : React.FC<IProjectList> = ({userId}) => {
-    const { loading, error, data } = useQuery(USER_PROJECTS_QUERY, {variables: {userId}});
-
-    if (loading) return (<div>Loading...</div>);
-    
-    return (
-        <div>
-            <h1>List projects</h1>
-            {error && (<div>{`Error! ${error.message}`}</div>)}
-            <Link to={'project-create'}>Create</Link>
-
-            {
-              data && data.allProjects && data.allProjects.map((projectItem:IListRowItem)=>(<ListRow item={projectItem}/>))
-            }
-        </div>
-    )
+export const MODEL_NAMEList: React.FC<MODEL_NAMEListType> = ({adminMode=false, name, fields, allQuery, adminQuery, deleteMutation}) => {
+  const user = useUserState()
+  return (
+    <div className={`filtered-list-MODEL_NAME filtered-list`}>
+      <FilteredList 
+              name={name || 'MODEL_NAMEs'}
+              fields={fields || FIELDS}
+              userId={user?.id} 
+              adminMode={adminMode}
+              queries={{
+                USER_LIST_QUERY:allQuery || USER_LIST_QUERY, 
+                ADMIN_LIST_QUERY:adminQuery || ADMIN_LIST_QUERY, 
+                DELETE_MUTATION: deleteMutation || DELETE_MUTATION}} />
+    </div>
+  )
 }
+
+export default MODEL_NAMEList
