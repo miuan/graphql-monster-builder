@@ -5,14 +5,48 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Attach to Chrome",
+            "port": 9222,
+            "request": "attach",
+            "type": "pwa-chrome",
+            "url": "<url of the open browser tab to connect to>",
+            "webRoot": "${workspaceFolder}/frontend/build"
+        },
+        {
             "type": "chrome",
             "request": "launch",
-            "name": "Launch Chrome against localhost",
+            "name": "Frontend:Debug",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/frontend"
         },
         {
-           "name": "Build project to server",
+            "name": "Frontend:Start",
+            "type": "node-terminal",
+            "request": "launch",
+            "command":"npm start",
+            "cwd": "${workspaceFolder}/frontend",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "PORT": 3000,
+                "NODE_ENV": "development"
+            }
+        },
+        {
+           "name": "Build protectql.schema for server",
+           "type": "node",
+           "request": "launch",
+           "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+           "args": ["./index.ts", "-bd", "-d", "../server/protectql.schema", "../server"],
+           "cwd": "${workspaceFolder}/builder",
+           "internalConsoleOptions": "openOnSessionStart",
+           "skipFiles": ["<node_internals>/**", "node_modules/**"],
+           "env": {
+               "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
+           }
+       },
+        {
+           "name": "Build example project to server",
            "type": "node",
            "request": "launch",
            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
@@ -35,31 +69,6 @@
             "env": {
                 "NODE_ENV": "development",
                 "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
-            }
-        },{
-            "name": "Client start",
-            "type": "node",
-            "request": "launch",
-            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-            "args": ["./server.ts"],
-            "cwd": "${workspaceFolder}/__clients__/5fe638b3399d7c4ee4e658d0-client",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": ["<node_internals>/**", "node_modules/**"],
-            "env": {
-                "NODE_ENV": "development",
-                "TS_NODE_PROJECT": "${workspaceFolder}/server/tsconfig.json"
-            }
-        },
-        {
-            "name": "Launch frontend",
-            "type": "node-terminal",
-            "request": "launch",
-            "command":"npm start",
-            "cwd": "${workspaceFolder}/frontend",
-            "internalConsoleOptions": "openOnSessionStart",
-            "skipFiles": ["<node_internals>/**", "node_modules/**"],
-            "env": {
-                "NODE_ENV": "development"
             }
         },{
             "type": "node",
@@ -91,6 +100,39 @@
             "windows": {
                 "program": "${workspaceFolder}/server/node_modules/jest/bin/jest",
             },
-        }
+        },
+        {
+            "name": "Mojefirma:LAUNCH",
+            "type": "node-terminal",
+            "request": "launch",
+            "command":"npm start",
+            "cwd": "${workspaceFolder}/templates/moje-doklady-online",
+            "internalConsoleOptions": "openOnSessionStart",
+            "skipFiles": ["<node_internals>/**", "node_modules/**"],
+            "env": {
+                "PORT": 3000,
+                "NODE_ENV": "development"
+            }
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Mojefirma:DEBUG",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/templates/moje-doklady-online"
+        },
+        {
+           "name": "Mojefirma:GenFrontend",
+           "type": "node",
+           "request": "launch",
+           "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
+           "args": ["./index.ts","--frontend", "../templates/moje-doklady-online/protectql.schema", "../server333"],
+           "cwd": "${workspaceFolder}/builder",
+           "internalConsoleOptions": "openOnSessionStart",
+           "skipFiles": ["<node_internals>/**", "node_modules/**"],
+           "env": {
+               "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
+           }
+       }
     ]
 }

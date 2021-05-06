@@ -3,7 +3,7 @@ import * as fs from 'fs'
 import {
   getModelsFromSchema,
   extractMemberFromLine,
-} from '../parser/scan';
+} from '../services/parser/scan';
 
 import {
   generateInputParamsForMutationModel,
@@ -20,7 +20,7 @@ import {
 
 import {
   writeToFile,
-} from '../common/files';
+} from '../services/common/files';
 import { generateEntry, generateEntryWorker } from './generators/entry';
 import { generateServices } from './generators/service';
 import { generateResolvers } from './generators/resolvers';

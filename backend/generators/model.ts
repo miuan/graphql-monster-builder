@@ -3,11 +3,11 @@ import {
   SchemaModelRelationType,
   StructureBackend,
   SchemaModelMember,
-} from '../../common/types';
+} from '../../services/common/types';
 
 import {
   writeToFile,
-} from '../../common/files';
+} from '../../services/common/files';
 
 const defaultMembers = [
   'createdAt',
@@ -15,7 +15,7 @@ const defaultMembers = [
   'id',
 ];
 
-import logger from '../../log'
+import logger from '../../services/log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('model')
 

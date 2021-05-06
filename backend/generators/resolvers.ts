@@ -6,15 +6,15 @@ import {
   SchemaModelProtection,
   SchemaModelProtectionParam,
   SchemaModelProtectionType,
-} from '../../common/types';
+} from '../../services/common/types';
 
 import {
   writeToFile, templateFileToText, templateToText,
-} from '../../common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+} from '../../services/common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils';
 import { relatedParamName1Id, relatedParamName1, relatedParamName2Id, relatedParamName2 } from './schema';
 
-import logger from '../../log'
+import logger from '../../services/log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('resolvers')
 

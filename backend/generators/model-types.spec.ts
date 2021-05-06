@@ -1,4 +1,4 @@
-import { SchemaModel, SchemaModelMember, SchemaModelRelation } from "../../common/types"
+import { SchemaModel, SchemaModelMember, SchemaModelRelation } from "../../services/common/types"
 import { createModelTypeFromModel, generateModelTypes, transformMemberTypeToTypescriptType } from "./model-types"
 import { BackendDirectory } from "../backendDirectory";
 

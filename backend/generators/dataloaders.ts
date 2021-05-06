@@ -1,7 +1,7 @@
-import { writeToFile } from '../../common/files';
-import { StructureBackend, SchemaModel } from '../../common/types';
+import { writeToFile } from '../../services/common/files';
+import { StructureBackend, SchemaModel } from '../../services/common/types';
 
-import logger from '../../log'
+import logger from '../../services/log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('dataloaders')
 

@@ -4,17 +4,17 @@ import {
   notMutationFields,
   schemaFilterStringValue,
   schemaFilterNumberValue,
-} from '../../common/constatns';
+} from '../../services/common/constatns';
 
 import {
   StructureBackend,
   SchemaModel,
   SchemaModelRelationType,
   SchemaModelMember,
-} from '../../common/types';
-import { writeToFile } from '../../common/files';
-import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../common/utils';
-import logger from '../../log'
+} from '../../services/common/types';
+import { writeToFile } from '../../services/common/files';
+import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../services/common/utils';
+import logger from '../../services/log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('schema')
 

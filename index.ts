@@ -5,7 +5,7 @@ import * as yargs from 'yargs'
 import log, {setupLogLevel} from './services/log'
 
 import { frontendFromSchema } from './frontend/frontend';
-import { exportAs } from './services/backend/build';
+import { exportAs } from './backend/build';
 
 const argv = yargs
     .usage('Usage: $0 <command> [options] path/to/schema.file [desctination/folder]')

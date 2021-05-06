@@ -3,15 +3,15 @@ import {
   SchemaModelRelationType,
   StructureBackend,
   SchemaModelMember,
-} from '../../common/types';
+} from '../../services/common/types';
 
 import {
   writeToFile, templateFileToText,
-} from '../../common/files';
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils';
+} from '../../services/common/files';
+import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils';
 import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema';
 
-import logger from '../../log'
+import logger from '../../services/log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('service')
 
