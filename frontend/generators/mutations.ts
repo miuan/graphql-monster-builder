@@ -29,12 +29,12 @@ function getInputParams(members: SchemaModelMember[], required= true) {
 
 
 function updateMutation(model: SchemaModel) {
-    let { params, inputs } = getInputParams(model.members.filter((m=>m.name !== 'user')), false);
+    let { params, inputs } = getInputParams(model.members.filter((m=>m.name !== 'user' && m.name !== 'id')), false);
 
     let result = frontendTemplateToText(`graphql/mutation.gql`,{
         'MUTATION_NAME': `update${_.upperFirst(model.modelName)}`,
-        PARAMS: params.substr(2),
-        INPUTS: inputs.substr(2),
+        INPUTS: `\$id: ID!${inputs}`,
+        PARAMS: `id: \$id${params}`,
         FRAGMENT_NAME: `${_.upperFirst(model.modelName)}Fragment`
       });
 

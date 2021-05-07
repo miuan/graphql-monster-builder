@@ -22,8 +22,10 @@ export type MODEL_NAMEEditType = {
   }
 
 export const MODEL_NAMEEdit:(obj:MODEL_NAMEEditType)=>any = ({name, fields, createMutation, updateMutation, oneQuery }) => {
-  let {id} = useParams() as any;
+  let params = useParams() as any;
   
+  const id = params.id !== 'create' &&  params.id
+
   return (<div className={`base-edit-MODEL_NAME base-edit`}>
       <BaseEdit 
         id={id} 
