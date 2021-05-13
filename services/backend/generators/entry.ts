@@ -1,6 +1,6 @@
-import { StructureBackend, SchemaModel, SchemaModelRelationType } from '../../services/common/types'
-import { writeToFile, templateToText, templateFileToText } from '../../services/common/files'
-import { getOnlyOneRelatedMember, firstToLower } from '../../services/common/utils'
+import { StructureBackend, SchemaModel, SchemaModelRelationType } from '../../common/types'
+import { writeToFile, templateToText, templateFileToText } from '../../common/files'
+import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
 import { BackendDirectory } from '../backendDirectory'
 
 

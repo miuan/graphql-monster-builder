@@ -4,17 +4,16 @@ import {
   notMutationFields,
   schemaFilterStringValue,
   schemaFilterNumberValue,
-} from '../../services/common/constatns';
+} from '../../common/constatns';
 
 import {
   StructureBackend,
   SchemaModel,
   SchemaModelRelationType,
   SchemaModelMember,
-} from '../../services/common/types';
-import { writeToFile } from '../../services/common/files';
-import { searchModelsRelationsInModels, getOnlyOneRelatedMember } from '../../services/common/utils';
-import logger from '../../services/log'
+} from '../../common/types';
+import { getOnlyOneRelatedMember } from '../../common/utils';
+import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('schema')
 
@@ -39,8 +38,6 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
 
   return result;
 };
-
-
 
 export const cleanApplayedRelations = () => {
   applayedRelations = [];

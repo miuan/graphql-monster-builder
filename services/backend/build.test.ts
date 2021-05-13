@@ -1,9 +1,8 @@
-import * as fs from 'fs'
 
 import {
   getModelsFromSchema,
   extractMemberFromLine,
-} from '../services/parser/scan';
+} from '../parser/scan';
 
 import {
   generateInputParamsForMutationModel,
@@ -13,18 +12,6 @@ import {
   cleanApplayedRelations,
 } from './generators/schema';
 
-import {
-  createMongoModel,
-  generateModels,
-} from './generators/model';
-
-import {
-  writeToFile,
-} from '../services/common/files';
-import { generateEntry, generateEntryWorker } from './generators/entry';
-import { generateServices } from './generators/service';
-import { generateResolvers } from './generators/resolvers';
-import { generateDataloaders } from './generators/dataloaders';
 
 const importedModelFileForSchema = `
 type File @model {

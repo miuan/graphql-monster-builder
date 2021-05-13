@@ -1,12 +1,12 @@
-import { templateFileToText} from '../services/common/files';
-import { getModelsFromSchema } from '../services/parser/scan';
+import { templateFileToText} from '../common/files';
+import { getModelsFromSchema } from '../parser/scan';
 import { generateModels } from './generators/model';
 import { generateServices } from './generators/service';
 import { generateResolvers } from './generators/resolvers';
 import { generateDataloaders } from './generators/dataloaders';
 import { generateEntry } from './generators/entry';
 import * as fs from 'fs';
-import { Schema } from 'inspector';
+
 import { generateSchema } from './generators/schema';
 import { generateModelTypes } from './generators/model-types';
 import { BackendDirectory } from './backendDirectory';

@@ -1,6 +1,6 @@
 import { defaultMaxListeners } from "stream";
 import { BackendDirectory } from "./backendDirectory";
-import * as files from '../services/common/files'
+import * as files from '../common/files'
 import 'jest-extended'
 
 describe('StructureOperator', () => {

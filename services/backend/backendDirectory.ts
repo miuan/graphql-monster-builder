@@ -1,6 +1,6 @@
 import path = require("path")
-import * as files from "../services/common/files"
-import { StructureBackend } from "../services/common/types"
+import * as files from "../common/files"
+import { StructureBackend } from "../common/types"
   
 export const BACKEND_STRUCTURE = {
     schema: { 

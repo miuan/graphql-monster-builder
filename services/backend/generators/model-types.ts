@@ -1,7 +1,7 @@
 import {
   SchemaModel,
   SchemaModelMember,
-} from '../../services/common/types';
+} from '../../common/types';
 
 
 const defaultMembers = [
@@ -10,8 +10,7 @@ const defaultMembers = [
   'id',
 ];
 
-import logger from '../../services/log'
-import { types } from 'util';
+import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory';
 const log = logger.getLogger('types')
 
