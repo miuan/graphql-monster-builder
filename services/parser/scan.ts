@@ -80,15 +80,20 @@ export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
     type: 3
   } as any
 
+  const ownerRole:SchemaModelProtectionParam = {
+    type: 2
+  } as any
+
+
 
   if(!presenceOfUserModel){
     models.push({
       modelName: 'User',
       protection: {
         all: [adminRole],
-        one: [adminRole],
+        one: [ownerRole],
         create: [adminRole],
-        update: [adminRole],
+        update: [ownerRole],
         remove:[adminRole]
       },
       members: [],

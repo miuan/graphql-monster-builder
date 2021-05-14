@@ -85,11 +85,11 @@ export const createResolver = (model : SchemaModel) => {
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
   const varName =  lower + 'Service';
 
-  const protectionAll = generateProtection(model.protection.all);
-  const protectionOne = generateProtection(model.protection.one);
-  const protectionCreate = generateProtection(model.protection.create);
-  const protectionUpdate = generateProtection(model.protection.update);
-  const protectionRemove = generateProtection(model.protection.remove);
+  const protectionAll = generateProtection(modelName, model.protection.all);
+  const protectionOne = generateProtection(modelName, model.protection.one);
+  const protectionCreate = generateProtection(modelName, model.protection.create);
+  const protectionUpdate = generateProtection(modelName, model.protection.update);
+  const protectionRemove = generateProtection(modelName, model.protection.remove);
 
   const {result: serviceAddRemove, connect: serviceAddRemoveConnect} = modelCreateAddRemoveLinks(model)
 
@@ -116,22 +116,30 @@ export const createResolver = (model : SchemaModel) => {
   return result;
 };
 
-export const generateProtection = (protection : SchemaModelProtectionParam[]) => {
-  let result = '';
+export const generateProtection = (modelName:string, protection : SchemaModelProtectionParam[]) => {
+  let condition = '';
   for (const protectionParam of protection) {
-    result += '&& ! (' + generateProtectionFromParam(protectionParam) + ') ';
+    condition += '&& ! (' + generateProtectionFromParam(modelName, protectionParam) + ') ';
   }
 
-  result = `
-      if(${result.substr(3)}){
+  let result = `
+      if(${condition.substr(3)}){
         ctx.throw(401, 'Unauthorized');
       }
   `;
 
+  if(modelName == 'User'){
+    result += `
+    if((data.roles || data.rolesIds) && await protections.role(ctx, ['admin'])){
+      ctx.throw(401, 'Unauthorized user:roles operation');
+    }
+  `;
+  }
+
   return result;
 };
 
-export const generateProtectionFromParam = (protection : SchemaModelProtectionParam) => {
+export const generateProtectionFromParam = (modelName: string, protection : SchemaModelProtectionParam) => {
   let result = '';
 
   if (protection.type === SchemaModelProtectionType.PUBLIC) {
@@ -139,7 +147,8 @@ export const generateProtectionFromParam = (protection : SchemaModelProtectionPa
   } else if (protection.type === SchemaModelProtectionType.USER) {
     result += `await protections.user(ctx)`;
   } else if (protection.type === SchemaModelProtectionType.OWNER) {
-    const param = protection.param ?  `${protection.param}` : 'user';
+    // in model user is owner identified by ID
+    const param = modelName === 'User' ? 'id' : 'user';
     result += `await protections.owner(ctx, data, '${param}')`;
   } else if (protection.type === SchemaModelProtectionType.ROLE) {
     const roles = `'` + protection.roles.join(`','`) + `'`;
