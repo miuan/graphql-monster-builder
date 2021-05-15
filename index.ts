@@ -4,8 +4,8 @@ import * as yargs from 'yargs'
 //       before any custom lib
 import log, {setupLogLevel} from './services/log'
 
-import { frontendFromSchema } from './frontend/frontend';
-import { exportAs } from './backend/build';
+import { frontendFromSchema } from './services/frontend/frontend';
+import { exportAs } from './services/backend/build';
 
 const argv = yargs
     .usage('Usage: $0 <command> [options] path/to/schema.file [desctination/folder]')

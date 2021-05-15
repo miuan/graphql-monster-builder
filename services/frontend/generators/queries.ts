@@ -1,5 +1,5 @@
-import { frontendTemplateToText, templateFileToText } from "../../services/common/files";
-import { SchemaModel, SchemaModelMember, SchemaModelRelationType } from "../../services/common/types";
+import { frontendTemplateToText, templateFileToText } from "../../common/files";
+import { SchemaModel, SchemaModelMember, SchemaModelRelationType } from "../../common/types";
 import { FrontendDirectory } from "../frontendDirectory";
 import * as _ from 'lodash'
 

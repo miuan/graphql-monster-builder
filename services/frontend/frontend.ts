@@ -1,5 +1,5 @@
-import { templateFileToText} from '../services/common/files';
-import { getModelsFromSchema } from '../services/parser/scan';
+import { templateFileToText} from '../common/files';
+import { getModelsFromSchema } from '../parser/scan';
 import * as fs from 'fs';
 import * as _ from 'lodash'
 import { FrontendDirectory } from './frontendDirectory';

@@ -121,7 +121,7 @@ export const frontendTemplateToText = (fileName: string, params: any = null): st
   // if filename is ../ or ./ the path is already setup 
   // to another file than templates firectory
   // and we will not override it 
-  const templateFilePath = (fileName.startsWith('C:') || fileName.startsWith('.') || fileName.startsWith('/')) ? fileName : path.join(__dirname, '../../', 'frontend/templates', fileName)
+  const templateFilePath = (fileName.startsWith('C:') || fileName.startsWith('.') || fileName.startsWith('/')) ? fileName : path.join(__dirname, '../../', 'services/frontend/templates', fileName)
   //const templateFilePath = `services/backend/templates/${fileName}`;
   let text = fs.readFileSync(templateFilePath).toString();
   
