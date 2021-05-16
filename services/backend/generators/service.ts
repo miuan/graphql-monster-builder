@@ -131,7 +131,6 @@ export const disconnectLinkedModels = (members: SchemaModelMember[]) => {
       continue;
     }
 
-    const relatedToMany = SchemaModelRelationType.ONE_TO_MANY || SchemaModelRelationType.MANY_TO_MANY;
     const relationModelName = member.relation.relatedModel.modelName;
     const relatedModel = member.relation.relatedModel;
     const relationName = member.relation.name;
@@ -143,19 +142,13 @@ export const disconnectLinkedModels = (members: SchemaModelMember[]) => {
 
     result += `
     if(${varLinkedIds} && ${varLinkedIds}.length > 0) {`;
-    if (relatedMember.relation.type === relatedToMany) {
+    if (relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE || relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY) {
       result += `
-        await entry.models['${lower}'].updateMany({}, {
-          $pullAll: {${relatedMemberName}: [updatedModel.id]}
-        })
+        await entry.models['${lower}'].updateMany({}, {$pull: {${relatedMemberName}: updatedModel.id}})
       `;
     } else {
       result += `
-      await entry.models['${lower}'].updateMany({
-        ${relatedMemberName}: updatedModel.id
-      }, {
-        ${relatedMemberName}: null
-      })
+      await entry.models['${lower}'].updateMany({${relatedMemberName}: updatedModel.id}, {${relatedMemberName}: null})
     `;
     }
     result += '}';
