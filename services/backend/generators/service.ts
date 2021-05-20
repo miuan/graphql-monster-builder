@@ -180,19 +180,11 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) 
     // TODO: test for relatedMember.relation.type set right type corespond to member model
     if (relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY || relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE) {
       result += `
-        await entry.models['${lower}'].updateMany({
-          _id: {$in: ${varLinkedIds}}
-        }, {
-          $push: {${relatedMemberName}: { $each: [${currentIdName}]}}
-        })
+        await entry.models['${lower}'].updateMany({ _id: {$in: ${varLinkedIds}} }, {  $push: {${relatedMemberName}: { $each: [${currentIdName}]}} })
       `;
     } else {
       result += `
-      await entry.models['${lower}'].updateMany({
-        _id: {$in: ${varLinkedIds}}
-      }, {
-        ${relatedMemberName}: ${currentIdName}
-      })
+      await entry.models['${lower}'].updateMany({ _id: {$in: ${varLinkedIds}} }, {  ${relatedMemberName}: ${currentIdName} })
     `;
     }
     result += '}';
@@ -211,38 +203,39 @@ export const conversionsIdsToField = (members: SchemaModelMember[]) => {
       continue;
     }
 
-    const relatedToMany = SchemaModelRelationType.ONE_TO_MANY || SchemaModelRelationType.MANY_TO_MANY;
-    const s = member.relation.type === relatedToMany ? 's' : '';
+    const isMeMany = member.relation.type === SchemaModelRelationType.MANY_TO_ONE ||  member.relation.type === SchemaModelRelationType.MANY_TO_MANY;
     const relationModelName = member.relation.relatedModel.modelName;
     const varLinkedIds = `${member.name}LinkedIds`;
     const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1);
-    
 
-    result += `
-      const ${varLinkedIds} = [];
+    const relatedConnecteMember = member.relation.relatedModel.members.find((member)=>member.relation && member.relation.name === member.relation.name)
+    const isHeMany = relatedConnecteMember.relation.type === SchemaModelRelationType.MANY_TO_ONE || relatedConnecteMember.relation.type === SchemaModelRelationType.MANY_TO_MANY
 
-      if (data.${member.name}Id${s}) {
-        data.${member.name} = data.${member.name}Id${s};
-        delete data.${member.name}Id${s};
-        if( data.${member.name} instanceof Array){
-          ${varLinkedIds}.push(...data.${member.name});
-        } else {
-          ${varLinkedIds}.push(data.${member.name});
+    const transformIds = templateFileToText(isMeMany ? 'service-transform-many-ids.ts' : 'service-transform-one-id.ts', {
+      _LOWER_NAME_: lower,
+      _LINKDED_IDS_:varLinkedIds,
+      _CONNECTED_MEMBER_NAME_: relatedConnecteMember.name,
+      _CONNECTED_MEMBER_ID_: isHeMany? '[id]' : 'id',
+      _MEMBER_NAME_: member.name
+    })
+
+    if(isMeMany){
+
+      result += `
+        // unregister
+        if(data.${member.name}Ids || data.${member.name}){
+          
         }
-      } else if (data.${member.name}) {
-        if( data.${member.name}.length > 0 ){
-          for(const c of data.${member.name}){
-            const created = await entry.services['${lower}'].create(c);
-            ${varLinkedIds}.push(created.id);
-          }
-          data.${member.name} = ${member.name}LinkedIds;
-        } else {
-          const created = await entry.services['${lower}'].create(data.${member.name});
-          ${varLinkedIds}.push(created.id);
-          data.${member.name} = created.id;
-        }
-      }
-    `;
+
+        ${transformIds}
+      `;
+    } else {
+
+      result += `
+        ${transformIds}
+      `;
+    }
+
   }
   
 

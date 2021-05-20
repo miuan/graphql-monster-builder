@@ -36,10 +36,10 @@ export const transformMemberTypeToTypescriptType = (member : SchemaModelMember) 
      ttype = `${member.relation.relatedModel.modelName}Model`;
   } else if (member.type === 'DateTime') {
     ttype = 'Date';
-  } else if (member.type === 'Int') {
-    ttype =`Number`;
-  } else if (member.type === 'ID') {
-    ttype =`String`;
+  } else if (member.type === 'Int' || member.type === 'Float') {
+    ttype =`number`;
+  } else if (member.type === 'ID' || member.type === 'String') {
+    ttype =`string`;
   } else {
     ttype = `${member.type}`;
   }

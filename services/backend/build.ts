@@ -12,10 +12,10 @@ import { generateModelTypes } from './generators/model-types';
 import { BackendDirectory } from './backendDirectory';
 import * as _ from 'lodash'
 
-export const exportAs = async (name, from, base='.') => {
+export const exportAs = async (name, from, base='.', config={}) => {
   
   const importedSchema = fs.readFileSync(from, { encoding: 'utf8' });
-  return exportAsFromString(name, importedSchema, base)
+  return exportAsFromString(name, importedSchema, base, config)
 }
 
 export const exportAsFromString = async (name, importedSchema, outDir='.', config={}) => {

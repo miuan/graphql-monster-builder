@@ -396,7 +396,7 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
     }
   }
 
-  if(!member.relation &&  !['ID','Boolean','String', 'Int','DateTime'].includes(member.modelName)){
+  if(!member.relation &&  !['ID','Boolean','String', 'Int', 'Float', 'DateTime'].includes(member.modelName)){
     throw new Error(`Line ${lineNumber}: Unknown type ${member.modelName}`)
   }
 

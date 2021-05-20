@@ -1,4 +1,4 @@
-
+// template/service-add-remove.ts
 export const addTo_RELATION_NAME_ = (entry) => {
     // console.log('_LOWER_NAME_AddTo_RELATION_NAME_')
     return async (_RELATED_PARAM_NAME_1_, _RELATED_PARAM_NAME_2_) => {

@@ -2,7 +2,7 @@ import * as bcrypt from 'bcrypt-nodejs';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
-import {sendVerifyEmail, sendForgottenPasswordEmail } from '../services/sendMail'
+import {sendVerifyEmail, sendForgottenPasswordEmail } from './sendMail'
 
 export const generateHash = function (password) {
   return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);

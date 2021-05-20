@@ -89,7 +89,7 @@ export const _LOWER_NAME_Update = (entry) => {
   };
 };
 
-export const _LOWER_NAME_Remove = (entry) => {
+export const _LOWER_NAME_Remove = (entry, skipRelations=[]) => {
   return async (id, userId = null) => {
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Remove']) {
       await entry.hooks.services['before_MODEL_NAME_Remove'](entry, { id });

@@ -1,7 +1,7 @@
 
 import 'jest-extended'
 import * as fs from 'fs'
-import { SchemaModel, SchemaModelProtection, SchemaModelProtectionType } from '../../services/common/types'
+import { SchemaModel, SchemaModelProtection, SchemaModelProtectionType } from '../../common/types'
 import * as resolvers from './resolvers'
 import * as extras from '../templates/extras'
 

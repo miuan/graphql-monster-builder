@@ -3,8 +3,8 @@
 exports[` 1`] = `
 "
     // type for model: \`Todo\`
-    interface TodoModel extends Document {
-		name: String
+    export interface TodoModel extends Document {
+		name: string
 		isDone: Boolean
     }
   "
@@ -16,16 +16,16 @@ Array [
   "import { Document } from 'mongoose'
 
     // type for model: \`Todo\`
-    interface TodoModel extends Document {
-		name: String
+    export interface TodoModel extends Document {
+		name: string
 		isDone: Boolean
     }
   
     // type for model: \`User\`
-    interface UserModel extends Document {
-		email: String
+    export interface UserModel extends Document {
+		email: string
 		password: Boolean
-		todos: Todo[]
+		todos: TodoModel[]
     }
   ",
 ]

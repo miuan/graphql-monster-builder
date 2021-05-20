@@ -149,7 +149,7 @@ export const transformTypeToMongoType = (structure: StructureBackend, member : S
   
   if (member.type === 'DateTime') {
     return 'Schema.Types.Date';
-  } else if (member.type === 'Int') {
+  } else if (member.type === 'Int' || member.type === 'Float') {
     return `Schema.Types.Number`;
   } else {
     return `Schema.Types.${member.modelName}`;

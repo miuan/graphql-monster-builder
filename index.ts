@@ -40,7 +40,9 @@ const argv = yargs
     const start = Date.now();
   
     if(argv.fd) await frontendFromSchema(outDir, schema, outDir);
-    else await exportAs(outDir, schema, outDir);
+    else await exportAs(outDir, schema, outDir, {extras: {
+        config: {'from \'./sendMail\'': 'from \'../services/sendMail\''}
+    }});
     
     const ms = Date.now() - start;
 
