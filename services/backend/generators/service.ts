@@ -145,7 +145,7 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) 
     result += ``;
 
     if(relation.type === SchemaModelRelationType.MANY_TO_ONE || relation.type === SchemaModelRelationType.MANY_TO_MANY){
-      result += `if( (${dataMemberName}Ids && ${dataMemberName}Ids.length > 0) || (${dataMemberName}s && ${dataMemberName}s.length > 0) ){`
+      result += `if( (${dataMemberName}Ids && ${dataMemberName}Ids.length > 0) || (${dataMemberName} && ${dataMemberName}.length > 0) ){`
     } else {
       result += `if( ${dataMemberName}Id || ${dataMemberName} ){`
     }
@@ -161,6 +161,7 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) 
       // relation is type: ${relation.type.toString()} and related model have it as required
       const relatedModel = await entry.models['${lower}'].findOne({${relatedMemberName}: id}, {_id:true})
       if(relatedModel && relatedModel._id){
+        // we call services because is necessary also unlink relations with removing object
         await entry.services['${lower}'].remove(relatedModel._id, ['${modelName}'])
       }
   `;
