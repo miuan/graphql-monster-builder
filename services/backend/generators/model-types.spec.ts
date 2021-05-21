@@ -5,27 +5,29 @@ import { BackendDirectory } from "../backendDirectory";
 describe('typescript-type', ()=>{
     describe('transformTypeToTypescriptType', ()=>{
         it.each([
-            ['String', 'String'],
+            ['String', 'string'],
             ['DateTime', 'Date'],
-            ['Int', 'Number'],
+            ['Int', 'number'],
+            ['Float', 'number'],
             ['Boolean', 'Boolean'],
-            ['ID', 'String'],
+            ['ID', 'string'],
         ])('should transform simple type %s to %s', (i, o)=>{
             expect(transformMemberTypeToTypescriptType({type: i} as SchemaModelMember)).toEqual(o)
         })
 
         it.each([
-            ['String', 'String[]'],
+            ['String', 'string[]'],
             ['DateTime', 'Date[]'],
-            ['Int', 'Number[]'],
+            ['Int', 'number[]'],
+            ['Float', 'number[]'],
             ['Boolean', 'Boolean[]'],
         ])('should transform simple array type %s to %s', (i, o)=>{
             expect(transformMemberTypeToTypescriptType({type: i, isArray: true} as SchemaModelMember)).toEqual(o)
         })
 
         it.each([
-            ['Todo', 'Todo'],
-            ['User', 'User'],
+            ['Todo', 'TodoModel'],
+            ['User', 'UserModel'],
         ])('should transform related member %s to %s', (i, o)=>{
             expect(transformMemberTypeToTypescriptType({
                 relation:{
@@ -35,8 +37,8 @@ describe('typescript-type', ()=>{
         })
 
         it.each([
-            ['Todo', 'Todo[]'],
-            ['User', 'User[]'],
+            ['Todo', 'TodoModel[]'],
+            ['User', 'UserModel[]'],
         ])('should transform related member array type %s to %s', (i, o)=>{
             expect(transformMemberTypeToTypescriptType({
                 isArray: true,

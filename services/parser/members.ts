@@ -49,11 +49,16 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
     const regexpNumber = new RegExp('@default\\(([0-9]*)\\)');
     const matchedNumber = params.match(regexpNumber);
 
-    if(!matched && !matchedNumber) {
-      throw new Error(`Line: ${member.row}: modificator @default must have a text value in double-qutes like @default("default-value") or only number can be without quotes @default(3)`)
+    const regexpTrueFalse = new RegExp('@default\\((true)|(false)\\)');
+    const matchedTrueFalse = params.match(regexpTrueFalse);
+
+    if(!matched && !matchedNumber && !matchedTrueFalse) {
+      throw new Error(`Line: ${member.row}: modificator @default must have a text value in double-qutes like @default("default-value") or number can be without quotes @default(3) or true and false value`)
     }
  
-    member.default = (matched && matched.length > 1 && matched[1]) || (matchedNumber && matchedNumber.length > 1 && Number(matchedNumber[1]))
+    member.default = (matched && matched.length > 1 && matched[1]) 
+                      || (matchedNumber && matchedNumber.length > 1 && Number(matchedNumber[1])) 
+                      || (matchedTrueFalse && matchedTrueFalse.length > 2 && matchedTrueFalse[2])
   }
 
   else if (params.startsWith('@placeholder')) {

@@ -1,0 +1,41 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`service hooks after  create 1`] = `
+Object {
+  "data": undefined,
+}
+`;
+
+exports[`service hooks after  remove 1`] = `
+Object {
+  "data": undefined,
+  "id": Object {},
+  "userId": null,
+}
+`;
+
+exports[`service hooks after  update 1`] = `
+Object {
+  "data": undefined,
+  "id": null,
+}
+`;
+
+exports[`service hooks before  create 1`] = `
+Object {
+  "data": Object {},
+}
+`;
+
+exports[`service hooks before  remove 1`] = `
+Object {
+  "id": Object {},
+}
+`;
+
+exports[`service hooks before  update 1`] = `
+Object {
+  "data": Object {},
+  "id": null,
+}
+`;

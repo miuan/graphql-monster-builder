@@ -28,7 +28,7 @@ type File @model {
 
 const importedModelTodoItemForSchema = `
 type TodoItem @model {
-  completed: Boolean! @defaultValue(value: false)
+  completed: Boolean! @defaultValue(false)
   createdAt: DateTime!
   id: ID! @isUnique
   title: String!
@@ -49,11 +49,7 @@ type ImageTodoItem @model {
 const importedModelUserForSchema = `
 type User @model {
   createdAt: DateTime!
-  id: ID! @isUnique
-  updatedAt: DateTime!
   todoItems: [TodoItem!]! @relation(name: "TodoItemOnUser")
-  email: String @isUnique
-  password: String
   student: User @relation(name: "StudentOnUser")
 }
 `;
@@ -105,27 +101,23 @@ describe('Schema Export', () => {
 
     const models = await getModelsFromSchema(importedSchema);
 
-    expect(models.length).toEqual(6);
+    expect(models.length).toEqual(7);
   });
 
   describe('inputs',  () => {
     it('student have two imputs', async () => {
-      const models = await getModelsFromSchema(`
-      ${importedModelClassForSchema}
-      ${importedModelStudentForSchema}
-      ${importedModelUserForSchema}
-      `);
-      const result = generateSchemaInputs([models[0],models[1]]);
+      const modelInText = `
+        ${importedModelTodoItemForSchema}
+        ${importedModelImageTodoItemForSchema}
+        ${importedModelClassForSchema}
+        ${importedModelStudentForSchema}
+        ${importedModelUserForSchema}
+      `
+      const models = await getModelsFromSchema(modelInText);
+      const result = generateSchemaInputs(models);
 
       // tslint:disable-next-line:max-line-length
-      expect(result).toEqual(`input ClassstudentsStudent {
-userId: ID, fullname: String!, age: Int
-}
-input StudentclassesClass {
-name: String!
-}
-
-`);
+      expect(result).toMatchSnapshot()
     });
   });
   describe('mutations', () => {
@@ -142,7 +134,7 @@ name: String!
       const result = generateInputParamsForMutationModel(models[2]);
 
       // tslint:disable-next-line:max-line-length
-      expect(result).toEqual('todoItemsIds: [ID!], todoItems: [UsertodoItemsTodoItem!], email: String, password: String, studentId: ID');
+      expect(result).toEqual('todoItemsIds: [ID!], todoItems: [UsertodoItemsTodoItem!], studentId: ID, rolesIds: [ID!], roles: [UserrolesUserRole!]');
     });
 
     it('todo item have todoItemsId: [ID!] instad of todoItemsId: ID', async () => {
@@ -150,7 +142,7 @@ name: String!
       const result = generateInputParamsForMutationModel(models[2], { includeId: true });
 
       // tslint:disable-next-line:max-line-length
-      expect(result).toEqual('id: ID!, todoItemsIds: [ID!], todoItems: [UsertodoItemsTodoItem!], email: String, password: String, studentId: ID');
+      expect(result).toEqual('id: ID!, todoItemsIds: [ID!], todoItems: [UsertodoItemsTodoItem!], studentId: ID, rolesIds: [ID!], roles: [UserrolesUserRole!]');
     });
 
     it('todo item have todoItemsId: [ID!] instad of todoItemsId: ID', async () => {

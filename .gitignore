@@ -5,3 +5,5 @@ test*
 
 .env.local
 .env.*.local
+
+services/backend/templates/__generated_services_for_test__

@@ -30,15 +30,15 @@ describe('files', () => {
         writeToFile(sctructureItem, 'testFileForWrite', 'data')
 
         expect(existsSyncMock).toBeCalledTimes(1)
-        expect(existsSyncMock).toBeCalledWith('_t1_/testFileForWrite.ts')
+        expect(existsSyncMock).toBeCalledWith(expect.stringMatching(/_t1_(\/|\\)testFileForWrite.ts/))
         expect(writeFileSyncMock).toBeCalledTimes(1)
-        expect(writeFileSyncMock).toBeCalledWith('_t1_/testFileForWrite.ts', 'data')
+        expect(writeFileSyncMock).toBeCalledWith(expect.stringMatching(/_t1_(\/|\\)testFileForWrite.ts/), 'data')
 
         // second call of existsSyncMock return true
         // so writeFileSyncMock should not be called
         writeToFile(sctructureItem, 'testFileForWrite2', 'data2')
         expect(existsSyncMock).toBeCalledTimes(2)
-        expect(existsSyncMock).toBeCalledWith('_t1_/testFileForWrite2.ts')
+        expect(existsSyncMock).toBeCalledWith(expect.stringMatching(/_t1_(\/|\\)testFileForWrite2.ts/))
         expect(writeFileSyncMock).toBeCalledTimes(1)
     })
 })

@@ -35,25 +35,17 @@ export const _LOWER_NAME_One = (entry) => {
 
 export const _LOWER_NAME_Create = (entry) => {
   return async (data) => {
-
-    _ALL_IDS_CONVERSIONS_;
-
+    _ALL_IDS_CONVERSIONS_
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Create']) {
       data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data });
     }
-
-    _EXTRA_ACTION_BEFORE_CREATE_;
-
+    _EXTRA_ACTION_BEFORE_CREATE_
     let createdModel = await VAR_NAME.create(data);
-
-    _EXTRA_ACTION_AFTER_CREATE_;
-    
-    _CONNECT_RELATION_CREATE_;
-
+    _EXTRA_ACTION_AFTER_CREATE_
+    _CONNECT_RELATION_CREATE_
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Create']) {
-      createdModel = await entry.hooks.services['after_MODEL_NAME_Create'](entry, { createdModel });
+      createdModel = await entry.hooks.services['after_MODEL_NAME_Create'](entry, { id: createdModel._id, data: createdModel });
     }
-
     return createdModel;
   };
 };
@@ -73,16 +65,15 @@ export const _LOWER_NAME_Update = (entry) => {
       data = await entry.hooks.services['before_MODEL_NAME_Update'](entry, { data, id });
     }
 
-    _EXTRA_ACTION_BEFORE_UPDATE_;
-
+    _EXTRA_ACTION_BEFORE_UPDATE_
     let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true });
     // disconnect all relations
-    _DISCONNECT_RELATIONS_;
+    _DISCONNECT_RELATIONS_
     // connect all relations
-    _CONNECT_RELATION_UPDATE_;
+    _CONNECT_RELATION_UPDATE_
 
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Update']) {
-      updatedModel = await entry.hooks.services['after_MODEL_NAME_Update'](entry, { updatedModel, id });
+      updatedModel = await entry.hooks.services['after_MODEL_NAME_Update'](entry, { data: updatedModel, id });
     }
 
     return updatedModel;
@@ -98,7 +89,7 @@ export const _LOWER_NAME_Remove = (entry, skipRelations=[]) => {
     let removedModel = await VAR_NAME.findByIdAndRemove(id);
 
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Remove']) {
-      removedModel = await entry.hooks.services['after_MODEL_NAME_Remove'](entry, { removedModel, id, userId });
+      removedModel = await entry.hooks.services['after_MODEL_NAME_Remove'](entry, { data: removedModel, id, userId });
     }
 
     return removedModel;
