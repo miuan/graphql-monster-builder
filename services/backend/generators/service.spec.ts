@@ -1,7 +1,7 @@
 
 import 'jest-extended'
 import * as fs from 'fs'
-import { SchemaModel, SchemaModelProtection, SchemaModelProtectionType } from '../../common/types'
+import { SchemaModel, SchemaModelProtection, SchemaModelProtectionType, SchemaModelRelationType } from '../../common/types'
 import * as service from './service'
 import * as extras from '../templates/extras'
 import * as _ from 'lodash'
@@ -20,6 +20,7 @@ const createService = (model) => {
         findByIdAndUpdate: jest.fn(), //.mockImplementation(async (id, data)=>data),
         findByIdAndRemove: jest.fn() //.mockImplementation(async (data)=>data),
     } as any;
+    export const Types = {ObjectId: jest.fn().mockImplementation(()=>'random-id')}
     export default ${camelName}Model`)
 
     try{
@@ -31,7 +32,7 @@ const createService = (model) => {
             model.findByIdAndRemove.mockClear()
         }}
     } catch (ex) {
-        // console.log(ex)
+        console.error(ex)
         throw ex
     }
     
@@ -143,10 +144,161 @@ export default filterGen
 
                 expect(hookService.model[modelMethod]).toBeCalledTimes(1)
                 
+                if(method == 'after') expect(hookService.model[modelMethod]).toHaveBeenCalledBefore(entry.hooks.services[hookName])
+                else expect(hookService.model[modelMethod]).toHaveBeenCalledAfter(entry.hooks.services[hookName])
 
         })
     })
 })
-    
 
-})
+function reverseType(meType){
+    if(meType == SchemaModelRelationType.MANY_TO_MANY) return SchemaModelRelationType.MANY_TO_MANY
+    if(meType == SchemaModelRelationType.MANY_TO_ONE) return SchemaModelRelationType.ONE_TO_MANY
+    if(meType == SchemaModelRelationType.ONE_TO_MANY) return SchemaModelRelationType.MANY_TO_ONE
+    else return SchemaModelRelationType.ONE_TO_ONE
+}
+
+function createServiceWithRelation(meType, required){
+    let relationService
+    let modelName = _.camelCase(`Relation ${meType} ${required} `)
+    const memberWeWithRelationOthers = {
+        name: 'toThem',
+        relation: {
+            name: 'WeConnectToOthers',
+            isRequired: false,
+            type: meType,
+            relatedModel: {
+                modelName: 'ModelWithOthers',
+                members: [
+                    {
+                        name: 'backToMe', 
+                        isRequired: required === 'required',
+                        relation: {
+                            name: 'WeConnectToOthers',
+                            type: reverseType(meType)
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    const updateMany = jest.fn()
+    const findOne = jest.fn()
+    const remove = jest.fn()
+
+    const entry = { 
+        hooks: {services : {}},
+        services: {
+            modelWithOthers: {
+                remove
+            }
+        },
+        models: {
+            modelWithOthers: {
+                updateMany,
+                findOne
+
+            }
+        }
+    }
+    relationService = createService({modelName, members:[memberWeWithRelationOthers]})
+    // relationService.model.findByIdAndUpdate.mockResolvedValue({id: 'resolved-findByIdAndUpdate-id-1'})
+    
+    const updateGen = relationService.service[`${modelName}Update`]
+    expect(updateGen).toBeFunction()
+
+    const updateFn = updateGen(entry)
+    expect(updateFn).toBeFunction()
+
+    return {service: relationService, entry, updateFn, updateMany, findOne, remove}
+}
+
+    describe('relations', ()=>{
+        describe.each([
+            [SchemaModelRelationType.MANY_TO_MANY, ''],
+            [SchemaModelRelationType.MANY_TO_ONE, 'required'],
+            [SchemaModelRelationType.MANY_TO_ONE, ''],
+            // 
+        ])('%s %s', (meType, required)=>{
+            
+            let serviceWithRelation
+                beforeAll(()=>{
+                    serviceWithRelation = createServiceWithRelation(meType, required)
+                })
+
+                beforeEach(()=>{
+                    serviceWithRelation.updateMany.mockReset()
+                    serviceWithRelation.findOne.mockReset()
+                    serviceWithRelation.remove.mockReset()
+                    serviceWithRelation.service.mockClearToAll()
+                })
+
+
+                it('update no affect relation', async ()=>{
+                    await serviceWithRelation.updateFn({})
+                    expect(serviceWithRelation.updateMany).not.toBeCalled()
+                })
+
+                it('update ids relation', async ()=>{
+                    serviceWithRelation.service.model.findByIdAndUpdate.mockResolvedValue({id: 'resolved-findByIdAndUpdate-id-1'})
+                    await serviceWithRelation.updateFn({toThemIds:['them-id-1', 'them-id-2']}, 'me-id-1')
+                    expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledTimes(1)
+                    expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledWith("me-id-1", {"toThem": ["them-id-1", "them-id-2"]}, {"new": true})
+                    
+                    
+                    if(meType == SchemaModelRelationType.MANY_TO_MANY){
+                        expect(serviceWithRelation.updateMany).toBeCalledTimes(2)
+                        expect(serviceWithRelation.updateMany).toHaveBeenNthCalledWith(1, {}, {$pull: {backToMe: 'me-id-1'}})
+                        expect(serviceWithRelation.updateMany).toHaveBeenNthCalledWith(2, { _id: {$in: ['them-id-1', 'them-id-2']} }, {  $push: {backToMe: { $each: ['resolved-findByIdAndUpdate-id-1']}} })
+                    } else if(required) {
+                        expect(serviceWithRelation.updateMany).toBeCalledTimes(1)
+                        expect(serviceWithRelation.updateMany).toHaveBeenNthCalledWith(1, { _id: {$in: ['them-id-1', 'them-id-2']} }, {  backToMe: 'resolved-findByIdAndUpdate-id-1'})
+                    } else {
+                        expect(serviceWithRelation.updateMany).toBeCalledTimes(2)
+                        expect(serviceWithRelation.updateMany).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1'}, {backToMe: null})
+                        expect(serviceWithRelation.updateMany).toHaveBeenNthCalledWith(2, { _id: {$in: ['them-id-1', 'them-id-2']} }, {  backToMe: 'resolved-findByIdAndUpdate-id-1'})
+                    }
+                    
+                })
+
+                // it.each([
+                //     ['update1', 'create'], 
+                // ])('%s', async (forWho, modelMethod)=>{
+                //     // expect(forWho).toEqual('ahoj')
+                // })
+            })
+
+
+        describe.each([
+            // [SchemaModelRelationType.ONE_TO_MANY, ''],
+            // [SchemaModelRelationType.ONE_TO_ONE, ''],
+            // [SchemaModelRelationType.ONE_TO_ONE, 'required']
+        ])('%s %s', (meType, required)=>{
+            
+                let serviceWithRelation
+                    beforeAll(()=>{
+                        serviceWithRelation = createServiceWithRelation(meType, required)
+                    })
+
+                    it.each([
+                        ['without relation']
+                    ])('update %s', async ()=>{
+                        
+
+                        await serviceWithRelation.updateFn({toThemIds:['1','2']})
+
+
+                        expect(true).toEqual(true)
+                    })
+
+                    // it.each([
+                    //     ['update1', 'create'], 
+                    // ])('%s', async (forWho, modelMethod)=>{
+                    //     // expect(forWho).toEqual('ahoj')
+                    // })
+                })
+
+            })
+
+        })

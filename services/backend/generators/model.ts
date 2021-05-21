@@ -20,7 +20,7 @@ export const createMongoModel = (structure: StructureBackend, model : SchemaMode
   const modelName = model.modelName;
   const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
   const varName =  lower + 'Schema';
-  let result = `import { Schema, Model, model } from 'mongoose'
+  let result = `import { Schema, Model, Types, model } from 'mongoose'
   import { ${modelName}Model } from '../model-types'
   
 const ${varName}: Schema = new Schema(
@@ -75,35 +75,35 @@ const ${varName}: Schema = new Schema(
   versionKey: false,
 });
 
-${varName}.pre('find', function() {
-  (<any>this)._startTime = Date.now();
-});
+// ${varName}.pre('find', function() {
+//   (<any>this)._startTime = Date.now();
+// });
 
-${varName}.post('find', function() {
-  if ((<any>this)._startTime != null) {
-    // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
-  }
-})
+// ${varName}.post('find', function() {
+//   if ((<any>this)._startTime != null) {
+//     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
+//   }
+// })
 
-${varName}.pre('findOne', function() {
-  (<any>this)._startTime = Date.now();
-});
+// ${varName}.pre('findOne', function() {
+//   (<any>this)._startTime = Date.now();
+// });
 
-${varName}.post('findOne', function() {
-  if ((<any>this)._startTime != null) {
-    // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
-  }
-})
+// ${varName}.post('findOne', function() {
+//   if ((<any>this)._startTime != null) {
+//     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
+//   }
+// })
 
-${varName}.pre('update', function() {
-  (<any>this)._startTime = Date.now();
-});
+// ${varName}.pre('update', function() {
+//   (<any>this)._startTime = Date.now();
+// });
 
-${varName}.post('update', function() {
-  if ((<any>this)._startTime != null) {
-    // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
-  }
-})
+// ${varName}.post('update', function() {
+//   if ((<any>this)._startTime != null) {
+//     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
+//   }
+// })
 `
 
 if(modelName === 'User'){
@@ -135,6 +135,8 @@ for (const member of model.members) {
 }
 
 result +=`
+export Types
+
 export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>('${structure.id}_${modelName}', ${varName});`;
   return result;
 };

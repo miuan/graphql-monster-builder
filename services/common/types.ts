@@ -7,10 +7,10 @@ export type SchemaModel = {
 };
 
 export enum SchemaModelRelationType {
-  ONE_TO_MANY, // me as one to many
-  MANY_TO_ONE, // me as multi to one
-  ONE_TO_ONE,
-  MANY_TO_MANY,
+  ONE_TO_MANY = 'ONE_TO_MANY', // me as one to many
+  MANY_TO_ONE= 'MANY_TO_ONE', // me as multi to one
+  ONE_TO_ONE= 'ONE_TO_ONE',
+  MANY_TO_MANY= 'MANY_TO_MANY',
 }
 
 export type SchemaModelRelation = {

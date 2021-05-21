@@ -1,4 +1,4 @@
-import { VAR_NAME } from '../models/_MODEL_NAME_';
+import { VAR_NAME, Types } from '../models/_MODEL_NAME_';
 import * as extras from '../extras';
   
 export const _LOWER_NAME_All = (entry) => {
@@ -35,6 +35,7 @@ export const _LOWER_NAME_One = (entry) => {
 
 export const _LOWER_NAME_Create = (entry) => {
   return async (data) => {
+    const id = Types.ObjectId()
     _ALL_IDS_CONVERSIONS_
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Create']) {
       data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data });
@@ -59,16 +60,16 @@ export const _LOWER_NAME_Update = (entry) => {
       delete data.id;
     }
 
-    _ALL_IDS_CONVERSIONS_;
-
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Update']) {
       data = await entry.hooks.services['before_MODEL_NAME_Update'](entry, { data, id });
     }
 
-    _EXTRA_ACTION_BEFORE_UPDATE_
-    let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true });
     // disconnect all relations
     _DISCONNECT_RELATIONS_
+    _ALL_IDS_CONVERSIONS_
+    _EXTRA_ACTION_BEFORE_UPDATE_
+    let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true });
+
     // connect all relations
     _CONNECT_RELATION_UPDATE_
 

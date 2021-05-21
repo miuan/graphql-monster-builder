@@ -86,7 +86,7 @@ export const createService = (model : SchemaModel) => {
   const allIdsConversions = conversionsIdsToField(model.members);
   const connectRelationCreate = updateLinkedModels(model.members, 'createdModel.id');
   const connectRelationUpdate = updateLinkedModels(model.members, 'updatedModel.id');
-  const disconnectRelations = disconnectLinkedModels(model.members);
+  const disconnectRelations = disconnectLinkedModels(modelName, model.members);
   let actionBeforeCreate = '';
   let actionAfterCreate = '';
   let actionBeforeUpdate = '';
@@ -122,7 +122,7 @@ export const createService = (model : SchemaModel) => {
   return result;
 };
 
-export const disconnectLinkedModels = (members: SchemaModelMember[]) => {
+export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) => {
   let result = '';
   // const membersWithRelation = members.every(m => m.relation != null);
 
@@ -131,26 +131,48 @@ export const disconnectLinkedModels = (members: SchemaModelMember[]) => {
       continue;
     }
 
-    const relationModelName = member.relation.relatedModel.modelName;
-    const relatedModel = member.relation.relatedModel;
-    const relationName = member.relation.name;
+    const relation = member.relation
+    const relatedModel = relation.relatedModel;
+    const relationModelName = relatedModel.modelName;
+    const relationName = relation.name;
     const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
     const relatedMemberName = relatedMember.name;
     const varLinkedIds = `${member.name}LinkedIds`;
+    const dataMemberName = `data.${member.name}`
     const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1)
     
 
-    result += `
-    if(${varLinkedIds} && ${varLinkedIds}.length > 0) {`;
+    result += ``;
+
+    if(relation.type === SchemaModelRelationType.MANY_TO_ONE || relation.type === SchemaModelRelationType.MANY_TO_MANY){
+      result += `if( (${dataMemberName}Ids && ${dataMemberName}Ids.length > 0) || (${dataMemberName}s && ${dataMemberName}s.length > 0) ){`
+    } else {
+      result += `if( ${dataMemberName}Id || ${dataMemberName} ){`
+    }
+
+
     if (relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE || relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY) {
       result += `
-        await entry.models['${lower}'].updateMany({}, {$pull: {${relatedMemberName}: updatedModel.id}})
-      `;
-    } else {
-      result += `
-      await entry.models['${lower}'].updateMany({${relatedMemberName}: updatedModel.id}, {${relatedMemberName}: null})
+      // relation is type: ${relation.type.toString()}
+      await entry.models['${lower}'].updateMany({}, {$pull: {${relatedMemberName}: id}})
     `;
+    } else if(relatedMember.isRequired){
+      result += `
+      // relation is type: ${relation.type.toString()} and related model have it as required
+      const relatedModel = await entry.models['${lower}'].findOne({${relatedMemberName}: id}, {_id:true})
+      if(relatedModel && relatedModel._id){
+        await entry.services['${lower}'].remove(relatedModel._id, ['${modelName}'])
+      }
+  `;
     }
+    else {
+      result += `
+      // relation is type: ${relation.type.toString()}
+      await entry.models['${lower}'].updateMany({${relatedMemberName}: id}, {${relatedMemberName}: null})
+  `;
+    }
+
+
     result += '}';
   }
 
@@ -172,6 +194,7 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) 
     const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
     const relatedMemberName = relatedMember.name;
     const varLinkedIds = `${member.name}LinkedIds`;
+
     const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1);
     
     result += `
@@ -220,13 +243,7 @@ export const conversionsIdsToField = (members: SchemaModelMember[]) => {
     })
 
     if(isMeMany){
-
       result += `
-        // unregister
-        if(data.${member.name}Ids || data.${member.name}){
-          
-        }
-
         ${transformIds}
       `;
     } else {
