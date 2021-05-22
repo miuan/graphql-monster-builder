@@ -109,7 +109,8 @@ emit: String # not possible is reserved
 | __ID__      |  The ID scalar type represents a unique identifier, often used to refetch an object or as the key for a cache. The ID type is serialized in the same way as a String; however, defining it as an ID signifies that it is not intended to be human‐readable.       |
 | String      | A UTF‐8 character sequence       |
 | Boolean     | __true__ or __false__.        |
-| Int      | A signed 32‐bit integer or A signed double-precision floating-point value        |
+| Int      | A signed 32‐bit integer         |
+| Float      | A signed double-precision floating-point value        |
 | Date     | objects represent a single moment in time in a platform-independent format.        |
 
 ## Arrays
@@ -230,6 +231,33 @@ type Project @model {
 type User @model {
  todo: [Todo] @relation(name: "TodoOnUser")
  project: [Project] @relation(name: "ProjectOnUser")
+}
+```
+
+## Required relations
+
+Relatations can be required, but not array relations. Array relations will be automaticaly set as not required
+
+### Required relations example
+Here is a example Todo what have required relation to User model, in this case you can't create a Todo without a user
+```
+type Todo @model {
+ user: User! @relation(name: "TodoOnUser")
+}
+
+type User @model {
+ todo: [Todo] @relation(name: "TodoOnUser")
+}
+```
+
+In another way this relation with required list of user are not possible and will automaticaly set to `user: [User] @relation(name: "TodoOnUser")` (not required list of User)
+```
+type Todo @model {
+ user: [User]! @relation(name: "TodoOnUser")
+}
+
+type User @model {
+ todo: [Todo] @relation(name: "TodoOnUser")
 }
 ```
 

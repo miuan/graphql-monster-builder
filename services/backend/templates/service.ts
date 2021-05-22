@@ -35,8 +35,10 @@ export const _LOWER_NAME_One = (entry) => {
 
 export const _LOWER_NAME_Create = (entry) => {
   return async (data) => {
+    // before real object exist
+    // we generate TEMPORARY-ID for related objects what they have a required relation...
     const id = Types.ObjectId()
-    _ALL_IDS_CONVERSIONS_
+    _ALL_IDS_CONVERSIONS_CREATE_
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Create']) {
       data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data });
     }
@@ -66,7 +68,7 @@ export const _LOWER_NAME_Update = (entry) => {
 
     // disconnect all relations
     _DISCONNECT_RELATIONS_
-    _ALL_IDS_CONVERSIONS_
+    _ALL_IDS_CONVERSIONS_UPDATE_
     _EXTRA_ACTION_BEFORE_UPDATE_
     let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true });
 

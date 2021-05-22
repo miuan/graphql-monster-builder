@@ -83,7 +83,8 @@ export const createService = (model : SchemaModel) => {
   const lower = firstToLower(modelName);
   const varName =  lower + 'Model';
 
-  const allIdsConversions = conversionsIdsToField(model.members);
+  const allIdsConversionsCreate = conversionsIdsToField(model.members, true);
+  const allIdsConversionsUpdate = conversionsIdsToField(model.members, false);
   const connectRelationCreate = updateLinkedModels(model.members, 'createdModel.id');
   const connectRelationUpdate = updateLinkedModels(model.members, 'updatedModel.id');
   const disconnectRelations = disconnectLinkedModels(modelName, model.members);
@@ -107,7 +108,8 @@ export const createService = (model : SchemaModel) => {
     _MODEL_NAME_: modelName,
     _LOWER_NAME_: lower,
     VAR_NAME: varName,
-    _ALL_IDS_CONVERSIONS_ : allIdsConversions,
+    _ALL_IDS_CONVERSIONS_CREATE_ : allIdsConversionsCreate,
+    _ALL_IDS_CONVERSIONS_UPDATE_ : allIdsConversionsUpdate,
     _CONNECT_RELATION_CREATE_: connectRelationCreate,
     _CONNECT_RELATION_UPDATE_: connectRelationUpdate,
     _DISCONNECT_RELATIONS_: disconnectRelations,
@@ -180,7 +182,7 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) 
   return result;
 };
 
-export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) => {
+export const updateLinkedModels = (members: SchemaModelMember[], currentIdName, create=false) => {
   let result = '';
   // const membersWithRelation = members.every(m => m.relation != null);
 
@@ -217,7 +219,7 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName) 
   return result;
 };
 
-export const conversionsIdsToField = (members: SchemaModelMember[]) => {
+export const conversionsIdsToField = (members: SchemaModelMember[], create=false) => {
   let result = '';
   // const membersWithRelation = members.every(m => m.relation != null);
 
@@ -235,12 +237,29 @@ export const conversionsIdsToField = (members: SchemaModelMember[]) => {
     const relatedConnecteMember = member.relation.relatedModel.members.find((member)=>member.relation && member.relation.name === member.relation.name)
     const isHeMany = relatedConnecteMember.relation.type === SchemaModelRelationType.MANY_TO_ONE || relatedConnecteMember.relation.type === SchemaModelRelationType.MANY_TO_MANY
 
+    let swithcOfLInkedIds
+    let switchOfAddConnectedId = ''
+    if(create){
+      if(relatedConnecteMember.isRequired){
+        switchOfAddConnectedId = '// the related member is required so we need for creation a id (TEMPORARY-ID)\n\t\t'
+        swithcOfLInkedIds = '// backward relation is setup just with TEMPORARY-ID so need update later with REAL-ID\n\t\t'
+      } else {
+        switchOfAddConnectedId = '// the related member is NOT required so we will update later with REAL-ID\n\t\t// '
+        swithcOfLInkedIds = '// backward relation is not setup yet, so need update later with REAL-ID\n\t\t '
+      }
+    } else {
+      swithcOfLInkedIds = '// backward relation is already setup, so no need any update aditional\n\t\t// '
+    }
+
+
     const transformIds = templateFileToText(isMeMany ? 'service-transform-many-ids.ts' : 'service-transform-one-id.ts', {
       _LOWER_NAME_: lower,
       _LINKDED_IDS_:varLinkedIds,
       _CONNECTED_MEMBER_NAME_: relatedConnecteMember.name,
       _CONNECTED_MEMBER_ID_: isHeMany? '[id]' : 'id',
-      _MEMBER_NAME_: member.name
+      _MEMBER_NAME_: member.name,
+      _SWITCH_OF_ADD_CONNECTED_ID_: switchOfAddConnectedId,
+      _SWITCH_OF_ADD_TO_LINKED_IDS_: swithcOfLInkedIds
     })
 
     if(isMeMany){

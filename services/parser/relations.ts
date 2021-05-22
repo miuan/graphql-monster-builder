@@ -18,6 +18,7 @@ export const setupModelsRelations = (models: SchemaModel[]) => {
         const anotherThird = searchModelsRelationsInModels(relationName, models, exc);
         if (!anotherThird) {
           member.relation.error = `To many relation to '${relationName}'`;
+          throw new Error(`Line: ${member.row} To many relation to '${relationName}`)
           continue;
         }
 
@@ -42,6 +43,11 @@ export const setupModelsRelations = (models: SchemaModel[]) => {
 
         generateInputNameAndFindRelatedModel(models, { model, member });
         generateInputNameAndFindRelatedModel(models, another);
+
+        if (member.isRequired && member.isArray && member.relation) {
+          member.relation.error = `Line ${member.row}: Array field '${member.name}' with relation to ${member.relation.relatedModel.modelName} (as many) can't be required! Only required relations to ONE are supported`
+          member.isRequired = false
+        }
       }
     }
   }
