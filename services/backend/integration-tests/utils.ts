@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as service from '../generators/service';
 import * as _ from 'lodash';
 import * as path from 'path'
-import * as bcrypt from 'bcrypt-nodejs';
+import * as bcrypt from 'bcrypt';
 import { SchemaModelRelationType } from '../../common/types';
 import { exportAsFromString } from '../build';
 import { createTestClient } from 'apollo-server-testing';
@@ -176,7 +176,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
     fs.mkdirSync(envPath, { recursive: true });
     fs.writeFileSync(path.join(envPath, '.env'), `PORT=${port}
 ADMIN_EMAIL=admin1
-ADMIN_PASSWORD=${bcrypt.hashSync('admin1', bcrypt.genSaltSync(8), null)}
+ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
     `)
 
     try {
@@ -201,7 +201,7 @@ ADMIN_PASSWORD=${bcrypt.hashSync('admin1', bcrypt.genSaltSync(8), null)}
 
         await Promise.all(dropCollectionPromises)
         // upload user again
-        await module.updateAdminUser()
+        await module.updateAdminUser(true)
 
         return {...server, query, mutate}
     } catch (ex) {

@@ -148,7 +148,7 @@ export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
 
     if(!presenceOfId) model.members.push({name: 'id', type: 'ID', modelName: 'ID', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
     if(!presenceOfEmail) model.members.push({name: 'email', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
-    if(!presenceOfPassword) model.members.push({name: 'password', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: false, isReadonly: true, row: -1, relation: null})
+    if(!presenceOfPassword) model.members.push({name: 'password', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: false, isReadonly: true, row: -1, relation: null, default: '*****'})
     if(!presenceOfVerification) model.members.push({name: 'verified', type: 'Boolean', modelName: 'Boolean', isArray: false, isRequired: false, isUnique: false, isReadonly: true, row: -1, relation: null})
     if(!presenceOfRoleName) model.members.push({name: 'name', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
     if(!presenceOfUserRelationToRole) model.members.push({name: 'roles', type: '[UserRole]', modelName: 'UserRole', isArray: true, isRequired: false, isUnique: false, isReadonly: false, row: -1, relation: {

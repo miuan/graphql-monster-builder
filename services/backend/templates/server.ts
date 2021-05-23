@@ -18,6 +18,7 @@ import { createUser, createRole, generateParentLogin } from './gen/extras'
 import * as proxy from 'koa-proxy'
 
 import allPassportSetup from './services/passport'
+import { generateHash } from './gen/extras'
 
 const app: Koa = new Koa()
 
@@ -160,12 +161,15 @@ process.on('SIGINT', () => {
   })
 })
 
-export async function updateAdminUser() {
+export async function updateAdminUser(rawPassword = true) {
   const admin_email = process.env.ADMIN_EMAIL || `admin`
   const admin_pass = process.env.ADMIN_PASSWORD || `ADMIN_PASSWORD_${admin_email.length}`
+  
+  const admin_pass_raw = rawPassword ? admin_pass : await generateHash(admin_pass)
+  
   // TODO: add all roles what is in schema
   const adminRole = await createRole(entry, 'admin')
-  const adminUser = await createUser(entry, admin_email, admin_pass, [adminRole._id])
+  const adminUser = await createUser(entry, admin_email, admin_pass_raw, [adminRole._id])
 }
 
 export const connectionPromise = new Promise((resolve, reject)=>{

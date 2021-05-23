@@ -1,9 +1,6 @@
 import * as request from 'supertest'
 import { closeGeneratedServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
-
-
-
 describe('integration', ()=>{
 
     describe('login', ()=>{
@@ -36,8 +33,7 @@ describe('integration', ()=>{
         })
 
         it('login', async ()=>{
-            const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql');
-            //const loginQL = loader('./builder/services/backend/integration-tests/graphql/login/login.gql')
+            const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
             
             const res = await server.mutate({
                 mutation: loginQL,
@@ -47,7 +43,33 @@ describe('integration', ()=>{
                 }
               });
 
-            expect(res).toHaveProperty('token', '123')
+            expect(res).toHaveProperty('data.login_v1.token')
+        })
+
+        it('register', async ()=>{
+            const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register.gql')
+            
+            const res = await server.mutate({
+                mutation: registerQL,
+                variables: { 
+                    email: 'user1',
+                    pass: 'user1' 
+                }
+              });
+
+            expect(res).toHaveProperty('data.register_v1.token')
+
+            const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
+            
+            const res2 = await server.mutate({
+                mutation: loginQL,
+                variables: { 
+                    email: 'user1',
+                    pass: 'user1' 
+                }
+              });
+
+            expect(res2).toHaveProperty('data.login_v1.token')
         })
     })
 })

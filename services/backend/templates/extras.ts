@@ -1,12 +1,21 @@
-import * as bcrypt from 'bcrypt-nodejs';
+import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
 import {sendVerifyEmail, sendForgottenPasswordEmail } from './sendMail'
 
-export const generateHash = function (password) {
-  return bcrypt.hashSync(password, bcrypt.genSaltSync(8), null);
-};
+export async function generateHash(password) {
+  return bcrypt.hash(password, 10)
+}
+
+export async function compareHash(pass, hashPass) {
+  return new Promise((resolve, rejected) => {
+    bcrypt.compare(pass, hashPass, (err, result) => {
+      if(err) rejected(err)
+      resolve(result)
+    });
+  })
+}
 
 /**
  *
@@ -52,7 +61,7 @@ export const checkPasswordIsNotIncluded = (userData) => {
 export const generateLogin = (entry) => async (root, data, ctx) => {
   const user = await entry.models['user'].findOne({ email: data.email });
 
-  if (user && bcrypt.compareSync(data.password, user.__password)) {
+  if (user && compareHash(data.password, user.__password)) {
     // in login allways generate new token
     // if(!user.__token) {
       genPasswordAndTokens(user)
@@ -78,9 +87,10 @@ export const generateRegister = (entry) => async (root, {email, password}, ctx) 
   }
 
   const __verifyToken = await createVerifyToken(userModel)
+  const __password = await generateHash(password)
   const user = {
     email,
-    __password: generateHash(password),
+    __password,
     password: '******',
     verified: false,
     __verifyToken
@@ -516,7 +526,7 @@ export const createUser = async (entry, email: string, password: string, rolesId
   if(!user) {
     // call service instead of simple model
     // because we want also create relation between user <- and -> roles
-    user = await userService.create({email: email, __password: password, password:'*****', rolesIds})
+    user = await userService.create({email: email, __password: password, rolesIds})
     console.log(`User with email: ${email} and with pass: ${password} [CREATED]`, user)
   } else {
     user = await userService.update({__password: password, rolesIds}, user.id)

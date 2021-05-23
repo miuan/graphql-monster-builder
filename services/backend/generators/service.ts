@@ -95,7 +95,7 @@ export const createService = (model : SchemaModel) => {
   if (modelName === 'User') {
     actionBeforeCreate = `
     if(data.password) {
-      data.__password = extras.generateHash(data.password);
+      data.__password = await extras.generateHash(data.password);
       data.password = '******';
     }
 `;

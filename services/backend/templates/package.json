@@ -12,7 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "apollo-server-koa": "^2.19.1",
-    "bcrypt-nodejs": "^0.0.3",
+    "bcrypt": "^5.0.1",
     "dataloader": "^2.0.0",
     "dotenv": "^8.2.0",
     "dotenv-flow": "^3.2.0",
