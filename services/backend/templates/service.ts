@@ -34,7 +34,7 @@ export const _LOWER_NAME_One = (entry) => {
 };
 
 export const _LOWER_NAME_Create = (entry) => {
-  return async (data) => {
+  return async (data, userId=null) => {
     // before real object exist
     // we generate TEMPORARY-ID for related objects what they have a required relation...
     const id = Types.ObjectId()
@@ -54,7 +54,7 @@ export const _LOWER_NAME_Create = (entry) => {
 };
 
 export const _LOWER_NAME_Update = (entry) => {
-  return async (data, _LOWER_NAME_Id = null, user = null) => {
+  return async (data, _LOWER_NAME_Id=null, userId=null) => {
     let id = _LOWER_NAME_Id;
     
     if (data.id) {
@@ -83,12 +83,14 @@ export const _LOWER_NAME_Update = (entry) => {
   };
 };
 
-export const _LOWER_NAME_Remove = (entry, skipRelations=[]) => {
-  return async (id, userId = null) => {
+export const _LOWER_NAME_Remove = (entry, userId=null) => {
+  return async (id, userId, skipRelations=[]) => {
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Remove']) {
       await entry.hooks.services['before_MODEL_NAME_Remove'](entry, { id });
     }
 
+    // disconnect all relations
+    _DISCONNECT_RELATIONS_IN_REMOVE
     let removedModel = await VAR_NAME.findByIdAndRemove(id);
 
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Remove']) {

@@ -88,6 +88,7 @@ export const createService = (model : SchemaModel) => {
   const connectRelationCreate = updateLinkedModels(model.members, 'createdModel.id');
   const connectRelationUpdate = updateLinkedModels(model.members, 'updatedModel.id');
   const disconnectRelations = disconnectLinkedModels(modelName, model.members);
+  const disconnectRelationsInRemove = disconnectLinkedModels(modelName, model.members, true);
   let actionBeforeCreate = '';
   let actionAfterCreate = '';
   let actionBeforeUpdate = '';
@@ -112,7 +113,10 @@ export const createService = (model : SchemaModel) => {
     _ALL_IDS_CONVERSIONS_UPDATE_ : allIdsConversionsUpdate,
     _CONNECT_RELATION_CREATE_: connectRelationCreate,
     _CONNECT_RELATION_UPDATE_: connectRelationUpdate,
+
+    _DISCONNECT_RELATIONS_IN_REMOVE: disconnectRelationsInRemove,
     _DISCONNECT_RELATIONS_: disconnectRelations,
+    
     _EXTRA_ACTION_BEFORE_CREATE_: actionBeforeCreate,
     _EXTRA_ACTION_AFTER_CREATE_: actionAfterCreate,
     _EXTRA_ACTION_BEFORE_UPDATE_: actionBeforeUpdate,
@@ -124,7 +128,7 @@ export const createService = (model : SchemaModel) => {
   return result;
 };
 
-export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) => {
+export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], isItForRemove=false) => {
   let result = '';
   // const membersWithRelation = members.every(m => m.relation != null);
 
@@ -139,24 +143,37 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) 
     const relationName = relation.name;
     const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
     const relatedMemberName = relatedMember.name;
-    const varLinkedIds = `${member.name}LinkedIds`;
+    
     const dataMemberName = `data.${member.name}`
     const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1)
-    
+    let removeList;
 
     result += ``;
-
-    if(relation.type === SchemaModelRelationType.MANY_TO_ONE || relation.type === SchemaModelRelationType.MANY_TO_MANY){
-      result += `if( (${dataMemberName}Ids && ${dataMemberName}Ids.length > 0) || (${dataMemberName} && ${dataMemberName}.length > 0) ){`
+      
+    // remove doesn't have any incoming data, should disconnect them automaticaly
+    // but can happend some relations are already removed bacause is called from there
+    // example: M2 have required relation to M1, M1 is removing and also call remove M2 object 
+    //          M2 will clean all its own relations, but cleaning relations to M1 is not necessay 
+    //          because M1 it will removed by itself anyway
+    if(isItForRemove){
+      result += `if( !skipRelations.includes('${lower}') ){`
+      removeList = `[...skipRelations, '${modelName}']`
     } else {
-      result += `if( ${dataMemberName}Id || ${dataMemberName} ){`
+      removeList = `['${modelName}']`;
+      if(relation.type === SchemaModelRelationType.MANY_TO_ONE || relation.type === SchemaModelRelationType.MANY_TO_MANY){
+        result += `if( (${dataMemberName}Ids && ${dataMemberName}Ids.length > 0) || (${dataMemberName} && ${dataMemberName}.length > 0) ){`
+      } else {
+        result += `if( ${dataMemberName}Id || ${dataMemberName} ){`
+      }
     }
+    
 
 
     if (relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE || relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY) {
+      // more about `$all` see https://stackoverflow.com/a/18149149
       result += `
-      // relation is type: ${relation.type.toString()}
-      await entry.models['${lower}'].updateMany({}, {$pull: {${relatedMemberName}: id}})
+      // relation is type: ${relation.type.toString()} 
+      await entry.models['${lower}'].updateMany({${relatedMemberName}:{$all: [id]}}, {$pull: {${relatedMemberName}: id}})
     `;
     } else if(relatedMember.isRequired){
       result += `
@@ -164,7 +181,7 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) 
       const relatedModel = await entry.models['${lower}'].findOne({${relatedMemberName}: id}, {_id:true})
       if(relatedModel && relatedModel._id){
         // we call services because is necessary also unlink relations with removing object
-        await entry.services['${lower}'].remove(relatedModel._id, ['${modelName}'])
+        await entry.services['${lower}'].remove(relatedModel._id, userId, ${removeList})
       }
   `;
     }
@@ -174,7 +191,6 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[]) 
       await entry.models['${lower}'].updateMany({${relatedMemberName}: id}, {${relatedMemberName}: null})
   `;
     }
-
 
     result += '}';
   }
