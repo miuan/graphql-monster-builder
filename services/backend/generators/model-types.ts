@@ -22,6 +22,15 @@ export const createModelTypeFromModel = (model : SchemaModel) => {
     modelMembers += `\n\t\t${member.name}: ${transformMemberTypeToTypescriptType(member)}`
   }
 
+  if (modelName === 'User') {
+    modelMembers += `\n\t\t__token?: string,\n`
+    modelMembers += `\n\t\t__refreshToken?: string,\n`
+    modelMembers += `\n\t\t__verifyToken?: string,\n`
+    modelMembers += `\n\t\t__password: string,\n`
+    modelMembers += `\n\t\t__resetPasswordToken: string,\n`
+    modelMembers += `\n\t\t__parent_access_token: string,\n`
+  }
+
   return `
     // type for model: \`${modelName}\`
     export interface ${modelName}Model extends Document {${modelMembers}

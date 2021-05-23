@@ -22,6 +22,7 @@ export const createMongoModel = (structure: StructureBackend, model : SchemaMode
   const varName =  lower + 'Schema';
   let result = `import { Schema, Model, Types, model } from 'mongoose'
   import { ${modelName}Model } from '../model-types'
+  export { Types } from 'mongoose'
   
 const ${varName}: Schema = new Schema(
 {
@@ -135,8 +136,6 @@ for (const member of model.members) {
 }
 
 result +=`
-export Types
-
 export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>('${structure.id}_${modelName}', ${varName});`;
   return result;
 };

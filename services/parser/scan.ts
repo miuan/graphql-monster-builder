@@ -151,19 +151,19 @@ export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
     if(!presenceOfPassword) model.members.push({name: 'password', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: false, isReadonly: true, row: -1, relation: null})
     if(!presenceOfVerification) model.members.push({name: 'verified', type: 'Boolean', modelName: 'Boolean', isArray: false, isRequired: false, isUnique: false, isReadonly: true, row: -1, relation: null})
     if(!presenceOfRoleName) model.members.push({name: 'name', type: 'String', modelName: 'String', isArray: false, isRequired: true, isUnique: true, isReadonly: true, row: -1, relation: null})
-    if(!presenceOfUserRelationToRole) model.members.push({name: 'roles', type: '[UserRole]', modelName: 'UserRole', isArray: true, isRequired: true, isUnique: false, isReadonly: false, row: -1, relation: {
+    if(!presenceOfUserRelationToRole) model.members.push({name: 'roles', type: '[UserRole]', modelName: 'UserRole', isArray: true, isRequired: false, isUnique: false, isReadonly: false, row: -1, relation: {
       createFromAnotherModel:true,
       inputName:'UserrolesUserRole',
       name:'_RoleOnUser',
       relatedModel:models.find((m)=>m.modelName=='UserRole'),
-      type:3
+      type:  SchemaModelRelationType.MANY_TO_MANY
     } as any})
-    if(!presenceOfRoleRelationToUser) model.members.push({name: 'users', type: '[User]', modelName: 'User', isArray: true, isRequired: true, isUnique: false, isReadonly: false, row: -1, relation: {
+    if(!presenceOfRoleRelationToUser) model.members.push({name: 'users', type: '[User]', modelName: 'User', isArray: true, isRequired: false, isUnique: false, isReadonly: false, row: -1, relation: {
       createFromAnotherModel:false,
       inputName:'UserRoleusersUser',
       name:'_RoleOnUser',
       relatedModel:models.find((m)=>m.modelName=='User'),
-      type:3
+      type:  SchemaModelRelationType.MANY_TO_MANY
     } as any})
   }
 }
@@ -196,6 +196,10 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
 
       memberList.push(member.name)
     }
+
+    const onlyRelations = model.members.every((member) => member.relation)
+    if(onlyRelations) throw `Line ${model.start}: Model with name '${model.modelName}' has only relations and but any scalar type`
+
     modelsList.push(model.modelName)
   }
 }

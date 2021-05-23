@@ -99,8 +99,6 @@ app.use(async (ctx, next) => {
   await next()
 })
 
-
-
 allPassportSetup(app)
 
 const {entry, resolvers} = generateResolver({})
@@ -111,18 +109,6 @@ const parentAccess = new Router()
 parentAccess.post(`/parent/:parentAccessToken/user/:parentUserId`, generateParentLogin(entry))
 app.use(parentAccess.routes())
 app.use(parentAccess.allowedMethods())
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-// HEALTCHECK
-const healthCheck = new Router()
-healthCheck.get(`/health`, (ctx)=>{
-  ctx.body = {
-    health: 'ok'
-  }
-})
-app.use(healthCheck.routes())
-app.use(healthCheck.allowedMethods())
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // GRAPHQL
@@ -136,13 +122,13 @@ try {
   console.error('Graphql Error', ex)
 }
 
-const apollo = new ApolloServer({
+const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ ctx }) => (ctx)
 })
 
-apollo.applyMiddleware({ app })
+server.applyMiddleware({ app })
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Setup connection to DB
@@ -159,29 +145,17 @@ process.on('SIGINT', () => {
     process.exit(0)
   })
 })
+  
+mongoDB.connect(connOptions).then(async () => {
+  app.listen(PORT)
+  console.info(`listening on port: ${PORT} ${(<any>server).graphqlPath}`)
 
-export async function updateAdminUser() {
   const admin_email = process.env.ADMIN_EMAIL || `admin`
   const admin_pass = process.env.ADMIN_PASSWORD || `ADMIN_PASSWORD_${admin_email.length}`
   // TODO: add all roles what is in schema
   const adminRole = await createRole(entry, 'admin')
-  const adminUser = await createUser(entry, admin_email, admin_pass, [adminRole._id])
-}
-
-export const connectionPromise = new Promise((resolve, reject)=>{
-  mongoDB.connect(connOptions).then(async () => {
-    
-    await updateAdminUser()
-
-    const koa = app.listen(PORT)
-    console.info(`listening on port: ${PORT} ${(apollo).graphqlPath}`)
-    
-    resolve({koa, mongoDB, apollo, entry})
-  })
+  const adminUser = await createUser(entry, admin_email, admin_pass, [adminRole.id])
+  
 })
 
-connectionPromise
-
 export default app
-
-

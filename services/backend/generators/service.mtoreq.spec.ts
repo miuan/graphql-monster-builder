@@ -1,5 +1,5 @@
 import { SchemaModelRelationType } from "../../common/types"
-import { createServiceWithRelation } from "./testServiceHelper"
+import { createServiceWithRelation } from "../integration-tests/utils"
 describe('service', () =>{
     describe('relations', () =>{
                 

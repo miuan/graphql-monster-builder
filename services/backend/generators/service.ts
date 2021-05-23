@@ -181,7 +181,7 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], 
       const relatedModel = await entry.models['${lower}'].findOne({${relatedMemberName}: id}, {_id:true})
       if(relatedModel && relatedModel._id){
         // we call services because is necessary also unlink relations with removing object
-        await entry.services['${lower}'].remove(relatedModel._id, userId, ${removeList})
+        await entry.services['${lower}'].remove(relatedModel._id, ctxUserId, ${removeList})
       }
   `;
     }

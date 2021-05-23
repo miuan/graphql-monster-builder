@@ -126,7 +126,7 @@ export const othersSetup = (authRouter, name=null) => {
         profileFields: ["name", "email", "link", "locale", "timezone"]
     },  (accessToken, refreshToken, profile, cb) => {
         console.log('Facebook profile', {accessToken, refreshToken, profile})
-       userModel.findOne({ __password:  `facebook-id:${profile.id}`}, {_id: 1, roles:1}, {}, (err, existingUser) => {
+       userModel.findOne({ __password:  `facebook-id:${profile.id}`}, {_id: 1, roles:1}, (err, existingUser) => {
             if(existingUser) return cb(null, existingUser)
 
             userModel.create({email: `${profile.name.givenName} ${profile.name.familyName}`, roles:[], __password:`facebook-id:${profile.id}`, password:'*****'}, (errCreate, createdUser) => {
@@ -142,7 +142,7 @@ export const othersSetup = (authRouter, name=null) => {
         callbackURL: process.env.GITHUB_CLIENT_CALLBACK_URL
     },  (accessToken, refreshToken, profile, cb) => {
         console.log('GitHub profile', {accessToken, refreshToken, profile})
-        userModel.findOne({ __password:  `github-id:${profile.id}`}, {_id: 1, roles:1}, {}, (err:any, existingUser:any) => {
+        userModel.findOne({ __password:  `github-id:${profile.id}`}, {_id: 1, roles:1}, (err, existingUser) => {
             if(existingUser) return cb(null, existingUser)
 
             userModel.create({email: `${profile.emails[0]}`, roles:[], __password:`github-id:${profile.id}`, password:'*****'}, (errCreate, createdUser) => {
@@ -159,7 +159,7 @@ export const othersSetup = (authRouter, name=null) => {
     }, (request, accessToken, refreshToken, profile, done) => {
         (accessToken, refreshToken, profile, cb) => {
             console.log('GOOGLE profile', {accessToken, refreshToken, profile})
-            userModel.findOne({ __password:  `google-id:${profile.id}`}, {_id: 1, roles:1}, {}, (err:any, existingUser:any) => {
+            userModel.findOne({ __password:  `google-id:${profile.id}`}, {_id: 1, roles:1}, (err, existingUser) => {
                 if(existingUser) return cb(null, existingUser)
     
                 userModel.create({email: `${profile.emails[0]}`, roles:[], __password:`google-id:${profile.id}`, password:'*****'}, (errCreate, createdUser) => {

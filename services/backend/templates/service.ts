@@ -34,28 +34,28 @@ export const _LOWER_NAME_One = (entry) => {
 };
 
 export const _LOWER_NAME_Create = (entry) => {
-  return async (data, userId=null) => {
+  return async (data, ctxUserId=null) => {
     // before real object exist
     // we generate TEMPORARY-ID for related objects what they have a required relation...
     const id = Types.ObjectId()
     _ALL_IDS_CONVERSIONS_CREATE_
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Create']) {
-      data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data });
+      data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data, ctxUserId });
     }
     _EXTRA_ACTION_BEFORE_CREATE_
     let createdModel = await VAR_NAME.create(data);
     _EXTRA_ACTION_AFTER_CREATE_
     _CONNECT_RELATION_CREATE_
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Create']) {
-      createdModel = await entry.hooks.services['after_MODEL_NAME_Create'](entry, { id: createdModel._id, data: createdModel });
+      createdModel = await entry.hooks.services['after_MODEL_NAME_Create'](entry, { id: createdModel._id, data: createdModel, ctxUserId });
     }
     return createdModel;
   };
 };
 
 export const _LOWER_NAME_Update = (entry) => {
-  return async (data, _LOWER_NAME_Id=null, userId=null) => {
-    let id = _LOWER_NAME_Id;
+  return async (data, update_LOWER_NAME_Id=null, ctxUserId=null) => {
+    let id = update_LOWER_NAME_Id;
     
     if (data.id) {
       id = data.id;
@@ -63,7 +63,7 @@ export const _LOWER_NAME_Update = (entry) => {
     }
 
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Update']) {
-      data = await entry.hooks.services['before_MODEL_NAME_Update'](entry, { data, id });
+      data = await entry.hooks.services['before_MODEL_NAME_Update'](entry, { data, id, ctxUserId });
     }
 
     // disconnect all relations
@@ -76,17 +76,17 @@ export const _LOWER_NAME_Update = (entry) => {
     _CONNECT_RELATION_UPDATE_
 
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Update']) {
-      updatedModel = await entry.hooks.services['after_MODEL_NAME_Update'](entry, { data: updatedModel, id });
+      updatedModel = await entry.hooks.services['after_MODEL_NAME_Update'](entry, { data: updatedModel, id, ctxUserId });
     }
 
     return updatedModel;
   };
 };
 
-export const _LOWER_NAME_Remove = (entry, userId=null) => {
+export const _LOWER_NAME_Remove = (entry, ctxUserId=null) => {
   return async (id, userId, skipRelations=[]) => {
     if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Remove']) {
-      await entry.hooks.services['before_MODEL_NAME_Remove'](entry, { id });
+      await entry.hooks.services['before_MODEL_NAME_Remove'](entry, { id, ctxUserId });
     }
 
     // disconnect all relations
@@ -94,7 +94,7 @@ export const _LOWER_NAME_Remove = (entry, userId=null) => {
     let removedModel = await VAR_NAME.findByIdAndRemove(id);
 
     if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Remove']) {
-      removedModel = await entry.hooks.services['after_MODEL_NAME_Remove'](entry, { data: removedModel, id, userId });
+      removedModel = await entry.hooks.services['after_MODEL_NAME_Remove'](entry, { data: removedModel, id, ctxUserId });
     }
 
     return removedModel;

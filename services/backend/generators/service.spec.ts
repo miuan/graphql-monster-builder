@@ -4,11 +4,8 @@ import * as fs from 'fs'
 import { SchemaModel, SchemaModelProtection, SchemaModelProtectionType, SchemaModelRelationType } from '../../common/types'
 import * as extras from '../templates/extras'
 import * as _ from 'lodash'
-import { createService, createServiceWithRelation, prepareDirectories } from './testServiceHelper'
+import { createService, createServiceWithRelation, prepareDirectories, testDirFullPath } from '../integration-tests/utils'
 
-export const TEST_DIR = 'templates/__generated_services_for_test__'
-const SERVICE_BACKEND = './services/backend/'
-export const testDirFullPath = `${SERVICE_BACKEND}${TEST_DIR}`
 
 
 describe('service', () => {
