@@ -11,6 +11,7 @@ import { generateSchema } from './generators/schema';
 import { generateModelTypes } from './generators/model-types';
 import { BackendDirectory } from './backendDirectory';
 import * as _ from 'lodash'
+import { generateIntegrationTests } from './generators/integration';
 
 export const exportAs = async (name, from, base='.', config={}) => {
   
@@ -33,6 +34,7 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', confi
   generateResolvers(backendDirectory, models);
   generateDataloaders(backendDirectory, models);
   generateModelTypes(backendDirectory, models);
+  generateIntegrationTests(backendDirectory, models);
 
   generateEntry(backendDirectory, models);
 

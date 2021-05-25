@@ -27,6 +27,11 @@ export const BACKEND_STRUCTURE = {
         dir:'ID/services/', 
         modules: [],
     },
+
+    integration_tests: { 
+        dir:'ID/gen/integration-tests/', 
+        modules: [],
+    },
 };
   
 export interface BackendStructureOperatorWrite {

@@ -26,6 +26,18 @@ Array [
 		email: string
 		password: Boolean
 		todos: TodoModel[]
+		__token?: string,
+
+		__refreshToken?: string,
+
+		__verifyToken?: string,
+
+		__password: string,
+
+		__resetPasswordToken: string,
+
+		__parent_access_token: string,
+
     }
   ",
 ]
