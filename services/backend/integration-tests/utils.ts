@@ -9,6 +9,8 @@ import { createTestClient } from 'apollo-server-testing';
 import gql from 'graphql-tag'
 import * as mongoose from 'mongoose'
 
+import * as request from 'supertest'
+
 export const TEST_DIR = 'templates/__generated_services_for_test__'
 const SERVICE_BACKEND = './services/backend/'
 export const testDirFullPath = `${SERVICE_BACKEND}${TEST_DIR}`
@@ -183,7 +185,29 @@ ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
         const module = require(path.join(integrationTestServerPath, 'server'))
         server = await module.connectionPromise
         
-        const { query, mutate } = createTestClient(server.apollo)
+
+        // NOTE: 
+        //    createTestClient - skip the requeste layer and skip the header part
+        //    https://github.com/apollographql/apollo-server/issues/2277
+        // const { query, mutate } = createTestClient(server.apollo)
+
+        const query = async (body: {query:string, variables: any}, token?: string) => {
+            const req = request(server.koa)
+                .post('/graphql')
+                .set('Content-Type', 'application/json')
+                .set('Accept', 'application/json')
+
+            if(token){
+                req.set('Authorization', `Bearer ${token}`)
+            }
+
+            return (await req.send(body)).body
+        }
+        
+        const mutate = async ({mutation, variables}: {mutation:string, variables: any}, token?: string) => {
+            return query({query: mutation, variables}, token)
+        }
+
         // console.log(server)
         let dropCollectionPromises = []
         await new Promise((resolve1)=>{
@@ -234,6 +258,6 @@ export function loadGraphQL(fileName) {
     }
 
 
-    const ql = gql(file);
+    const ql = file; //gql(file);
     return ql;
 }

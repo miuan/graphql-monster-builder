@@ -32,6 +32,21 @@ describe('integration', ()=>{
             expect(response.body).toEqual({health: 'ok'});
         })
 
+        it('login fail', async ()=>{
+            const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
+            
+            const res = await server.mutate({
+                mutation: loginQL,
+                variables: { 
+                    email: 'admin1',
+                    pass: '123' 
+                }
+              });
+
+            expect(res).not.toHaveProperty('data.login_v1.token')
+            expect(res).toHaveProperty('errors')
+        })
+
         it('login', async ()=>{
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
             
@@ -44,6 +59,7 @@ describe('integration', ()=>{
               });
 
             expect(res).toHaveProperty('data.login_v1.token')
+            expect(res).not.toHaveProperty('errors')
         })
 
         it('register', async ()=>{
@@ -58,6 +74,7 @@ describe('integration', ()=>{
               });
 
             expect(res).toHaveProperty('data.register_v1.token')
+            expect(res).not.toHaveProperty('errors')
 
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
             
@@ -70,6 +87,7 @@ describe('integration', ()=>{
               });
 
             expect(res2).toHaveProperty('data.login_v1.token')
+            expect(res2).not.toHaveProperty('errors')
         })
     })
 })

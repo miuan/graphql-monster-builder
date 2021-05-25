@@ -9,12 +9,7 @@ export async function generateHash(password) {
 }
 
 export async function compareHash(pass, hashPass) {
-  return new Promise((resolve, rejected) => {
-    bcrypt.compare(pass, hashPass, (err, result) => {
-      if(err) rejected(err)
-      resolve(result)
-    });
-  })
+  return bcrypt.compare(pass, hashPass)
 }
 
 /**
@@ -59,9 +54,10 @@ export const checkPasswordIsNotIncluded = (userData) => {
 };
 
 export const generateLogin = (entry) => async (root, data, ctx) => {
+  console.log(ctx)
   const user = await entry.models['user'].findOne({ email: data.email });
 
-  if (user && compareHash(data.password, user.__password)) {
+  if (user && await compareHash(data.password, user.__password)) {
     // in login allways generate new token
     // if(!user.__token) {
       genPasswordAndTokens(user)

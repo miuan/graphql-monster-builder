@@ -65,10 +65,13 @@ export const generateDataloadersWorker = (models: SchemaModel[]):string => {
     const dataloaderName = name + 'Dataloader';
   
     let dataloader;
-    if (ctx.req[dataloaderName]){
+    if (ctx.req && ctx.req[dataloaderName]){
       dataloader = ctx.req[dataloaderName];
     } else {
       dataloader = createDataloder(service);
+      
+      // in test with apollo-test-server is mising req
+      if(!ctx.req) ctx.req = {}
       ctx.req[dataloaderName] = dataloader;
     }
   
