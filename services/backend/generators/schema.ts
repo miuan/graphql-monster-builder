@@ -210,24 +210,14 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
         const relatedModel = member.relation.inputName;
         const createFromAnotherModel = member.relation.createFromAnotherModel;
 
-        const relationIsArray = (
-          relationType === SchemaModelRelationType.ONE_TO_MANY ||
-          relationType === SchemaModelRelationType.ONE_TO_ONE
-        );
-        
+        let relationText = ''
 
-        const relationTemplate =  relationIsArray ? ', _NAME_Id: ID' : ', _NAME_Ids: [ID!]';
-        
-        let relationText = relationTemplate.replace('_NAME_', mame);
-
-        if (createFromAnotherModel) {
-          const relationTemplate2 = relationIsArray ? ', _NAME_: _TYPE_' : ', _NAME_s: [_TYPE_!]';
-          relationText += relationTemplate2.replace('_NAME_', mame).replace('_TYPE_',relatedModel);
-        }
-        
-        // imagess -> images
-        if (mame.endsWith('s')) {
-          relationText = relationText.replace(mame + 's', mame);
+        if(member.isArray){
+          relationText += `, ${member.relation.payloadNameForId}: [ID!]`
+          if (createFromAnotherModel) relationText += `, ${member.relation.payloadNameForCreate}: [${relatedModel}!]`
+        } else {
+          relationText += `, ${member.relation.payloadNameForId}: ID`
+          if (createFromAnotherModel) relationText += `, ${member.relation.payloadNameForCreate}: ${relatedModel}`
         }
 
         result += relationText;

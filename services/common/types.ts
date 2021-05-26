@@ -18,7 +18,10 @@ export type SchemaModelRelation = {
   type: SchemaModelRelationType,
   inputName: string,
   relatedModel: SchemaModel,
+  relatedMember: SchemaModelMember,
   createFromAnotherModel: boolean,
+  payloadNameForCreate: string,
+  payloadNameForId: string,
   payloadNameForAddOrDelete: string,
   error: string,
 };

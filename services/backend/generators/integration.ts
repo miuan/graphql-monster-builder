@@ -12,6 +12,11 @@ function randomDate(start = new Date(2020, 0, 1), end = new Date(), startHour = 
     return date;
   }
 
+function wrapStringValue(member: SchemaModelMember, value: any){
+    if(member.modelName == 'String' || member.modelName == 'DateTime') return `'${value}'`
+    return value
+}
+
 function createTestAll(type: string, model: SchemaModel, role) {
     const queryName = `all${model.modelName}`
     let res = ''
@@ -44,17 +49,47 @@ function generateFields(model: SchemaModel, members: SchemaModelMember[], queryN
 
 
     for(const member of members){
-        const test = member.relation? `${member.name}.id` : member.name
-        
-        if(variables[member.name]){
+
+        if(member.relation){
+            const variableName = member.relation.payloadNameForCreate
+            const relatedVariables = variables[variableName]
+
+            if(member.isArray){
+                if(relatedVariables){
+                    let count = 0
+                    for(const relatedVariable of relatedVariables){
+
+                        for(const relatedMember of member.relation.relatedModel.members){
+                            const rmName = relatedMember.name
+                            const rmValue = relatedVariable[rmName]
+                            if(rmValue){
+                                res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.${count}.${rmName}', ${wrapStringValue(relatedMember, rmValue)})`
+                            }
+                        }
+                            
+                        count++;
+                    }
+
+                }
+
+                const relatedMemberName = member.relation.relatedMember?.name
+                if(relatedMemberName){
+                    for(let i = 0; i < 3; i++) res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.${i}.${relatedMemberName}.id', response.data.${queryName}.id)`
+                }
+                
+                for(let i = 0; i < 3; i++) res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.${i}.id')`
+            } else {
+                if(relatedVariables){
+            
+                }
+                res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.id')`
+            }
+            
+
+        } else if(variables[member.name]){
             let variable = variables[member.name]
 
-            if(member.modelName == 'String' || member.modelName == 'DateTime'){
-                variable = Array.isArray(variable) ? '[' + variable.reduce<string>((p,c)=>`${p},'${c}'`, '').substr(1) + ']' : `'${variable}'`
-            } else {
-                variable = Array.isArray(variable) ? '[' + variable.reduce((p,c)=>`${p},${c}`, '').substr(1) + ']' : `${variable}`
-            }
-
+            variable = Array.isArray(variable) ? '[' + variable.reduce((p,c)=>`${p},${wrapStringValue(member,c)}`, '').substr(1) + ']' : wrapStringValue(member, variable)
             res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}', ${variable})`
         } else {
             res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}')`
@@ -64,12 +99,20 @@ function generateFields(model: SchemaModel, members: SchemaModelMember[], queryN
     return res
 }
 
-function generateVariables(model: SchemaModel, members: SchemaModelMember[]) {
+function generateVariables(model: SchemaModel, members: SchemaModelMember[], {skipRelation}={skipRelation:''}) {
     let variables = {} as any
     
     for(const member of members){
         if(member.isArray){
-            if(member.modelName == 'String'){
+            if(member.relation && member.relation.name !== skipRelation){
+                const relatedModel = member.relation.relatedModel
+                const relatedVariables = [
+                    generateVariables(relatedModel, relatedModel.members, {skipRelation:member.relation.name}),
+                    generateVariables(relatedModel, relatedModel.members, {skipRelation:member.relation.name}),
+                    generateVariables(relatedModel, relatedModel.members, {skipRelation:member.relation.name})
+                ]
+                variables[member.relation.payloadNameForCreate] = relatedVariables
+            } else if(member.modelName == 'String'){
                 variables[member.name] = [
                     `${model.modelName}/${member.name}/${Math.random().toString(36).substring(5)}`,
                     `${model.modelName}/${member.name}/${Math.random().toString(36).substring(5)}`,
@@ -95,7 +138,11 @@ function generateVariables(model: SchemaModel, members: SchemaModelMember[]) {
                 ]
             }
         } else {
-            if(member.modelName == 'String'){
+            if(member.relation && member.relation.name !== skipRelation){
+                const relatedModel = member.relation.relatedModel
+                const relatedVariables = generateVariables(relatedModel, relatedModel.members, {skipRelation:member.relation.name})
+                variables[member.relation.payloadNameForCreate] = relatedVariables
+            } else if(member.modelName == 'String'){
                 variables[member.name] = `${model.modelName}/${member.name}/${Math.random().toString(36).substring(5)}`
             } else if(member.modelName == 'Int'){
                 variables[member.name] = Math.round(Math.random()*1000000)
@@ -117,14 +164,20 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], requ
     const mutationDesc = `Create${model.modelName}`
     let res = ''
 
-    let output = members.map((m)=>m.relation? `${m.name}{id}` : m.name)
+    let output = members.map((m)=>{
+        if(m.relation){
+            const relations = m.relation.relatedModel.members.map((rm)=>rm.relation? `${rm.name}{id}` : rm.name).join(',')
+            return `${m.name}{${relations}}`
+        } 
+        return m.name
+    })
     let inputs = members.filter((m)=>m.name !== 'id').map((m)=> {
         
         let mapped = ''
 
         if(m.relation){
-            const name = m.isArray ? `$${m.name}s` : `$${m.name}`
-            mapped = m.isArray ? `${name}: [${m.relation.inputName}!]`: `${name}: ${m.relation.inputName}`
+            const name = m.relation.payloadNameForCreate
+            mapped = m.isArray ? `$${name}: [${m.relation.inputName}!]`: `$${name}: ${m.relation.inputName}`
         } else {
             mapped =  `$${m.name}: ${m.type}`
         }
@@ -132,7 +185,7 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], requ
 
         return m.isRequired ? `${mapped}!` : mapped
     }).join(',')
-    let inputs2 = members.filter((m)=>m.name !== 'id').map((m)=>m.isArray && m.relation? `${m.name}s: $${m.name}s` : `${m.name}: $${m.name}`).join(',')
+    let inputs2 = members.filter((m)=>m.name !== 'id').map((m)=> m.relation? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}` : `${m.name}: $${m.name}`).join(',')
     
     const variables = generateVariables(model, members)
 

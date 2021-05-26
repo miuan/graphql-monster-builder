@@ -156,14 +156,18 @@ export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
       inputName:'UserrolesUserRole',
       name:'_RoleOnUser',
       relatedModel:models.find((m)=>m.modelName=='UserRole'),
-      type:  SchemaModelRelationType.MANY_TO_MANY
+      type:  SchemaModelRelationType.MANY_TO_MANY,
+      payloadNameForCreate: 'roles',
+      payloadNameForId: 'rolesIds'
     } as any})
     if(!presenceOfRoleRelationToUser) model.members.push({name: 'users', type: '[User]', modelName: 'User', isArray: true, isRequired: false, isUnique: false, isReadonly: false, row: -1, relation: {
       createFromAnotherModel:false,
       inputName:'UserRoleusersUser',
       name:'_RoleOnUser',
       relatedModel:models.find((m)=>m.modelName=='User'),
-      type:  SchemaModelRelationType.MANY_TO_MANY
+      type:  SchemaModelRelationType.MANY_TO_MANY,
+      payloadNameForCreate: 'users',
+      payloadNameForId: 'usersIds'
     } as any})
   }
 }

@@ -1,4 +1,5 @@
 import { SchemaModelRelationType, SchemaModel } from '../common/types';
+import * as _ from 'lodash'
 
 export const setupModelsRelations = (models: SchemaModel[]) => {
 
@@ -6,15 +7,15 @@ export const setupModelsRelations = (models: SchemaModel[]) => {
     for (const member of model.members) {
       if (member.relation && !member.relation.type) {
         const relationName = member.relation.name;
-        const another = searchModelsRelationsInModels(relationName, models, [model.modelName]);
-        if (!another) {
+        const relatedModel = searchModelsRelationsInModels(relationName, models, [model.modelName]);
+        if (!relatedModel) {
           member.relation.error = `Unknow relation to '${relationName}'`;
           throw new Error(`Line: ${member.row} Relation '${relationName}' doesn't have mate`)
         }
 
-        const anotherMember = another.member; 
+        const relatedMember = relatedModel.member; 
         // console.log(relationName, models);
-        const exc = [model.modelName, anotherMember.name];
+        const exc = [model.modelName, relatedMember.name];
         const anotherThird = searchModelsRelationsInModels(relationName, models, exc);
         if (!anotherThird) {
           member.relation.error = `To many relation to '${relationName}'`;
@@ -22,27 +23,27 @@ export const setupModelsRelations = (models: SchemaModel[]) => {
           continue;
         }
 
-        const ATM = anotherMember.type.indexOf('[') === 0;
-        const CTM = member.type.indexOf('[') === 0;
+        const relatedIsArray = relatedMember.isArray;
+        const meIsArray = member.isArray;
 
-        if (ATM && CTM) {
+        if (relatedIsArray && meIsArray) {
           member.relation.type = SchemaModelRelationType.MANY_TO_MANY;
-          anotherMember.relation.type = SchemaModelRelationType.MANY_TO_MANY;
-        } else if (!ATM && !CTM) {
+          relatedMember.relation.type = SchemaModelRelationType.MANY_TO_MANY;
+        } else if (!relatedIsArray && !meIsArray) {
           member.relation.type = SchemaModelRelationType.ONE_TO_ONE;
-          anotherMember.relation.type = SchemaModelRelationType.ONE_TO_ONE;
-        } else if (ATM && !CTM) {
+          relatedMember.relation.type = SchemaModelRelationType.ONE_TO_ONE;
+        } else if (relatedIsArray && !meIsArray) {
           // me is one and another is multi
           member.relation.type = SchemaModelRelationType.ONE_TO_MANY;
-          anotherMember.relation.type = SchemaModelRelationType.MANY_TO_ONE;
-        } else if (!ATM && CTM) {
+          relatedMember.relation.type = SchemaModelRelationType.MANY_TO_ONE;
+        } else if (!relatedIsArray && meIsArray) {
           // me is multi and another is one
           member.relation.type = SchemaModelRelationType.MANY_TO_ONE;
-          anotherMember.relation.type = SchemaModelRelationType.ONE_TO_MANY;
+          relatedMember.relation.type = SchemaModelRelationType.ONE_TO_MANY;
         }
 
         generateInputNameAndFindRelatedModel(models, { model, member });
-        generateInputNameAndFindRelatedModel(models, another);
+        generateInputNameAndFindRelatedModel(models, relatedModel);
 
         if (member.isRequired && member.isArray && member.relation) {
           member.relation.error = `Line ${member.row}: Array field '${member.name}' with relation to ${member.relation.relatedModel.modelName} (as many) can't be required! Only required relations to ONE are supported`
@@ -61,11 +62,9 @@ export const generateInputNameAndFindRelatedModel = (models, { model, member }) 
 
   const modelName = extendModelNameFromType(member.type);
   
-  member.relation.inputName = model.modelName + member.name + modelName;
+  member.relation.inputName = `In${model.modelName}Member${_.upperFirst(member.name)}As${modelName}`;
   // find model what is related to member.type
   member.relation.relatedModel = models.find(m => (m.modelName === modelName));
-
-  
 
   if (!member.relation.relatedModel) {
     throw `Line ${member.row}: Model name '${modelName}'\
@@ -81,6 +80,14 @@ in member ${member.name} doesn't exist`;
 
   const noCreateFromAnother = NO_CREATE_FROM_ANOTHER_MODEL.some(m => m === modelName);
   member.relation.createFromAnotherModel = !noCreateFromAnother;
+
+  member.relation.relatedMember = relatedMember
+  // NOTE:  note use just member name
+  //        change todo -> todos for create list can be problem if user will have two array fileds 'todo' and 'todos'
+  //        todo will transform to todos and will be there two same input parameters... 
+  //        member.relation.payloadNameForCreate = member.isArray && !member.name.endsWith('s')? `${member.name}s` : member.name
+  member.relation.payloadNameForCreate = member.name
+  member.relation.payloadNameForId = member.isArray ? `${member.name}Ids` : `${member.name}Id`
 };
 
 export const searchModelsRelationsInModels = (relationName: string, models: SchemaModel[], exc: string[]) => {

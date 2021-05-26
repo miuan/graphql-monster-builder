@@ -160,10 +160,10 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], 
       removeList = `[...skipRelations, '${modelName}']`
     } else {
       removeList = `['${modelName}']`;
-      if(relation.type === SchemaModelRelationType.MANY_TO_ONE || relation.type === SchemaModelRelationType.MANY_TO_MANY){
-        result += `if( (${dataMemberName}Ids && ${dataMemberName}Ids.length > 0) || (${dataMemberName} && ${dataMemberName}.length > 0) ){`
+      if(member.isArray){
+        result += `if( (data.${relation.payloadNameForId} && data.${relation.payloadNameForId}.length > 0) || (data.${relation.payloadNameForCreate} && data.${relation.payloadNameForCreate}.length > 0) ){`
       } else {
-        result += `if( ${dataMemberName}Id || ${dataMemberName} ){`
+        result += `if( data.${relation.payloadNameForId} || data.${relation.payloadNameForCreate} ){`
       }
     }
     
@@ -271,11 +271,13 @@ export const conversionsIdsToField = (members: SchemaModelMember[], create=false
     const transformIds = templateFileToText(isMeMany ? 'service-transform-many-ids.ts' : 'service-transform-one-id.ts', {
       _LOWER_NAME_: lower,
       _LINKDED_IDS_:varLinkedIds,
-      _CONNECTED_MEMBER_NAME_: relatedConnecteMember.name,
+      _CONNECTED_MEMBER_NAME_: relatedConnecteMember.relation.payloadNameForId,
       _CONNECTED_MEMBER_ID_: isHeMany? '[id]' : 'id',
       _MEMBER_NAME_: member.name,
       _SWITCH_OF_ADD_CONNECTED_ID_: switchOfAddConnectedId,
-      _SWITCH_OF_ADD_TO_LINKED_IDS_: swithcOfLInkedIds
+      _SWITCH_OF_ADD_TO_LINKED_IDS_: swithcOfLInkedIds,
+      _PAYLOAD_NAME_FOR_ID_: member.relation.payloadNameForId,
+      _PAYLOAD_NAME_FOR_CREATE_: member.relation.payloadNameForCreate
     })
 
     if(isMeMany){
