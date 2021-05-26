@@ -76,6 +76,28 @@ describe('integration', ()=>{
             expect(res).toHaveProperty('data.login_v1.user.roles', [{name: 'admin'}])
             expect(res).not.toHaveProperty('errors')
 
+            const modelModel2 = server.entry.models['model2']
+
+        const modelModel2Data = await Promise.all([
+            modelModel2.create({
+				"name": "Model2/name/v4319nzi",
+				"opt": "Model2/opt/pfj2q4lm",
+				"optFloat": 886542.9743051663,
+				"model1": "607bc7944481571f509470a2"
+}),
+            modelModel2.create({
+				"name": "Model2/name/pkb8wgo8",
+				"opt": "Model2/opt/8w76kodx",
+				"optFloat": 756007.503293699,
+				"model1": "607bc7944481571f509470a2"
+}),
+            modelModel2.create({
+				"name": "Model2/name/v3nf42nn",
+				"opt": "Model2/opt/zqq4ftw3",
+				"optFloat": 517728.7261187864,
+				"model1": "607bc7944481571f509470a2"
+})
+        ])
             
             const mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!]){
                 createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2) {
