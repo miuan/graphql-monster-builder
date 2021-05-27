@@ -99,80 +99,81 @@ describe('integration', ()=>{
 })
         ])
             
-            const mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!]){
-                createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2) {
-                   name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
-                }
-            }`
-            
-            const response = await server.mutate({
-                mutation,
-                variables: {
-            "name": "Model1/name/jrqkvwo",
-            "opt": "Model1/opt/ym2aq8mt",
-            "optInt": 452820,
-            "optFloat": 714162.0109180656,
-            "arrName": [
-                "Model1/arrName/v1tpmv7",
-                "Model1/arrName/7z0pmdic",
-                "Model1/arrName/5o0opaht"
-            ],
-            "arrInt": [
-                5283575,
-                5906008,
-                976230
-            ],
-            "arrFloat": [
-                71985.43736315433,
-                894989.3636426063,
-                294900.862524188
-            ],
-            "optDateTime": "2021-05-22T22:12:41.424Z",
-            "model2": [
-                {
-                    "name": "Model2/name/clmma92a",
-                    "opt": "Model2/opt/ifdmbolp",
-                    "optFloat": 653371.2484914886
-                },
-                {
-                    "name": "Model2/name/sqbf2k6",
-                    "opt": "Model2/opt/99ffi5bu",
-                    "optFloat": 584053.5212678084
-                },
-                {
-                    "name": "Model2/name/ky5oi5j",
-                    "opt": "Model2/opt/b6h8jiz",
-                    "optFloat": 103704.77106998143
-                }
-            ]
-        }
-              }, res.data.login_v1.token);
+        const mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+            createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+               name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+            }
+        }`
         
-            expect(response).not.toHaveProperty('errors')
-        expect(response).toHaveProperty('data.createModel1.name', 'Model1/name/jrqkvwo')
-        expect(response).toHaveProperty('data.createModel1.opt', 'Model1/opt/ym2aq8mt')
-        expect(response).toHaveProperty('data.createModel1.optInt', 452820)
-        expect(response).toHaveProperty('data.createModel1.optFloat', 714162.0109180656)
-        expect(response).toHaveProperty('data.createModel1.arrName', ['Model1/arrName/v1tpmv7','Model1/arrName/7z0pmdic','Model1/arrName/5o0opaht'])
-        expect(response).toHaveProperty('data.createModel1.arrInt', [5283575,5906008,976230])
-        expect(response).toHaveProperty('data.createModel1.arrFloat', [71985.43736315433,894989.3636426063,294900.862524188])
-        expect(response).toHaveProperty('data.createModel1.optDateTime', '2021-05-22T22:12:41.424Z')
-        expect(response).toHaveProperty('data.createModel1.model2.0.name', 'Model2/name/clmma92a')
-        expect(response).toHaveProperty('data.createModel1.model2.0.opt', 'Model2/opt/ifdmbolp')
-        expect(response).toHaveProperty('data.createModel1.model2.0.optFloat', 653371.2484914886)
-        expect(response).toHaveProperty('data.createModel1.model2.1.name', 'Model2/name/sqbf2k6')
-        expect(response).toHaveProperty('data.createModel1.model2.1.opt', 'Model2/opt/99ffi5bu')
-        expect(response).toHaveProperty('data.createModel1.model2.1.optFloat', 584053.5212678084)
-        expect(response).toHaveProperty('data.createModel1.model2.2.name', 'Model2/name/ky5oi5j')
-        expect(response).toHaveProperty('data.createModel1.model2.2.opt', 'Model2/opt/b6h8jiz')
-        expect(response).toHaveProperty('data.createModel1.model2.2.optFloat', 103704.77106998143)
-        expect(response).toHaveProperty('data.createModel1.model2.0.model1.id', response.data.createModel1.id)
-        expect(response).toHaveProperty('data.createModel1.model2.1.model1.id', response.data.createModel1.id)
-        expect(response).toHaveProperty('data.createModel1.model2.2.model1.id', response.data.createModel1.id)
-        expect(response).toHaveProperty('data.createModel1.model2.0.id')
-        expect(response).toHaveProperty('data.createModel1.model2.1.id')
-        expect(response).toHaveProperty('data.createModel1.model2.2.id')
-        expect(response).toHaveProperty('data.createModel1.id')
+        const response = await server.mutate({
+            mutation,
+            variables: {
+        "name": "Model1/name/37ob06bs",
+        "opt": "Model1/opt/54kt8x3",
+        "optInt": 52426,
+        "optFloat": 803894.1767597477,
+        "arrName": [
+            "Model1/arrName/v7u6c5x",
+            "Model1/arrName/cvxclq59",
+            "Model1/arrName/wi3dxb0p"
+        ],
+        "arrInt": [
+            178323,
+            961012,
+            759014
+        ],
+        "arrFloat": [
+            494951.04467335274,
+            922622.0030313241,
+            308529.36044976034
+        ],
+        "optDateTime": "2020-05-27T22:00:23.990Z",
+        "model2": [
+            {
+                "name": "Model2/name/qt9ynicd",
+                "opt": "Model2/opt/7h4q1bj",
+                "optFloat": 715329.6769870432
+            },
+            {
+                "name": "Model2/name/dee7i3f",
+                "opt": "Model2/opt/rrd82w99",
+                "optFloat": 799453.7108380719
+            },
+            {
+                "name": "Model2/name/d25uxpo",
+                "opt": "Model2/opt/1nxcbn",
+                "optFloat": 59741.66343142051
+            }
+        ],
+        "model2Ids": [
+            modelModel2Data[0].id,
+            modelModel2Data[1].id,
+            modelModel2Data[2].id
+        ]
+    }
+          }, res.data.login_v1.token);
+    
+        expect(response).not.toHaveProperty('errors')
+    expect(response).toHaveProperty('data.createModel1.name', 'Model1/name/37ob06bs')
+    expect(response).toHaveProperty('data.createModel1.opt', 'Model1/opt/54kt8x3')
+    expect(response).toHaveProperty('data.createModel1.optInt', 52426)
+    expect(response).toHaveProperty('data.createModel1.optFloat', 803894.1767597477)
+    expect(response).toHaveProperty('data.createModel1.arrName', ['Model1/arrName/v7u6c5x','Model1/arrName/cvxclq59','Model1/arrName/wi3dxb0p'])
+    expect(response).toHaveProperty('data.createModel1.arrInt', [178323,961012,759014])
+    expect(response).toHaveProperty('data.createModel1.arrFloat', [494951.04467335274,922622.0030313241,308529.36044976034])
+    expect(response).toHaveProperty('data.createModel1.optDateTime', '2020-05-27T22:00:23.990Z')
+    expect(response.data.createModel1.model2).toEqual(expect.arrayContaining([
+        expect.objectContaining({name: 'Model2/name/qt9ynicd',opt: 'Model2/opt/7h4q1bj',optFloat: 715329.6769870432,model1:expect.objectContaining({id:response.data.createModel1.id})}),
+        expect.objectContaining({name: 'Model2/name/dee7i3f',opt: 'Model2/opt/rrd82w99',optFloat: 799453.7108380719,model1:expect.objectContaining({id:response.data.createModel1.id})}),
+        expect.objectContaining({name: 'Model2/name/d25uxpo',opt: 'Model2/opt/1nxcbn',optFloat: 59741.66343142051,model1:expect.objectContaining({id:response.data.createModel1.id})})]))
+    expect(response.data.createModel1.model2).toEqual(expect.arrayContaining([
+            expect.objectContaining({id: modelModel2Data[0].id,model1:expect.objectContaining({id:response.data.createModel1.id})}),
+            expect.objectContaining({id: modelModel2Data[1].id,model1:expect.objectContaining({id:response.data.createModel1.id})}),
+            expect.objectContaining({id: modelModel2Data[2].id,model1:expect.objectContaining({id:response.data.createModel1.id})})]))
+    expect(response).toHaveProperty('data.createModel1.model2.0.id')
+    expect(response).toHaveProperty('data.createModel1.model2.1.id')
+    expect(response).toHaveProperty('data.createModel1.model2.2.id')
+    expect(response).toHaveProperty('data.createModel1.id')
             
         })
 

@@ -60,27 +60,19 @@ function generateFields(model: SchemaModel, members: SchemaModelMember[], queryN
 
             if(member.isArray){
                 if(relatedVariables){
-                    let count = 0
-                    for(const relatedVariable of relatedVariables){
+                    let arrayContaining = generateArrayContaining(relatedVariables, member, queryName);
 
-                        for(const relatedMember of member.relation.relatedModel.members){
-                            const rmName = relatedMember.name
-                            const rmValue = relatedVariable[rmName]
-                            if(rmValue){
-                                res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.${count}.${rmName}', ${wrapStringValue(relatedMember, rmValue)})`
-                            }
-                        }
-                            
-                        count++;
-                    }
+                    res +=`\nexpect(response.data.${queryName}.${member.name}).${not}toEqual(${arrayContaining})`
+                }
+                const variableNameId = member.relation.payloadNameForId
+                const relatedVariablesIds = variables[variableNameId]
+                if(relatedVariablesIds){
+                    const rvi = relatedVariablesIds.map((c)=>({id:c.replace(/=>/g, '').replace(/<=/g, '')}))
+                    let arrayContaining = generateArrayContaining(rvi, member, queryName);
 
+                    res +=`\nexpect(response.data.${queryName}.${member.name}).${not}toEqual(${arrayContaining})`
                 }
 
-                const relatedMemberName = member.relation.relatedMember?.name
-                if(relatedMemberName){
-                    for(let i = 0; i < 3; i++) res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.${i}.${relatedMemberName}.id', response.data.${queryName}.id)`
-                }
-                
                 for(let i = 0; i < 3; i++) res += `\nexpect(response).${not}toHaveProperty('data.${queryName}.${member.name}.${i}.id')`
             } else {
                 if(relatedVariables){
@@ -101,6 +93,38 @@ function generateFields(model: SchemaModel, members: SchemaModelMember[], queryN
     }
     
     return res
+}
+
+function generateArrayContaining(relatedVariables: any, member: SchemaModelMember, queryName: string) {
+    let arrayContaining = ``
+
+    for (const relatedVariable of relatedVariables) {
+        const additions = [];
+        const relatedMemberName = member.relation.relatedMember?.name;
+        if (relatedMemberName) {
+            additions.push(`${relatedMemberName}:expect.objectContaining({id:response.data.${queryName}.id})`);
+        }
+        const objectContaining = generateObjectContain(member.relation.relatedModel.members, relatedVariable, additions);
+        arrayContaining += `,\n\texpect.objectContaining({${objectContaining.substr(1)}})`;
+    }
+    arrayContaining = `expect.arrayContaining([${arrayContaining.substr(1)}])`;
+
+    return arrayContaining;
+}
+
+function generateObjectContain(members: SchemaModelMember[], relatedVariable: any, additions: any) {
+    let objectContaining = ``;
+    for (const relatedMember of members) {
+        const rmName = relatedMember.name;
+        const rmValue = relatedVariable[rmName];
+        if (rmValue) {
+            objectContaining += `,${rmName}: ${wrapStringValue(relatedMember, rmValue)}`;
+        }
+    }
+    for (const addition of additions){
+        objectContaining += `,${addition}`;
+    }
+    return objectContaining;
 }
 
 function generateVariables(model: SchemaModel, members: SchemaModelMember[], {skipRelation, config}:{skipRelation?:string, config?:any}={skipRelation:'', config: {}}) {
