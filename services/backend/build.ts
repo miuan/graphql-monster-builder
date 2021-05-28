@@ -48,5 +48,6 @@ export const exportAsFromString = async (name, importedSchema, outDir='.', confi
   backendDirectory.genWrite( `services/db`, templateFileToText(`db.ts`, null));
   backendDirectory.genWrite( `source.schema`, importedSchema);
   backendDirectory.write( `package.json`, templateFileToText(`package.json`, null));
+  backendDirectory.genWrite( `integration-tests/helper.ts`, templateFileToText(`integration-test-helper.ts`, null));
   
 }

@@ -86,9 +86,7 @@ function generateMongooseModelCreate(member: SchemaModelMember, globalConfig: an
         `=>${modelName}Data[2].id<=`
     ]
     
-    return `
-
-        const ${modelName} = server.entry.models['${_.lowerFirst(member.modelName)}']
+    return `const ${modelName} = server.entry.models['${_.lowerFirst(member.modelName)}']
 
         const ${modelName}Data = await Promise.all([
             ${modelName}.create(${JSON.stringify(modelData[0], null, '\t\t\t\t')}),
@@ -104,7 +102,7 @@ function generateVariablesMulti(model: SchemaModel, members: SchemaModelMember[]
 }
 
 function generateVariableInputsFromMembers(members: SchemaModelMember[]) {
-    return members.filter((m) => m.name !== 'id').map((m) => {
+    return members.map((m) => {
 
         let mapped = '';
 
@@ -215,13 +213,13 @@ function generateExpects(model: SchemaModel, members: SchemaModelMember[], query
     return res
 }
 
-function createTestCreate(model: SchemaModel, members: SchemaModelMember[], requiredOnly=false) {
+function createTestCreate(model: SchemaModel, members: SchemaModelMember[], expect=false) {
     const mutationName = `create${model.modelName}`
     const mutationDesc = `Create${model.modelName}`
     let res = ''
 
     let output = generateOutputFromMembers(members)
-    let variableInputs = generateVariableInputsFromMembers(members)
+    let variableInputs = generateVariableInputsFromMembers(members.filter((m) => m.name !== 'id'))
     let mutationInputs = members.filter((m)=>m.name !== 'id').map((m)=> m.relation? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}` : `${m.name}: $${m.name}`).join(',')
 
     const config = {
@@ -242,10 +240,13 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], requ
     const ${mutationName}Response = await server.mutate({
         mutation: ${mutationName}Mutation,
         variables: ${JSON.stringify(variables, null, '\t').replace(/"=>/g, '').replace(/<="/g, '')}
-      }, res.data.login_v1.token);
-
-    ${generateExpects(model, members, mutationName, variables, (m,v)=>wrapStringValue(m,v))}
+      }, token);
     `
+
+    if(expect){
+        res+=generateExpects(model, members, mutationName, variables, (m,v)=>wrapStringValue(m,v))
+    }
+
     return res;
 }
 
@@ -253,17 +254,13 @@ function createTestOne(model: SchemaModel, beforeMutation='create') {
     const queryName = `one${model.modelName}`
     const beforeMutationName = `${beforeMutation}${model.modelName}`
     const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
-    let res = '\n\n'
+    let res = ''
     let output = generateOutputFromMembers(model.members)
     const regEx = new RegExp(`data\\.${queryName}\\.`, 'g')
     //const variables = generateVariables(model, members, {config})
     let variables = model.members.reduce((accumulator, member)=>{
         if(member.relation){
-            accumulator[member.name] = [
-                {id:`${beforeMutationResponseName}.${member.name}[0].id`},
-                {id:`${beforeMutationResponseName}.${member.name}[1].id`},
-                {id:`${beforeMutationResponseName}.${member.name}[2].id`}
-            ]
+            accumulator[member.name] = Array.from({length:6},(i,c)=>({id:`${beforeMutationResponseName}.${member.name}[${c}].id`}))
         }
         else accumulator[member.name] = `${beforeMutationResponseName}.${member.name}`
         return accumulator
@@ -278,7 +275,7 @@ function createTestOne(model: SchemaModel, beforeMutation='create') {
     const ${queryName}Response = await server.query({
         query: ${queryName}Query,
         variables: { id: ${beforeMutationName}Response.data.${beforeMutationName}.id}
-      }, res.data.login_v1.token);
+      }, token);
 
       ${generateExpects(model, model.members, queryName, variables).replace(regEx, `data.${model.modelName}.`)}
 
@@ -286,13 +283,102 @@ function createTestOne(model: SchemaModel, beforeMutation='create') {
     return res;
 }
 
+function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], beforeMutation='create') {
+    const mutationName = `update${model.modelName}`
+    const mutationDesc = `Update${model.modelName}`
+    const beforeMutationName = `${beforeMutation}${model.modelName}`
+    const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
+    let res = ''
+
+    let output = generateOutputFromMembers(members)
+    let variableInputs = generateVariableInputsFromMembers(members)
+    let mutationInputs = members.map((m)=> m.relation? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}` : `${m.name}: $${m.name}`).join(',')
+
+    const config = {
+        id: `=>${beforeMutationName}Response.data.${beforeMutationName}.id<=`
+    }
+    for(const memberWithRelation of members.filter((m)=>m.relation && m.relation.relatedMember)){
+        res += generateMongooseModelCreate(memberWithRelation, config);
+    }
+    
+    const variables = generateVariables(model, members, {config})
+    
+    res += `const ${mutationName}Mutation = \`mutation ${mutationDesc}(${variableInputs}){
+        ${mutationName}(${mutationInputs}) {
+           ${output.join(',')}
+        }
+    }\`
+    
+    const ${mutationName}Response = await server.mutate({
+        mutation: ${mutationName}Mutation,
+        variables: ${JSON.stringify(variables, null, '\t').replace(/"=>/g, '').replace(/<="/g, '')}
+      }, token);
+
+    ${generateExpects(model, members, mutationName, variables, (m,v)=>wrapStringValue(m,v)).replace(/=>/g, '').replace(/<=/g, '')}
+    `
+    return res;
+}
+
+function wrapTest(name, model:SchemaModel, {token, createModelFn=true}) {
+    
+    let createModelLine = ''
+    if(createModelFn){
+        createModelLine = `const create${model.modelName}Response = await create${model.modelName}(server, token)`
+    }
+
+    let test = ''
+
+    if(name === 'create'){
+        test = createTestCreate(model, model.members, true)
+    } else if(name === 'one'){
+        test = createTestOne(model)
+    } else if(name === 'update'){
+        test = createTestUpdate(model, model.members)
+    }
+    
+    return `
+        it('${name} ${model.modelName}', async()=>{
+            const token = ${token}
+            
+            ${createModelLine}
+
+            ${test}
+        })
+    
+    
+    
+    `
+}
+
 
 function createAdminTest(structure: StructureBackend, model: SchemaModel) {
     // throw new Error('Function not implemented.');
     let res = ''
 
-    res += createTestCreate(model, model.members)
-    res += createTestOne(model)
+    res += `
+    import { connectToServer, disconnectFromServer } from './helper'
+    
+    export async function create${model.modelName}(server, token){
+        ${createTestCreate(model, model.members)}
+
+        return create${model.modelName}Response
+    }`
+
+    res += `
+    describe('integration ${model.modelName} for Admin', () => {
+        let server
+        beforeAll(()=>{
+            server = await connectToServer()
+        })
+
+        afterAll(async () => {
+            disconnectFromServer(server)
+        });
+
+        ${wrapTest('create', model, {token: 'res.data.login_v1.token', createModelFn:false})}
+        ${wrapTest('one', model, {token: 'res.data.login_v1.token'})}
+        ${wrapTest('update', model, {token: 'res.data.login_v1.token'})}
+    })`
 
     return res
 }
@@ -307,10 +393,10 @@ function createUserTest(structure: StructureBackend, model: any) {
 export const generateTestToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
     const str = createAdminTest(backendDirectory.structure, model);
     
-    backendDirectory.genWrite(`/integration-tests/${model.modelName}-admin.spec.ts`, str);
+    backendDirectory.genWrite(`/integration-tests/${model.modelName}-admin.integration.spec.ts`, str);
 
     const userTest = createUserTest(backendDirectory.structure, model);
-    backendDirectory.genWrite(`/integration-tests/${model.modelName}-user.spec.ts`, userTest);
+    backendDirectory.genWrite(`/integration-tests/${model.modelName}-user.integration.spec.ts`, userTest);
   };
   
   

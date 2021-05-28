@@ -1,5 +1,5 @@
 import * as request from 'supertest'
-import { closeGeneratedServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
+import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
 describe('integration', ()=>{
 
@@ -32,7 +32,7 @@ describe('integration', ()=>{
         })
 
         afterAll(async () => {
-            await closeGeneratedServer(server)
+            await disconnectFromServer(server)
            });
 
         it('health check', async ()=>{
@@ -201,10 +201,13 @@ describe('integration', ()=>{
       expect(oneModel1Response).toHaveProperty('data.Model1.arrFloat', createModel1Response.data.createModel1.arrFloat)
       expect(oneModel1Response).toHaveProperty('data.Model1.optDateTime', createModel1Response.data.createModel1.optDateTime)
       expect(oneModel1Response.data.Model1.model2).toEqual(expect.arrayContaining([
-          expect.objectContaining({id: createModel1Response.data.createModel1.model2[0].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
-          expect.objectContaining({id: createModel1Response.data.createModel1.model2[1].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
-          expect.objectContaining({id: createModel1Response.data.createModel1.model2[2].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})})]))
-      expect(oneModel1Response).toHaveProperty('data.Model1.model2.0.id')
+        expect.objectContaining({id: createModel1Response.data.createModel1.model2[0].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
+        expect.objectContaining({id: createModel1Response.data.createModel1.model2[1].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
+        expect.objectContaining({id: createModel1Response.data.createModel1.model2[2].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
+        expect.objectContaining({id: createModel1Response.data.createModel1.model2[3].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
+        expect.objectContaining({id: createModel1Response.data.createModel1.model2[4].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})}),
+        expect.objectContaining({id: createModel1Response.data.createModel1.model2[5].id,model1:expect.objectContaining({id:oneModel1Response.data.Model1.id})})]))
+    expect(oneModel1Response).toHaveProperty('data.Model1.model2.0.id')
       expect(oneModel1Response).toHaveProperty('data.Model1.model2.1.id')
       expect(oneModel1Response).toHaveProperty('data.Model1.model2.2.id')
       expect(oneModel1Response).toHaveProperty('data.Model1.id', createModel1Response.data.createModel1.id)

@@ -234,7 +234,7 @@ ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
 }
 
 
-export async function closeGeneratedServer(server: any) {
+export async function disconnectFromServer(server: any) {
     await server.koa.close()
     await new Promise((resolve, reject) => {
         server.mongoDB.close(() => {

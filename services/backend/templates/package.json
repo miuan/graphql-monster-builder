@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npx ts-node server.ts",
     "start:watch": "npx nodemon --exec ts-node server.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "yarn"
   },
   "author": "",
   "license": "ISC",
