@@ -90,7 +90,7 @@ describe('couad integration', ()=>{
         let res
 
         beforeAll(async ()=>{
-            server = await generateAndRunServerFromSchema('login', `
+            server = await generateAndRunServerFromSchema('couad', `
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
                     name: String!
@@ -110,7 +110,7 @@ describe('couad integration', ()=>{
                     optFloat: Float
                     model1: Model1! @relation(name: "Model1OnModel2")
                 }
-            `)
+            `, 3002)
 
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
             
@@ -397,6 +397,37 @@ expect(updateModel1Response).toHaveProperty('data.updateModel1.model2.0.id')
 expect(updateModel1Response).toHaveProperty('data.updateModel1.model2.1.id')
 expect(updateModel1Response).toHaveProperty('data.updateModel1.model2.2.id')
 expect(updateModel1Response).toHaveProperty('data.updateModel1.id', createModel1Response.data.createModel1.id)
+    
+        })
+
+        it('all Model1', async()=>{
+            const token = res.data.login_v1.token
+            
+            const createModel1Response = await createModel1(server, token)
+const createModel1Response2 = await createModel1(server, token)
+
+            const allModel1Query = `query allModel1 {
+        allModel1 {
+            name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+        }
+    }`
+    
+    const allModel1Response = await server.query({
+        query: allModel1Query,
+        variables: { id: createModel1Response.data.createModel1.id}
+      }, token);
+
+    
+      expect(allModel1Response.data.allModel1).toEqual(expect.arrayContaining([
+        expect.objectContaining({name: createModel1Response.data.createModel1.name,opt: createModel1Response.data.createModel1.opt,optInt: createModel1Response.data.createModel1.optInt,optFloat: createModel1Response.data.createModel1.optFloat,arrName: createModel1Response.data.createModel1.arrName,arrInt: createModel1Response.data.createModel1.arrInt,arrFloat: createModel1Response.data.createModel1.arrFloat,optDateTime: createModel1Response.data.createModel1.optDateTime,model2: expect.arrayContaining([
+expect.objectContaining({id: createModel1Response.data.createModel1.model2[0].id}),
+expect.objectContaining({id: createModel1Response.data.createModel1.model2[1].id}),
+expect.objectContaining({id: createModel1Response.data.createModel1.model2[2].id}),
+expect.objectContaining({id: createModel1Response.data.createModel1.model2[3].id}),
+expect.objectContaining({id: createModel1Response.data.createModel1.model2[4].id}),
+expect.objectContaining({id: createModel1Response.data.createModel1.model2[5].id})]),id: createModel1Response.data.createModel1.id})
+    ]))
+    
     
         })
 

@@ -3,6 +3,7 @@ import { SchemaModel, SchemaModelMember, StructureBackend } from '../../common/t
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory';
 import * as _ from 'lodash'
+import { type } from 'os';
 const log = logger.getLogger('model')
 
 
@@ -142,26 +143,42 @@ function generateArrayContaining(relatedVariables: any, member: SchemaModelMembe
             additions.push(`${relatedMemberName}:expect.objectContaining({id:${queryName}Response.data.${queryName}.id})`);
         }
         const objectContaining = generateObjectContain(member.relation.relatedModel.members, relatedVariable, additions);
-        arrayContaining += `,\n\texpect.objectContaining({${objectContaining.substr(1)}})`;
+        arrayContaining += `,\n\t${objectContaining}`;
     }
     arrayContaining = `expect.arrayContaining([${arrayContaining.substr(1)}])`;
 
     return arrayContaining;
 }
 
-function generateObjectContain(members: SchemaModelMember[], relatedVariable: any, additions: any) {
+function generateObjectContain(members: SchemaModelMember[], relatedVariable: any, additions: any, wrapValue=wrapStringValue) {
     let objectContaining = ``;
     for (const relatedMember of members) {
         const rmName = relatedMember.name;
         const rmValue = relatedVariable[rmName];
+        
         if (rmValue) {
-            objectContaining += `,${rmName}: ${wrapStringValue(relatedMember, rmValue)}`;
+            if(relatedMember.relation){
+                if(Array.isArray(rmValue)) {
+                    let newObjectsContaining = ''
+                    objectContaining += `,${rmName}: expect.arrayContaining([`
+                    for(const rmArrayValue of rmValue){
+                        newObjectsContaining += `,\n${generateObjectContain(relatedMember.relation.relatedModel.members, rmArrayValue, [], wrapValue)}`;
+                    }
+                    objectContaining += newObjectsContaining.substr(1)
+                    objectContaining += `])`
+
+                } else if(typeof rmValue === 'object') {
+                    objectContaining += `${generateObjectContain}`;
+                }  
+            } else {
+                objectContaining += `,${rmName}: ${wrapValue ? wrapValue(relatedMember, rmValue) : rmValue}`;
+            }
         }
     }
     for (const addition of additions){
         objectContaining += `,${addition}`;
     }
-    return objectContaining;
+    return `expect.objectContaining({${objectContaining.substr(1)}})`
 }
 
 function generateExpects(model: SchemaModel, members: SchemaModelMember[], queryName: string, variables: any = {}, wrap = (member, variable) => variable, error=false) {
@@ -283,6 +300,44 @@ function createTestOne(model: SchemaModel, beforeMutation='create') {
     return res;
 }
 
+function createTestAll(model: SchemaModel) {
+    const queryName = `all${model.modelName}`
+    const beforeMutationName = `create${model.modelName}`
+    const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
+    let res = ''
+    let output = generateOutputFromMembers(model.members)
+    const regEx = new RegExp(`data\\.${queryName}\\.`, 'g')
+    //const variables = generateVariables(model, members, {config})
+    let variables = model.members.reduce((accumulator, member)=>{
+        if(member.relation){
+            accumulator[member.name] = Array.from({length:6},(i,c)=>({id:`${beforeMutationResponseName}.${member.name}[${c}].id`}))
+        }
+        else accumulator[member.name] = `${beforeMutationResponseName}.${member.name}`
+        return accumulator
+    }, {})
+
+    res += `const ${queryName}Query = \`query all${model.modelName} {
+        all${model.modelName} {
+            ${output.join(',')}
+        }
+    }\`
+    
+    const ${queryName}Response = await server.query({
+        query: ${queryName}Query,
+        variables: { id: ${beforeMutationName}Response.data.${beforeMutationName}.id}
+      }, token);
+
+    `
+
+    // test is array is for One where is comming `createModel1Response.data.createModel1.model2` and thats generate milion of test lines
+    let arrayContaining = `expect.arrayContaining([
+        ${generateObjectContain(model.members, variables, [], null)}
+    ])`
+    res +=`\nexpect(${queryName}Response.data.${queryName}).toEqual(${arrayContaining})`
+
+    return res;
+}
+
 function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], beforeMutation='create') {
     const mutationName = `update${model.modelName}`
     const mutationDesc = `Update${model.modelName}`
@@ -319,11 +374,11 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
     return res;
 }
 
-function wrapTest(name, model:SchemaModel, {token, createModelFn=true}) {
+function wrapTest(name, model:SchemaModel, {token, createModelFn=1}) {
     
     let createModelLine = ''
     if(createModelFn){
-        createModelLine = `const create${model.modelName}Response = await create${model.modelName}(server, token)`
+        createModelLine = Array.from({length: createModelFn}, (value ,index) => `const create${model.modelName}Response${index < 1? '': index+1} = await create${model.modelName}(server, token)`).join('\n')
     }
 
     let test = ''
@@ -334,6 +389,8 @@ function wrapTest(name, model:SchemaModel, {token, createModelFn=true}) {
         test = createTestOne(model)
     } else if(name === 'update'){
         test = createTestUpdate(model, model.members)
+    }else if(name === 'all'){
+        test = createTestAll(model)
     }
     
     return `
@@ -375,9 +432,10 @@ function createAdminTest(structure: StructureBackend, model: SchemaModel) {
             disconnectFromServer(server)
         });
 
-        ${wrapTest('create', model, {token: 'res.data.login_v1.token', createModelFn:false})}
+        ${wrapTest('create', model, {token: 'res.data.login_v1.token', createModelFn:0})}
         ${wrapTest('one', model, {token: 'res.data.login_v1.token'})}
         ${wrapTest('update', model, {token: 'res.data.login_v1.token'})}
+        ${wrapTest('all', model, {token: 'res.data.login_v1.token', createModelFn:2})}
     })`
 
     return res

@@ -79,7 +79,7 @@ export const createResolvers = (structure: StructureBackend, models: SchemaModel
   for (const modul of structure.resolvers.modules) {
     const lower = modul.charAt(0).toLowerCase() + modul.slice(1)
     queries += `\t\t${modul}: entry.resolvers['${lower}'].one,\n`
-    queries += `\t\tall${modul}s: entry.resolvers['${lower}'].all,\n`
+    queries += `\t\tall${modul}: entry.resolvers['${lower}'].all,\n`
   }
 
   let mutations = ''

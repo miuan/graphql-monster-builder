@@ -26,7 +26,7 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
   for (const model of models) {
     const name = model.modelName;
     // tslint:disable-next-line:max-line-length
-    result += `  all${name}s(filter: ${name}Filter): [${name}!]!\n`;
+    result += `  all${name}(filter: ${name}Filter): [${name}!]!\n`;
   }
 
   for (const model of models) {
