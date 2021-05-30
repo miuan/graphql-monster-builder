@@ -1,69 +1,22 @@
 import * as request from 'supertest'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
-export async function createModel1(server, token) {
-    const modelModel2 = server.entry.models['model2']
-
-    const modelModel2Data = await Promise.all([
-        modelModel2.create({
-            name: 'Model2/name/uebiel5',
-            opt: 'Model2/opt/uns68j5q',
-            optFloat: 988804.5232840485,
-            model1: '607bc7944481571f509470a2',
-            id: 'Model2/id/asjalsg',
-        }),
-        modelModel2.create({
-            name: 'Model2/name/fyozcr4l',
-            opt: 'Model2/opt/2wg9try',
-            optFloat: 323716.7666569545,
-            model1: '607bc7944481571f509470a2',
-            id: 'Model2/id/w5mvb0yc',
-        }),
-        modelModel2.create({
-            name: 'Model2/name/0n4111np',
-            opt: 'Model2/opt/g6fh7s7',
-            optFloat: 353820.96365906834,
-            model1: '607bc7944481571f509470a2',
-            id: 'Model2/id/ezun7if',
-        }),
-    ])
+export async function createModel1(server, token, data, relations = {}) {
+    if (relations['model2'] && Array.isArray(relations['model2'])) {
+        const modelmodel2 = server.entry.models['model2']
+        const modelmodel2Data = await Promise.all(relations['model2'].map((m) => modelmodel2.create(m)))
+        data.model2Ids = modelmodel2Data.map((d) => d.id)
+    }
 
     const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
-    createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
-       name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
-    }
-}`
+        createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+        name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+        }
+    }`
 
     const createModel1Response = await server.mutate(
         {
             mutation: createModel1Mutation,
-            variables: {
-                name: 'Model1/name/a05bsjl',
-                opt: 'Model1/opt/ihceo0zn',
-                optInt: 604673,
-                optFloat: 168679.8122456963,
-                arrName: ['Model1/arrName/83hr7bh', 'Model1/arrName/0vfe6y5x', 'Model1/arrName/sd9ooan'],
-                arrInt: [450872, 935105, 819113],
-                arrFloat: [415609.7568177239, 430780.629430916, 44720.895268391294],
-                optDateTime: '2020-12-23T23:05:30.691Z',
-                model2: [
-                    {
-                        name: 'Model2/name/918odrm1',
-                        opt: 'Model2/opt/ne9g1o8',
-                        optFloat: 666221.2651161294,
-                    },
-                    {
-                        name: 'Model2/name/hxklg2ae',
-                        opt: 'Model2/opt/9ms7xvn',
-                        optFloat: 531540.3591485334,
-                    },
-                    {
-                        name: 'Model2/name/4fe4vtc',
-                        opt: 'Model2/opt/4380f02l',
-                        optFloat: 41788.33097842949,
-                    },
-                ],
-                model2Ids: [modelModel2Data[0].id, modelModel2Data[1].id, modelModel2Data[2].id],
-            },
+            variables: data,
         },
         token,
     )
@@ -256,13 +209,34 @@ describe('couad integration', () => {
     it('one Model1', async () => {
         const token = res.data.login_v1.token
 
-        const createModel1Response = await createModel1(server, token)
+        const createModel1Data = {
+            name: 'Model1/name/m31sjoz',
+            opt: 'Model1/opt/xgmf7hlc',
+            optInt: 56914,
+            optFloat: 100650.19300819644,
+            arrName: ['Model1/arrName/021wt7oe', 'Model1/arrName/14pe8714', 'Model1/arrName/xqw45vei'],
+            arrInt: [653347, 490170, 765198],
+            arrFloat: [608342.7840562845, 686516.0427550563, 396105.32736136264],
+            optDateTime: '2020-01-06T23:36:19.348Z',
+            model2: [{ name: 'Model2/name/k1hs5xxp', opt: 'Model2/opt/ksmynr3g', optFloat: 869978.7950384823 }],
+        }
+        const createModel1Relations = {
+            model2: [
+                {
+                    name: 'Model2/name/kq0pyhk5',
+                    opt: 'Model2/opt/vypy1gta',
+                    optFloat: 510640.1344117408,
+                    model1: '607bc7944481571f509470a2',
+                },
+            ],
+        }
+        const createModel1Response = await createModel1(server, token, createModel1Data, createModel1Relations)
 
         const oneModel1Query = `query Model1($id: ID!){
-        Model1(id: $id) {
-            name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
-        }
-    }`
+    Model1(id: $id) {
+        name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
 
         const oneModel1Response = await server.query(
             {
@@ -300,94 +274,88 @@ describe('couad integration', () => {
                     id: createModel1Response.data.createModel1.model2[1].id,
                     model1: expect.objectContaining({ id: oneModel1Response.data.Model1.id }),
                 }),
-                expect.objectContaining({
-                    id: createModel1Response.data.createModel1.model2[2].id,
-                    model1: expect.objectContaining({ id: oneModel1Response.data.Model1.id }),
-                }),
-                expect.objectContaining({
-                    id: createModel1Response.data.createModel1.model2[3].id,
-                    model1: expect.objectContaining({ id: oneModel1Response.data.Model1.id }),
-                }),
-                expect.objectContaining({
-                    id: createModel1Response.data.createModel1.model2[4].id,
-                    model1: expect.objectContaining({ id: oneModel1Response.data.Model1.id }),
-                }),
-                expect.objectContaining({
-                    id: createModel1Response.data.createModel1.model2[5].id,
-                    model1: expect.objectContaining({ id: oneModel1Response.data.Model1.id }),
-                }),
             ]),
         )
         expect(oneModel1Response).toHaveProperty('data.Model1.model2.0.id')
         expect(oneModel1Response).toHaveProperty('data.Model1.model2.1.id')
-        expect(oneModel1Response).toHaveProperty('data.Model1.model2.2.id')
         expect(oneModel1Response).toHaveProperty('data.Model1.id', createModel1Response.data.createModel1.id)
     })
 
     it('update Model1', async () => {
         const token = res.data.login_v1.token
 
-        const createModel1Response = await createModel1(server, token)
+        const createModel1Data = {
+            name: 'Model1/name/9xdozt5',
+            opt: 'Model1/opt/veuzo6fw',
+            optInt: 178908,
+            optFloat: 270263.47104221646,
+            arrName: ['Model1/arrName/z16efwi', 'Model1/arrName/itt8ze0a', 'Model1/arrName/1hgi59zd'],
+            arrInt: [841914, 706908, 381989],
+            arrFloat: [981172.4638921468, 595172.7641393992, 950648.2557312585],
+            optDateTime: '2020-02-24T23:09:16.338Z',
+            model2: [{ name: 'Model2/name/99wyxtpb', opt: 'Model2/opt/gc9v3645', optFloat: 128002.71510919803 }],
+        }
+        const createModel1Relations = {
+            model2: [
+                {
+                    name: 'Model2/name/xvpbyleg',
+                    opt: 'Model2/opt/brkknrrh',
+                    optFloat: 506870.5727494771,
+                    model1: '607bc7944481571f509470a2',
+                },
+            ],
+        }
+        const createModel1Response = await createModel1(server, token, createModel1Data, createModel1Relations)
 
         const modelModel2 = server.entry.models['model2']
 
         const modelModel2Data = await Promise.all([
             modelModel2.create({
-                name: 'Model2/name/cjzjoah',
-                opt: 'Model2/opt/635x9e6s',
-                optFloat: 388251.8236677499,
+                name: 'Model2/name/rrf1zue',
+                opt: 'Model2/opt/d5lhpbb',
+                optFloat: 794581.5344788817,
                 model1: '607bc7944481571f509470a2',
-                id: 'Model2/id/7qej5hrs',
+                id: 'Model2/id/kors5ee5',
             }),
             modelModel2.create({
-                name: 'Model2/name/13gzemlu',
-                opt: 'Model2/opt/x4f8xymp',
-                optFloat: 809487.9571306355,
+                name: 'Model2/name/y7yyjtxl',
+                opt: 'Model2/opt/ths8b3q9',
+                optFloat: 147313.64317070495,
                 model1: '607bc7944481571f509470a2',
-                id: 'Model2/id/39kmxv3g',
+                id: 'Model2/id/s0zwzo7m',
             }),
             modelModel2.create({
-                name: 'Model2/name/6sf490u',
-                opt: 'Model2/opt/w04uxz2',
-                optFloat: 886512.4206799038,
+                name: 'Model2/name/ee788yxq',
+                opt: 'Model2/opt/cj2hjyvr',
+                optFloat: 793571.7465582052,
                 model1: '607bc7944481571f509470a2',
-                id: 'Model2/id/k4iv0sk',
+                id: 'Model2/id/d28jo2d',
             }),
         ])
 
         const updateModel1Mutation = `mutation UpdateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!],$id: ID!){
-        updateModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids,id: $id) {
-           name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
-        }
-    }`
+    updateModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids,id: $id) {
+       name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
 
         const updateModel1Response = await server.mutate(
             {
                 mutation: updateModel1Mutation,
                 variables: {
-                    name: 'Model1/name/gexkgkcx',
-                    opt: 'Model1/opt/zf9atpbr',
-                    optInt: 728321,
-                    optFloat: 920930.8187684952,
-                    arrName: ['Model1/arrName/g1v9iyfj', 'Model1/arrName/mqdmrwt', 'Model1/arrName/24prqwe7'],
-                    arrInt: [418523, 619379, 273255],
-                    arrFloat: [352348.98388495675, 312806.04741825635, 89106.33479567754],
-                    optDateTime: '2020-08-26T22:51:36.298Z',
+                    name: 'Model1/name/rabm0ueo',
+                    opt: 'Model1/opt/iyy46ulc',
+                    optInt: 564003,
+                    optFloat: 710838.0456158707,
+                    arrName: ['Model1/arrName/18cic326', 'Model1/arrName/uoib8f8k', 'Model1/arrName/4vsdxon'],
+                    arrInt: [969299, 459931, 920080],
+                    arrFloat: [919167.4541117561, 816683.5093124962, 811748.9766200358],
+                    optDateTime: '2020-08-31T22:21:58.155Z',
                     model2: [
                         {
-                            name: 'Model2/name/2zhnzsjg',
-                            opt: 'Model2/opt/9qg8lvb',
-                            optFloat: 608418.0837124346,
-                        },
-                        {
-                            name: 'Model2/name/eb6kzl2',
-                            opt: 'Model2/opt/vi357igc',
-                            optFloat: 785493.7033338258,
-                        },
-                        {
-                            name: 'Model2/name/d5sgxinr',
-                            opt: 'Model2/opt/5cavp5g',
-                            optFloat: 955555.2557857112,
+                            name: 'Model2/name/9ulw9lt',
+                            opt: 'Model2/opt/jadugtzg',
+                            optFloat: 734552.4338407698,
                         },
                     ],
                     model2Ids: [modelModel2Data[0].id, modelModel2Data[1].id, modelModel2Data[2].id],
@@ -398,39 +366,27 @@ describe('couad integration', () => {
         )
 
         expect(updateModel1Response).not.toHaveProperty('errors')
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.name', 'Model1/name/gexkgkcx')
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.opt', 'Model1/opt/zf9atpbr')
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.optInt', 728321)
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.optFloat', 920930.8187684952)
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.name', 'Model1/name/rabm0ueo')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.opt', 'Model1/opt/iyy46ulc')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optInt', 564003)
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optFloat', 710838.0456158707)
         expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', [
-            'Model1/arrName/g1v9iyfj',
-            'Model1/arrName/mqdmrwt',
-            'Model1/arrName/24prqwe7',
+            'Model1/arrName/18cic326',
+            'Model1/arrName/uoib8f8k',
+            'Model1/arrName/4vsdxon',
         ])
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrInt', [418523, 619379, 273255])
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrInt', [969299, 459931, 920080])
         expect(updateModel1Response).toHaveProperty(
             'data.updateModel1.arrFloat',
-            [352348.98388495675, 312806.04741825635, 89106.33479567754],
+            [919167.4541117561, 816683.5093124962, 811748.9766200358],
         )
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.optDateTime', '2020-08-26T22:51:36.298Z')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optDateTime', '2020-08-31T22:21:58.155Z')
         expect(updateModel1Response.data.updateModel1.model2).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
-                    name: 'Model2/name/2zhnzsjg',
-                    opt: 'Model2/opt/9qg8lvb',
-                    optFloat: 608418.0837124346,
-                    model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
-                }),
-                expect.objectContaining({
-                    name: 'Model2/name/eb6kzl2',
-                    opt: 'Model2/opt/vi357igc',
-                    optFloat: 785493.7033338258,
-                    model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
-                }),
-                expect.objectContaining({
-                    name: 'Model2/name/d5sgxinr',
-                    opt: 'Model2/opt/5cavp5g',
-                    optFloat: 955555.2557857112,
+                    name: 'Model2/name/9ulw9lt',
+                    opt: 'Model2/opt/jadugtzg',
+                    optFloat: 734552.4338407698,
                     model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
                 }),
             ]),
@@ -460,14 +416,57 @@ describe('couad integration', () => {
     it('all Model1', async () => {
         const token = res.data.login_v1.token
 
-        const createModel1Response = await createModel1(server, token)
-        const createModel1Response2 = await createModel1(server, token)
+        const createModel1Data = {
+            name: 'Model1/name/t41te99',
+            opt: 'Model1/opt/fm1bxamv',
+            optInt: 624050,
+            optFloat: 15707.226870998791,
+            arrName: ['Model1/arrName/po2y9x7s', 'Model1/arrName/fumo2e1', 'Model1/arrName/jw4xhp3p'],
+            arrInt: [74695, 979639, 194851],
+            arrFloat: [16373.13472973645, 173834.21646217513, 426517.8765657782],
+            optDateTime: '2020-10-02T22:49:58.883Z',
+            model2: [{ name: 'Model2/name/4lx0o86', opt: 'Model2/opt/nx9e9uuv', optFloat: 642556.2737034869 }],
+        }
+        const createModel1Relations = {
+            model2: [
+                {
+                    name: 'Model2/name/wdnhr3rn',
+                    opt: 'Model2/opt/rp03kor',
+                    optFloat: 263800.8307202817,
+                    model1: '607bc7944481571f509470a2',
+                },
+            ],
+        }
+        const createModel1Response = await createModel1(server, token, createModel1Data, createModel1Relations)
+
+        const createModel1Data2 = {
+            name: 'Model1/name/h8i146ut',
+            opt: 'Model1/opt/c830pb6g',
+            optInt: 285531,
+            optFloat: 441859.478726337,
+            arrName: ['Model1/arrName/697rqk6r', 'Model1/arrName/zsi8o0yl', 'Model1/arrName/uz5m9d6c'],
+            arrInt: [65169, 597749, 437459],
+            arrFloat: [588043.3770093702, 284717.7617158319, 494524.91148259805],
+            optDateTime: '2021-02-25T23:04:01.102Z',
+            model2: [{ name: 'Model2/name/2ql174fa', opt: 'Model2/opt/m46f1fcc', optFloat: 215141.87919157668 }],
+        }
+        const createModel1Relations2 = {
+            model2: [
+                {
+                    name: 'Model2/name/0tu1sni4',
+                    opt: 'Model2/opt/bc62oygq',
+                    optFloat: 903280.0334989845,
+                    model1: '607bc7944481571f509470a2',
+                },
+            ],
+        }
+        const createModel1Response2 = await createModel1(server, token, createModel1Data2, createModel1Relations2)
 
         const allModel1Query = `query allModel1 {
-        allModel1 {
-            name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
-        }
-    }`
+    allModel1 {
+        name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
 
         const allModel1Response = await server.query(
             {
@@ -489,14 +488,45 @@ describe('couad integration', () => {
                     arrFloat: createModel1Response.data.createModel1.arrFloat,
                     optDateTime: createModel1Response.data.createModel1.optDateTime,
                     model2: expect.arrayContaining([
-                        expect.objectContaining({ id: createModel1Response.data.createModel1.model2[0].id }),
-                        expect.objectContaining({ id: createModel1Response.data.createModel1.model2[1].id }),
-                        expect.objectContaining({ id: createModel1Response.data.createModel1.model2[2].id }),
-                        expect.objectContaining({ id: createModel1Response.data.createModel1.model2[3].id }),
-                        expect.objectContaining({ id: createModel1Response.data.createModel1.model2[4].id }),
-                        expect.objectContaining({ id: createModel1Response.data.createModel1.model2[5].id }),
+                        expect.objectContaining({
+                            name: createModel1Response.data.createModel1.model2[0].name,
+                            opt: createModel1Response.data.createModel1.model2[0].opt,
+                            optFloat: createModel1Response.data.createModel1.model2[0].optFloat,
+                            id: createModel1Response.data.createModel1.model2[0].id,
+                        }),
+                        expect.objectContaining({
+                            name: createModel1Response.data.createModel1.model2[1].name,
+                            opt: createModel1Response.data.createModel1.model2[1].opt,
+                            optFloat: createModel1Response.data.createModel1.model2[1].optFloat,
+                            id: createModel1Response.data.createModel1.model2[1].id,
+                        }),
                     ]),
                     id: createModel1Response.data.createModel1.id,
+                }),
+                expect.objectContaining({
+                    name: createModel1Response2.data.createModel1.name,
+                    opt: createModel1Response2.data.createModel1.opt,
+                    optInt: createModel1Response2.data.createModel1.optInt,
+                    optFloat: createModel1Response2.data.createModel1.optFloat,
+                    arrName: createModel1Response2.data.createModel1.arrName,
+                    arrInt: createModel1Response2.data.createModel1.arrInt,
+                    arrFloat: createModel1Response2.data.createModel1.arrFloat,
+                    optDateTime: createModel1Response2.data.createModel1.optDateTime,
+                    model2: expect.arrayContaining([
+                        expect.objectContaining({
+                            name: createModel1Response2.data.createModel1.model2[0].name,
+                            opt: createModel1Response2.data.createModel1.model2[0].opt,
+                            optFloat: createModel1Response2.data.createModel1.model2[0].optFloat,
+                            id: createModel1Response2.data.createModel1.model2[0].id,
+                        }),
+                        expect.objectContaining({
+                            name: createModel1Response2.data.createModel1.model2[1].name,
+                            opt: createModel1Response2.data.createModel1.model2[1].opt,
+                            optFloat: createModel1Response2.data.createModel1.model2[1].optFloat,
+                            id: createModel1Response2.data.createModel1.model2[1].id,
+                        }),
+                    ]),
+                    id: createModel1Response2.data.createModel1.id,
                 }),
             ]),
         )
