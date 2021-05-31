@@ -154,10 +154,7 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], 
             }
         }
 
-        if (
-            relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE ||
-            relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY
-        ) {
+        if (relatedMember.isArray) {
             // more about `$all` see https://stackoverflow.com/a/18149149
             result += `
       // relation is type: ${relation.type.toString()} 
@@ -166,10 +163,10 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], 
         } else if (relatedMember.isRequired) {
             result += `
       // relation is type: ${relation.type.toString()} and related model have it as required
-      const relatedModel = await entry.models['${lower}'].findOne({${relatedMemberName}: id}, {_id:true})
-      if(relatedModel && relatedModel._id){
+      const relatedModels = await entry.models['${lower}'].find({${relatedMemberName}: id}, {_id:true})
+      if(relatedModels && relatedModels.length > 0){
         // we call services because is necessary also unlink relations with removing object
-        await entry.services['${lower}'].remove(relatedModel._id, ctxUserId, ${removeList})
+        await Promise.all(relatedModels.map((relatedModel) => entry.services['${lower}'].remove(relatedModel._id, ctxUserId, ${removeList})))
       }
   `
         } else {

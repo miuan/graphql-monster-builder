@@ -446,6 +446,93 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
     return res
 }
 
+function createTestRemove(model: SchemaModel, beforeMutation = 'create') {
+    const mutationName = `remove${model.modelName}`
+    const mutationDesc = `Remove${model.modelName}`
+    const beforeMutationName = `${beforeMutation}${model.modelName}`
+    const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
+    let res = ''
+
+    const output = generateOutputFromMembers(model.members)
+    const variableInputs = generateVariableInputsFromMembers(model.members.filter((m) => m.name == 'id'))
+    const mutationInputs = model.members
+        .filter((m) => m.name == 'id')
+        .map((m) => `${m.name}: $${m.name}`)
+        .join(',')
+
+    const config = {
+        id: `=>${beforeMutationName}Response.data.${beforeMutationName}.id<=`,
+    }
+
+    const variables = generateVariables(model, model.members, { config })
+
+    res += `const ${mutationName}Mutation = \`mutation ${mutationDesc}(${variableInputs}){
+        ${mutationName}(${mutationInputs}) {
+           id
+        }
+    }\`
+    
+    const ${mutationName}Response = await server.mutate({
+        mutation: ${mutationName}Mutation,
+        variables: { id:${beforeMutationName}Response.data.${beforeMutationName}.id }
+      }, token);
+
+      ${generateExpects(
+          model,
+          model.members.filter((m) => m.name === 'id'),
+          mutationName,
+          { id: `${beforeMutationName}Response.data.${beforeMutationName}.id` },
+          (m, v) => wrapStringValue(m, v),
+      )
+          .replace(/=>/g, '')
+          .replace(/<=/g, '')}
+
+          ${generateCheckExistenceInMongo(model, `${beforeMutationName}Response.data.${beforeMutationName}.id`, false)}
+    `
+
+    for (const relatedMember of model.members.filter((m) => m.relation)) {
+        if (relatedMember.isArray) {
+            const check = generateCheckExistenceInMongo(
+                relatedMember.relation.relatedModel,
+                `check.id`,
+                !relatedMember.relation.relatedMember.isRequired,
+                1,
+            )
+
+            res += `
+                for(const check of ${beforeMutationName}Response.data.${beforeMutationName}.${relatedMember.name}){
+                    ${check}
+                }
+            `
+        } else {
+            res += generateCheckExistenceInMongo(
+                relatedMember.relation.relatedModel,
+                `${beforeMutationName}Response.data.${beforeMutationName}.${relatedMember.name}`,
+                !relatedMember.relation.relatedMember.isRequired,
+                1,
+            )
+        }
+    }
+
+    return res
+}
+
+function generateCheckExistenceInMongo(
+    model: SchemaModel,
+    beforeMutationName,
+    shouldExist = true,
+    iteration = 0,
+    beforeMutation = 'create',
+) {
+    const lower = _.lowerFirst(model.modelName)
+    const check = `${lower}Check${iteration == 0 ? '' : iteration.toString()}`
+    const expect = shouldExist ? `toBeObject()` : `toBeNull()`
+    return `
+          const ${check} = await server.entry.models['${lower}'].findById(${beforeMutationName})
+          expect(${check}).${expect}
+    `
+}
+
 function wrapTest(name, model: SchemaModel, { token, createModelFn = 1 }) {
     const numCreatedRelations = 1
     const numLinkedRelations = 1
@@ -482,6 +569,8 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 1 }) {
         test = createTestUpdate(model, model.members)
     } else if (name === 'all') {
         test = createTestAll(model)
+    } else if (name === 'remove') {
+        test = createTestRemove(model)
     }
 
     return `
@@ -585,6 +674,7 @@ function createAdminTest(structure: StructureBackend, model: SchemaModel) {
         ${wrapTest('one', model, { token: 'res.data.login_v1.token' })}
         ${wrapTest('update', model, { token: 'res.data.login_v1.token' })}
         ${wrapTest('all', model, { token: 'res.data.login_v1.token', createModelFn: 2 })}
+        ${wrapTest('remove', model, { token: 'res.data.login_v1.token' })}
     })`
 
     return res

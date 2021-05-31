@@ -1,5 +1,6 @@
 import * as request from 'supertest'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
+
 export async function createModel1(server, token, data, relations = {}) {
     if (relations['model2'] && Array.isArray(relations['model2'])) {
         const modelmodel2 = server.entry.models['model2']
@@ -22,6 +23,30 @@ export async function createModel1(server, token, data, relations = {}) {
     )
 
     return createModel1Response
+}
+
+export async function createModel2(server, token, data, relations = {}) {
+    if (relations['model1']) {
+        const modelmodel1 = server.entry.models['model1']
+        const modelmodel1Data = await modelmodel1.create(relations['model1'])
+        data.model1Id = modelmodel1Data.id
+    }
+
+    const createModel2Mutation = `mutation CreateModel2($name: String!,$opt: String,$optFloat: Float,$model1: InModel2MemberModel1AsModel1,$model1Id: ID){
+        createModel2(name: $name,opt: $opt,optFloat: $optFloat,model1: $model1, model1Id: $model1Id) {
+        name,opt,optFloat,model1{name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{id},id},id
+        }
+    }`
+
+    const createModel2Response = await server.mutate(
+        {
+            mutation: createModel2Mutation,
+            variables: data,
+        },
+        token,
+    )
+
+    return createModel2Response
 }
 
 describe('couad integration', () => {
@@ -530,5 +555,117 @@ describe('couad integration', () => {
                 }),
             ]),
         )
+    })
+
+    it('remove Model1', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Data = {
+            name: 'Model1/name/frwqgrl3',
+            opt: 'Model1/opt/wtwznya5',
+            optInt: 769003,
+            optFloat: 5449.282262900201,
+            arrName: ['Model1/arrName/1tsrvto9', 'Model1/arrName/wht5hoxd', 'Model1/arrName/9kg16fqc'],
+            arrInt: [563899, 900260, 637807],
+            arrFloat: [659700.5044207514, 151109.23957118284, 640352.3896067109],
+            optDateTime: '2020-06-21T22:51:04.220Z',
+            model2: [{ name: 'Model2/name/2iafhse', opt: 'Model2/opt/eaushr7d', optFloat: 265279.86436118267 }],
+        }
+        const createModel1Relations = {
+            model2: [
+                {
+                    name: 'Model2/name/bldvsjblk',
+                    opt: 'Model2/opt/58k3y0qs',
+                    optFloat: 7312.143521916337,
+                    model1: '607bc7944481571f509470a2',
+                },
+            ],
+        }
+        const createModel1Response = await createModel1(server, token, createModel1Data, createModel1Relations)
+
+        const removeModel1Mutation = `mutation RemoveModel1($id: ID!){
+                removeModel1(id: $id) {
+                id
+                }
+            }`
+
+        const removeModel1Response = await server.mutate(
+            {
+                mutation: removeModel1Mutation,
+                variables: { id: createModel1Response.data.createModel1.id },
+            },
+            token,
+        )
+
+        expect(removeModel1Response).not.toHaveProperty('errors')
+        expect(removeModel1Response).toHaveProperty('data.removeModel1.id', createModel1Response.data.createModel1.id)
+
+        const model1Check = await server.entry.models['model1'].findById(createModel1Response.data.createModel1.id)
+        expect(model1Check).toBeNull()
+
+        for (const check of createModel1Response.data.createModel1.model2) {
+            const model2Check1 = await server.entry.models['model2'].findById(check.id)
+            expect(model2Check1).toBeNull()
+        }
+    })
+
+    it('remove Model2', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel2Data = {
+            name: 'Model2/name/x38jdqjk',
+            opt: 'Model2/opt/6s47179m',
+            optFloat: 218101.0611238121,
+            model1: {
+                name: 'Model1/name/2gflys2r',
+                opt: 'Model1/opt/273q3vym',
+                optInt: 929200,
+                optFloat: 383814.64715508674,
+                arrName: ['Model1/arrName/besm4cp', 'Model1/arrName/2t34degp', 'Model1/arrName/bdv4kl8d'],
+                arrInt: [117226, 692845, 78518],
+                arrFloat: [342131.60854823113, 370838.4173866042, 838686.6896444529],
+                optDateTime: '2020-10-03T22:35:12.414Z',
+            },
+        }
+        const createModel2Relations = {
+            model1x: [
+                {
+                    name: 'Model1/name/0e92csvm',
+                    opt: 'Model1/opt/8s3w3yoq',
+                    optInt: 956152,
+                    optFloat: 85114.10032937517,
+                    arrName: ['Model1/arrName/hgse1x2', 'Model1/arrName/wvxvzgu', 'Model1/arrName/sdjztau5'],
+                    arrInt: [488942, 811268, 108499],
+                    arrFloat: [190096.48485302355, 104232.3344197289, 103587.29236843645],
+                    optDateTime: '2021-02-06T23:48:03.660Z',
+                },
+            ],
+        }
+        const createModel2Response = await createModel2(server, token, createModel2Data, createModel2Relations)
+
+        const removeModel2Mutation = `mutation RemoveModel2($id: ID!){
+    removeModel2(id: $id) {
+       id
+    }
+}`
+
+        const removeModel2Response = await server.mutate(
+            {
+                mutation: removeModel2Mutation,
+                variables: { id: createModel2Response.data.createModel2.id },
+            },
+            token,
+        )
+
+        expect(removeModel2Response).not.toHaveProperty('errors')
+        expect(removeModel2Response).toHaveProperty('data.removeModel2.id', createModel2Response.data.createModel2.id)
+
+        const model2Check = await server.entry.models['model2'].findById(createModel2Response.data.createModel2.id)
+        expect(model2Check).toBeNull()
+
+        const model1Check1 = await server.entry.models['model1'].findById(
+            createModel2Response.data.createModel2.model1.id,
+        )
+        expect(model1Check1).not.toBeNull()
     })
 })
