@@ -42,7 +42,8 @@ function generateVariables(
         } else if (forMongoose && member.isRequired && !member.isArray) {
             // is relation single and is reauired
             variables[member.name] = '607bc7944481571f509470a2'
-        } else if (member.relation.name !== skipRelation) {
+        } else if (member.relation.name !== skipRelation && model.modelName == `User`) {
+            // TODO: if user have relations to objects it goes to stack
             const options = { skipRelation: member.relation.name, config: { id: VARIABLE_CONFIG_SKIP } }
             const relatedModel = member.relation.relatedModel
 
