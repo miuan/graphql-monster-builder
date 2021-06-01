@@ -49,7 +49,7 @@ function generateVariables(
             if (member.isArray) {
                 variables[member.relation.payloadNameForCreate] = Array.from(
                     {
-                        length: config[member.name] ? config[member.name] : 1,
+                        length: config && config[member.name] ? config[member.name] : 1,
                     },
                     () => generateVariables(relatedModel, relatedModel.members, options),
                 )

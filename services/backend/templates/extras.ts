@@ -26,10 +26,8 @@ export const generateTokenJWT = (tokenizeData, opts?): string => {
       expiresIn: '365d',
     };
   }
-
   
   const tokenJWT = jwt.sign(tokenizeData, process.env.JWT_TOKEN_SECRET || 'protectql_test_secret', options);
-  console.log('generateTokenJWT', tokenizeData, tokenJWT)
   return tokenJWT;
 };
 
@@ -54,7 +52,6 @@ export const checkPasswordIsNotIncluded = (userData) => {
 };
 
 export const generateLogin = (entry) => async (root, data, ctx) => {
-  console.log(ctx)
   const user = await entry.models['user'].findOne({ email: data.email });
 
   if (user && await compareHash(data.password, user.__password)) {
@@ -187,7 +184,6 @@ export const generateChangePassword = (entry) => async (root, data, ctx) => {
     const userModel = entry.models['user'];
     const userForUpdate = await userModel.findById(ctx.state.user.id);
 
-    console.log(data, userForUpdate);
     if (!userForUpdate) {
       throw `Unknown user with id: ${data.userId}`;
     }
@@ -327,8 +323,6 @@ export const generateProtections = (entry, modelName) => {
         // const u = await entry.models[modelName].findOne(fd, ownerField)
         
         const u = await entry.models[modelName].findById(data.id || data._id, ownerField)
-        console.log('OWNER CHECK : user1 >>', {u, fd:(data.id || data._id), state: ctx.state, modelName, models: entry.models})
-        console.log('u && u[ownerField] == ctx.state.user.id', u && u[ownerField] == ctx.state.user.id)
         return u && u[ownerField] == ctx.state.user.id;
       } else {
         return false
@@ -371,7 +365,6 @@ export const generateProtections = (entry, modelName) => {
           for(let filter of filters) {
             if(filter.name) {
               const value = _.get(a, filter.name)
-              console.log('filter', filter.name, value)
 
               if(filter.value == value || (filter.value == '{{userId}}' && value == ctxUser.id)) {
                 return true
@@ -414,7 +407,6 @@ const filterANDOR = (filter, operator) => {
 
 export const filterGen = (filters) => {
 
-  console.log('DEBUG:FILTER', filters)
   let obj = {}
 
   if(!filters){
