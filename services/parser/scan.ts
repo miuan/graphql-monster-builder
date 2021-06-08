@@ -6,6 +6,8 @@ import {
     SchemaModelProtection,
     SchemaModelProtectionType,
     SchemaModelProtectionParam,
+    SchemaModelType,
+    MODEL_TYPES,
 } from '../common/types'
 import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
@@ -19,18 +21,27 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
     let currentProtection: SchemaModelProtection = generateBaseProtection()
     const models: SchemaModel[] = [] as SchemaModel[]
 
-    const regexp = new RegExp('type ([A-Za-z0-9]*) @model {')
+    const modelRegExp = new RegExp('(type|model|entity) (w+) ?(@model|@entity)? ?{')
     let lineNumber = 1
     for (const currentRow of rows) {
-        const matched = currentRow.match(regexp)
+        const matched = currentRow.match(/(\w+) *(\w+) *(@((\w+)(\(for="(\w+)",?( *)?(multi=(\w+))?\))?))? *{/)
         if (currentRow.indexOf('#') === 0) {
             // ** COMMENTS
-        } else if (matched && matched.length === 2) {
+        } else if (matched && matched.length > 1) {
             // ** START WITH LOADING MEMBER TO MODEL **
-            const modelName = matched[1]
+            const modelType = matched[5] || matched[1]
+            const modelName = matched[2]
 
             if (!/^[A-Z]/.test(modelName)) {
                 throw `Line ${lineNumber}: The model name '${modelName}' should start with capital leter '[A-Z]'`
+            }
+
+            if (!MODEL_TYPES.includes(modelType)) {
+                throw `Line ${lineNumber}: The type '${modelType}' of '${modelName}' is unknown, knows types are ${MODEL_TYPES}`
+            }
+
+            if (modelType === 'type') {
+                throw `Line ${lineNumber}: The type of '${modelName}' is not specified, it shoudl be followed with @ after model name`
             }
 
             currentModel = {
@@ -38,6 +49,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 start: lineNumber,
                 end: lineNumber,
                 members: [],
+                type: modelType === 'model' ? SchemaModelType.MODEL : SchemaModelType.ENTITY,
             } as SchemaModel
         } else if (currentModel && currentRow === '}') {
             // ** CLOSE LOADING MEMBERS TO MODEL **

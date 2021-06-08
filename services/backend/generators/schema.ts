@@ -5,7 +5,13 @@ import {
     schemaFilterNumberValue,
 } from '../../common/constatns'
 
-import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelMember } from '../../common/types'
+import {
+    StructureBackend,
+    SchemaModel,
+    SchemaModelRelationType,
+    SchemaModelMember,
+    SchemaModelType,
+} from '../../common/types'
 import { getOnlyOneRelatedMember } from '../../common/utils'
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
@@ -14,21 +20,21 @@ const log = logger.getLogger('schema')
 let applayedRelations = []
 
 export const generateSchemaQueries = (models: SchemaModel[]) => {
-    let result = `type Query {\n`
+    let result = ``
 
     for (const model of models) {
-        const name = model.modelName
-        // tslint:disable-next-line:max-line-length
-        result += `  all${name}(filter: ${name}Filter): [${name}Model!]!\n`
+        if (model.type == SchemaModelType.MODEL) {
+            const name = model.modelName
+            // tslint:disable-next-line:max-line-length
+            result += `  all${name}(filter: ${name}Filter): [${name}Model!]!\n
+            ${name}(id: ID): ${name}Model\n
+            `
+        }
     }
 
-    for (const model of models) {
-        result += `  ${model.modelName}(id: ID): ${model.modelName}Model\n`
-    }
-
-    result += '}\n\n'
-
-    return result
+    return `type Query {
+        ${result}
+    }`
 }
 
 export const cleanApplayedRelations = () => {
@@ -135,23 +141,24 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
 
     applayedRelations = []
     for (const model of models) {
-        for (const mutation of schemaMutations) {
-            const name = model.modelName
-            const mutationName = mutation[0]
-            const mutationParams = mutation[1]
+        if (model.type === SchemaModelType.MODEL)
+            for (const mutation of schemaMutations) {
+                const name = model.modelName
+                const mutationName = mutation[0]
+                const mutationParams = mutation[1]
 
-            if (name == 'User' && mutationName == 'create') continue
+                if (name == 'User' && mutationName == 'create') continue
 
-            if (mutationParams === 'ONLY_ID') {
-                result += `  ${mutationName}${name}(id: ID!): ${name}Model\n`
-            } else {
-                const params = generateInputParamsForMutationModel(model, {
-                    includeId: mutationParams === 'ALWAYS_ID',
-                    forceRequiredFields: mutationName === 'create',
-                })
-                result += `  ${mutationName}${name}(${params}): ${name}Model\n`
+                if (mutationParams === 'ONLY_ID') {
+                    result += `  ${mutationName}${name}(id: ID!): ${name}Model\n`
+                } else {
+                    const params = generateInputParamsForMutationModel(model, {
+                        includeId: mutationParams === 'ALWAYS_ID',
+                        forceRequiredFields: mutationName === 'create',
+                    })
+                    result += `  ${mutationName}${name}(${params}): ${name}Model\n`
+                }
             }
-        }
         result += generateMutationAddingsAndRemovings(model)
     }
 

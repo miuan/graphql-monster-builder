@@ -4,6 +4,12 @@ export type SchemaModel = {
     end: number
     members: SchemaModelMember[]
     protection: SchemaModelProtection
+    type: SchemaModelType
+}
+
+export enum SchemaModelType {
+    MODEL = 'MODEL', // me as one to many
+    ENTITY = 'ENTITY', // me as multi to one
 }
 
 export enum SchemaModelRelationType {
@@ -95,3 +101,5 @@ export type StructureFrontend = Structure & {
     gen: StructureItem
     graphql: StructureItem
 }
+
+export const MODEL_TYPES = ['type', 'model', 'entity']

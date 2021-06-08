@@ -1,4 +1,4 @@
-import { StructureBackend, SchemaModel, SchemaModelRelationType } from '../../common/types'
+import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelType } from '../../common/types'
 import { writeToFile, templateToText, templateFileToText } from '../../common/files'
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
 import { BackendDirectory } from '../backendDirectory'
@@ -70,25 +70,23 @@ export const generateEntryWorker = (structure: StructureBackend, models: SchemaM
 
 export const createResolvers = (structure: StructureBackend, models: SchemaModel[]) => {
     let queries = ''
+    let mutations = ''
     let dataloaders = ''
 
-    for (const modul of structure.resolvers.modules) {
-        const lower = modul.charAt(0).toLowerCase() + modul.slice(1)
-        queries += `\t\t${modul}: entry.resolvers['${lower}'].one,\n`
-        queries += `\t\tall${modul}: entry.resolvers['${lower}'].all,\n`
-    }
-
-    let mutations = ''
-
-    for (const modul of structure.resolvers.modules) {
-        const lower = modul.charAt(0).toLowerCase() + modul.slice(1)
-        if (modul !== 'User') mutations += `\t\tcreate${modul}: entry.resolvers['${lower}'].create,\n`
-        mutations += `\t\tupdate${modul}: entry.resolvers['${lower}'].update,\n`
-        mutations += `\t\tremove${modul}: entry.resolvers['${lower}'].remove,\n`
-    }
-
     for (const model of models) {
-        mutations += genAddingAndRemovingsForModel(model)
+        if (model.type === SchemaModelType.MODEL) {
+            const modelName = model.modelName
+            const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1)
+            queries += `\t\t${modelName}: entry.resolvers['${lower}'].one,\n`
+            queries += `\t\tall${modelName}: entry.resolvers['${lower}'].all,\n`
+
+            if (modelName !== 'User') mutations += `\t\tcreate${modelName}: entry.resolvers['${lower}'].create,\n`
+            mutations += `\t\tupdate${modelName}: entry.resolvers['${lower}'].update,\n`
+            mutations += `\t\tremove${modelName}: entry.resolvers['${lower}'].remove,\n`
+
+            mutations += genAddingAndRemovingsForModel(model)
+        }
+
         dataloaders += generateDataloadersForResolver(model)
     }
 

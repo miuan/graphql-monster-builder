@@ -3,6 +3,7 @@ import {
     SchemaModelProtectionParam,
     SchemaModelProtectionType,
     SchemaModelRelationType,
+    SchemaModelType,
 } from '../common/types'
 
 const DEFAULT_ADMIN_ROLE: SchemaModelProtectionParam = {
@@ -63,6 +64,7 @@ const USER_MODEL = {
     members: USER_MEMBERS,
     start: -1,
     end: -1,
+    type: SchemaModelType.MODEL,
 }
 
 const USERROLE_MODEL = {
@@ -89,6 +91,7 @@ const USERROLE_MODEL = {
     ],
     start: -1,
     end: -1,
+    type: SchemaModelType.MODEL,
 }
 
 const FILE_MEMBERS = [
@@ -128,6 +131,7 @@ const FILE_MODEL = {
     members: FILE_MEMBERS,
     start: -1,
     end: -1,
+    type: SchemaModelType.MODEL,
 }
 
 export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
