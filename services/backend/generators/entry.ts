@@ -2,6 +2,7 @@ import { StructureBackend, SchemaModel, SchemaModelRelationType } from '../../co
 import { writeToFile, templateToText, templateFileToText } from '../../common/files'
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
 import { BackendDirectory } from '../backendDirectory'
+import { model } from 'mongoose'
 
 export const generateEntry = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
     const body = generateEntryWorker(backendDirectory.structure, models)
@@ -81,7 +82,7 @@ export const createResolvers = (structure: StructureBackend, models: SchemaModel
 
     for (const modul of structure.resolvers.modules) {
         const lower = modul.charAt(0).toLowerCase() + modul.slice(1)
-        mutations += `\t\tcreate${modul}: entry.resolvers['${lower}'].create,\n`
+        if (modul !== 'User') mutations += `\t\tcreate${modul}: entry.resolvers['${lower}'].create,\n`
         mutations += `\t\tupdate${modul}: entry.resolvers['${lower}'].update,\n`
         mutations += `\t\tremove${modul}: entry.resolvers['${lower}'].remove,\n`
     }

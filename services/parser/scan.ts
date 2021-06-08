@@ -10,6 +10,7 @@ import {
 import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
 import { setupModelsRelations } from './relations'
+import { addDefaultModelsAndMembers } from './defaultModels'
 
 export const getModelsFromSchema = (schema): SchemaModel[] => {
     const rows = schema.split('\n').map((r) => r.trim())
@@ -61,196 +62,14 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
 
     setupModelsRelations(models)
     checkForErrorsInModels(models)
-    addMissingFieldIntoModels(models)
+    addDefaultModelsAndMembers(models)
 
     return models
 }
 
-export const addMissingFieldIntoModels = (models: SchemaModel[]) => {
-    const presenceOfRoleModel = false
-    const presenceOfUserModel = models.find((m) => m.modelName == 'User')
-
-    const adminRole: SchemaModelProtectionParam = {
-        roles: ['admin'],
-        type: 3,
-    } as any
-
-    const ownerRole: SchemaModelProtectionParam = {
-        type: 2,
-    } as any
-
-    if (!presenceOfUserModel) {
-        models.push({
-            modelName: 'User',
-            protection: {
-                all: [adminRole],
-                one: [ownerRole],
-                create: [adminRole],
-                update: [ownerRole],
-                remove: [adminRole],
-            },
-            members: [],
-            start: -1,
-            end: -1,
-        })
-    }
-
-    models.push({
-        modelName: 'UserRole',
-        protection: {
-            all: [adminRole],
-            one: [adminRole],
-            create: [adminRole],
-            update: [adminRole],
-            remove: [adminRole],
-        },
-        members: [
-            {
-                name: 'name',
-                modelName: 'String',
-                type: 'String',
-                isRequired: true,
-                isUnique: true,
-                relation: null,
-                isArray: false,
-                row: -1,
-                isReadonly: false,
-            },
-        ],
-        start: -1,
-        end: -1,
-    })
-
-    for (const model of models) {
-        let presenceOfId = false
-        let presenceOfEmail = model.modelName !== 'User'
-        let presenceOfPassword = model.modelName !== 'User'
-        let presenceOfVerification = model.modelName !== 'User'
-        let presenceOfUserRelationToRole = model.modelName !== 'User'
-        let presenceOfRoleName = model.modelName !== 'UserRole'
-        const presenceOfRoleRelationToUser = model.modelName !== 'UserRole'
-
-        for (const member of model.members) {
-            if (member.name == 'id') presenceOfId = true
-            else if (member.name == 'email') presenceOfEmail = true
-            else if (member.name == 'password') presenceOfPassword = true
-            else if (member.name == 'verified') presenceOfVerification = true
-            else if (member.name == 'roles') presenceOfUserRelationToRole = true
-            else if (member.name == 'name') presenceOfRoleName = true
-        }
-
-        if (!presenceOfId)
-            model.members.push({
-                name: 'id',
-                type: 'ID',
-                modelName: 'ID',
-                isArray: false,
-                isRequired: true,
-                isUnique: true,
-                isReadonly: true,
-                row: -1,
-                relation: null,
-            })
-        if (!presenceOfEmail)
-            model.members.push({
-                name: 'email',
-                type: 'String',
-                modelName: 'String',
-                isArray: false,
-                isRequired: true,
-                isUnique: true,
-                isReadonly: true,
-                row: -1,
-                relation: null,
-            })
-        if (!presenceOfPassword)
-            model.members.push({
-                name: 'password',
-                type: 'String',
-                modelName: 'String',
-                isArray: false,
-                isRequired: true,
-                isUnique: false,
-                isReadonly: true,
-                row: -1,
-                relation: null,
-                default: '*****',
-            })
-        if (!presenceOfVerification)
-            model.members.push({
-                name: 'verified',
-                type: 'Boolean',
-                modelName: 'Boolean',
-                isArray: false,
-                isRequired: false,
-                isUnique: false,
-                isReadonly: true,
-                row: -1,
-                relation: null,
-            })
-        if (!presenceOfRoleName)
-            model.members.push({
-                name: 'name',
-                type: 'String',
-                modelName: 'String',
-                isArray: false,
-                isRequired: true,
-                isUnique: true,
-                isReadonly: true,
-                row: -1,
-                relation: null,
-            })
-        if (!presenceOfUserRelationToRole)
-            model.members.push({
-                name: 'roles',
-                type: '[UserRole]',
-                modelName: 'UserRole',
-                isArray: true,
-                isRequired: false,
-                isUnique: false,
-                isReadonly: false,
-                row: -1,
-                relation: {
-                    createFromAnotherModel: true,
-                    inputName: 'UserrolesUserRole',
-                    name: '_RoleOnUser',
-                    relatedModel: models.find((m) => m.modelName == 'UserRole'),
-                    type: SchemaModelRelationType.MANY_TO_MANY,
-                    payloadNameForCreate: 'roles',
-                    payloadNameForId: 'rolesIds',
-                } as any,
-            })
-        if (!presenceOfRoleRelationToUser) {
-            const userModel = models.find((m) => m.modelName == 'User')
-            const userMemberToUserRole = userModel.members.find((m) => m.name == 'roles')
-            const memberToUser = {
-                name: 'users',
-                type: '[User]',
-                modelName: 'User',
-                isArray: true,
-                isRequired: false,
-                isUnique: false,
-                isReadonly: false,
-                row: -1,
-                relation: {
-                    createFromAnotherModel: false,
-                    inputName: 'UserRoleusersUser',
-                    name: '_RoleOnUser',
-                    relatedModel: userModel,
-                    relatedMember: userMemberToUserRole,
-                    type: SchemaModelRelationType.MANY_TO_MANY,
-                    payloadNameForCreate: 'users',
-                    payloadNameForId: 'usersIds',
-                } as any,
-            }
-            model.members.push(memberToUser)
-            userMemberToUserRole.relation.relatedMember = memberToUser
-        }
-    }
-}
-
 export const checkForErrorsInModels = (models: SchemaModel[]) => {
-    const reservedInUser = ['email', 'password', 'verified', 'roles']
+    const reservedInUser = ['email', 'password', 'verified', 'roles', 'files']
+    const reservedInFile = ['name', 'publicToken', 'user']
     const modelsList = []
 
     for (const model of models) {
@@ -270,8 +89,10 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
         for (const member of model.members) {
             if (model.modelName == 'User' && reservedInUser.indexOf(member.name) != -1)
                 throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInUser} reserved and will be add automaticaly`
-            else if (member.name == 'ID')
-                throw `Line ${member.row}: Model with name '${model.modelName}' are ID is reserved and will be add automaticaly`
+            else if (model.modelName == 'File' && reservedInFile.indexOf(member.name) != -1)
+                throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInFile} reserved and will be add automaticaly`
+            else if (member.name == 'id')
+                throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`id\` that is reserved and will be add automaticaly`
 
             if (memberList.includes(member.name)) {
                 const previous = model.members.find((m) => m.name == member.name)

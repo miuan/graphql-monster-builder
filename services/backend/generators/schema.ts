@@ -140,6 +140,8 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
             const mutationName = mutation[0]
             const mutationParams = mutation[1]
 
+            if (name == 'User' && mutationName == 'create') continue
+
             if (mutationParams === 'ONLY_ID') {
                 result += `  ${mutationName}${name}(id: ID!): ${name}Model\n`
             } else {
