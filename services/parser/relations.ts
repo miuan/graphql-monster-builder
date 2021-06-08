@@ -5,11 +5,24 @@ import { isEnumMember } from 'typescript'
 export const setupModelsRelations = (models: SchemaModel[]) => {
     for (const model of models) {
         for (const member of model.members) {
-            if (member.relation && !member.modelName) {
-                processRelation(models, model, member, member.relation.name)
+            if (member.relation && !member.relation.relatedModel) {
+                if (member.relation.type == SchemaModelRelationType.ENTITY) processEntity(models, model, member)
+                else processRelation(models, model, member, member.relation.name)
             }
         }
     }
+}
+
+function processEntity(models: SchemaModel[], model: SchemaModel, member: SchemaModelMember) {
+    const relatedModel = models.find((searchModel) => searchModel.modelName == member.modelName)
+    if (!relatedModel) {
+        throw new Error(`Line: ${member.row} Type, Entity or Model with name '${member.modelName}' not found.`)
+    }
+    member.relation.relatedModel = relatedModel
+    member.relation.relatedMember = null
+    member.relation.createFromAnotherModel = true
+    member.relation.payloadNameForCreate = member.name
+    member.relation.payloadNameForId = null
 }
 
 function processRelation(models: SchemaModel[], model: SchemaModel, member: SchemaModelMember, relationName: string) {
@@ -49,6 +62,7 @@ export function setupRelation(member, relatedModel, relatedMember) {
     member.modelName = relatedModel.modelName
     member.relation.relatedModel = relatedModel
     member.relation.relatedMember = relatedMember
+    member.relation.inputName = `${member.name}With${member.modelName}Input`
 
     member.relation.createFromAnotherModel = !NO_CREATE_FROM_ANOTHER_MODEL.includes(relatedModel.modelName)
 

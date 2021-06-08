@@ -295,6 +295,10 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
     const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+)?/)
 
+    if (!match) {
+        throw `Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`
+    }
+
     const {
         1: name,
         3: type,
@@ -341,6 +345,12 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         // the actual model name will setup from related model
         // in method relations.ts/setupModelsRelations
         member.modelName = null
+    } else if (!['ID', 'Boolean', 'String', 'Int', 'Float', 'DateTime'].includes(type)) {
+        member.relation = {
+            name: `_${type}_ENTITY`,
+            type: SchemaModelRelationType.ENTITY,
+        } as SchemaModelRelation
+        member.modelName = type
     } else {
         member.modelName = type
     }
@@ -353,9 +363,9 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         }
     }
 
-    if (!member.relation && !['ID', 'Boolean', 'String', 'Int', 'Float', 'DateTime'].includes(member.modelName)) {
-        throw new Error(`Line ${lineNumber}: Unknown type ${member.modelName}`)
-    }
+    // if (!member.relation && !['ID', 'Boolean', 'String', 'Int', 'Float', 'DateTime'].includes(member.modelName)) {
+    //     throw new Error(`Line ${lineNumber}: Unknown type ${member.modelName}`)
+    // }
 
     return member
 }

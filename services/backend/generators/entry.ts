@@ -9,7 +9,7 @@ export const generateEntry = async (backendDirectory: BackendDirectory, models: 
     backendDirectory.genWrite(`entry`, body)
 }
 
-const genAddingAndRemovingsForModel = (model: SchemaModel) => {
+export const genAddingAndRemovingsForModel = (model: SchemaModel) => {
     let result = ''
     for (const member of model.members) {
         const relatedMember = member.relation && getOnlyOneRelatedMember(member)
@@ -127,9 +127,7 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
         const memberName = member.name
         const memberModelName = member.relation.relatedModel.modelName
         const lower = memberModelName.charAt(0).toLowerCase() + memberModelName.slice(1)
-        const many =
-            member.relation.type === SchemaModelRelationType.MANY_TO_MANY ||
-            member.relation.type === SchemaModelRelationType.MANY_TO_ONE
+        const many = member.isArray
         body += `\n\t\t${memberName}: async (root, data, ctx) => {
       return await entry.dataloaders['${lower}'](ctx, root.${memberName},${many})
     },`

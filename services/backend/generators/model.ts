@@ -14,8 +14,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
   import { ${modelName}Model } from '../model-types'
   export { Types } from 'mongoose'
   
-const ${varName}: Schema = new Schema(
-{
+const ${varName}: Schema = new Schema({
 `
 
     for (const member of model.members) {

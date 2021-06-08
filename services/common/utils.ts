@@ -21,24 +21,17 @@ export const searchModelsRelationsInModels = (relationName: string, models: Sche
 // but because the relation is cross each others it will create also userRoleAddToUser and userRoleRemoveFromUser
 export const getOnlyOneRelatedMember = (member: SchemaModelMember) => {
     const {
-        relation,
-        relation: { name: relationName, relatedModel },
+        relation: { name: relationName, relatedMember },
     } = member
 
-    const { model: _, member: relatedMember } = searchModelsRelationsInModels(relationName, [relatedModel])
     log.trace('relationName, member.name ' + relationName, member.modelName, relatedMember.modelName)
 
-    if (member.isArray && relatedMember.isArray) {
-        // in split select member alfabethicaly higher
-        return member.modelName < relatedMember.modelName ? relatedMember : member
-    } else if (member.isArray) {
+    if (member.isArray && (!relatedMember.isArray || member.modelName < relatedMember.modelName)) {
         return member
-    } else if (relatedMember.isArray) {
-        return relatedMember
     }
 
     // if any of them is not array, not take any
-    return
+    return null
 }
 
 export const firstToLower = (name) => name.charAt(0).toLowerCase() + name.slice(1)

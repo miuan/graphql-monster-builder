@@ -15,6 +15,7 @@ export enum SchemaModelType {
 export enum SchemaModelRelationType {
     RELATION = 'RELATION',
     CONNECT = 'CONNECT',
+    ENTITY = 'ENTITY',
 }
 
 export type SchemaModelRelation = {

@@ -179,11 +179,11 @@ describe('scan', () => {
         expect(models[1].members[1].relation).toHaveProperty('relatedMember', models[0].members[1])
     })
 
-    it('connection a entity', async () => {
+    it.only('connection a entity', async () => {
         const models = await getModelsFromSchema(`
             type Model1 @model {
                 name: String @isUnique
-                entity1: @connect("Entity1")[]
+                entity1: Entity1[]
             }
 
             type Entity1 @entity {
@@ -196,11 +196,7 @@ describe('scan', () => {
         expect(models[0].members[1]).toHaveProperty('isArray', true)
         expect(models[0].members[1]).toHaveProperty('isRequired', false)
         expect(models[0].members[1].relation).toHaveProperty('relatedModel', models[1])
-        expect(models[0].members[1].relation).toHaveProperty('relatedMember', models[1].members[1])
-        expect(models[1].modelName).toEqual('Model2')
-        expect(models[1].members[1]).toHaveProperty('isArray', false)
-        expect(models[1].members[1]).toHaveProperty('isRequired', true)
-        expect(models[1].members[1].relation).toHaveProperty('relatedModel', models[0])
-        expect(models[1].members[1].relation).toHaveProperty('relatedMember', models[0].members[1])
+        expect(models[0].members[1].relation).toHaveProperty('relatedMember', null)
+        expect(models[1].modelName).toEqual('Entity1')
     })
 })
