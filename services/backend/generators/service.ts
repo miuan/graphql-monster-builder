@@ -204,10 +204,7 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName, 
     if(${varLinkedIds} && ${varLinkedIds}.length > 0) {`
         // TODO: test for relatedMember.relation.type generate correct `updateMany`
         // TODO: test for relatedMember.relation.type set right type corespond to member model
-        if (
-            relatedMember.relation.type === SchemaModelRelationType.MANY_TO_MANY ||
-            relatedMember.relation.type === SchemaModelRelationType.MANY_TO_ONE
-        ) {
+        if (relatedMember.isArray) {
             result += `
         await entry.models['${lower}'].updateMany({ _id: {$in: ${varLinkedIds}} }, {  $push: {${relatedMemberName}: { $each: [${currentIdName}]}} })
       `
@@ -231,9 +228,7 @@ export const conversionsIdsToField = (members: SchemaModelMember[], create = fal
             continue
         }
 
-        const isMeMany =
-            member.relation.type === SchemaModelRelationType.MANY_TO_ONE ||
-            member.relation.type === SchemaModelRelationType.MANY_TO_MANY
+        const isMeMany = member.isArray
         const relationModelName = member.relation.relatedModel.modelName
         const varLinkedIds = `${member.name}LinkedIds`
         const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1)
@@ -241,9 +236,7 @@ export const conversionsIdsToField = (members: SchemaModelMember[], create = fal
         const relatedConnecteMember = member.relation.relatedModel.members.find(
             (member) => member.relation && member.relation.name === member.relation.name,
         )
-        const isHeMany =
-            relatedConnecteMember.relation.type === SchemaModelRelationType.MANY_TO_ONE ||
-            relatedConnecteMember.relation.type === SchemaModelRelationType.MANY_TO_MANY
+        const isHeMany = relatedConnecteMember.isArray
 
         let swithcOfLInkedIds
         let switchOfAddConnectedId = ''

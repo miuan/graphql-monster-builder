@@ -24,7 +24,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
     const modelRegExp = new RegExp('(type|model|entity) (w+) ?(@model|@entity)? ?{')
     let lineNumber = 1
     for (const currentRow of rows) {
-        const matched = currentRow.match(/(\w+) *(\w+) *(@((\w+)(\(for="(\w+)",?( *)?(multi=(\w+))?\))?))? *{/)
+        const matched = currentRow.match(/ *(\w+) *(\w+) *(@((\w+)))? *{/)
         if (currentRow.indexOf('#') === 0) {
             // ** COMMENTS
         } else if (matched && matched.length > 1) {
@@ -293,15 +293,22 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 }
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
-    const nameAndType = row.trim().split(':')
+    const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+)?/)
 
+    const {
+        1: name,
+        3: type,
+        4: relationType, // 'relation' or 'connect'
+        5: relationParamName, // 'name' or 'entity'
+        7: relationParamValue,
+        8: isArray,
+        9: isRequired,
+        10: options,
+    } = match
     // empty line we can skip
-    if (nameAndType.length < 2) {
+    if (match.length < 2) {
         return null
     }
-
-    const name = nameAndType[0]
-    const typeParams = nameAndType[1].trim().split(' ')
 
     // https://mongoosejs.com/docs/api.html#schema_Schema.reserved
     if (MONGOSEE_RESERVED_WORDS.indexOf(name) !== -1) {
@@ -315,18 +322,31 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
     const member: SchemaModelMember = {
         row: lineNumber,
         name,
-        isRequired: false,
+        type,
+        isArray: !!isArray,
+        isRequired: !!isRequired,
         isUnique: false,
     } as SchemaModelMember
 
-    const required = typeParams[0].endsWith('!')
-    member.type = !required ? typeParams[0] : typeParams[0].substr(0, typeParams[0].length - 1)
-    member.isRequired = required
-    member.modelName = member.type.replace('[', '').replace(']', '').replace('!', '')
-    member.isArray = member.type.startsWith('[')
+    if (relationType) {
+        if (relationType !== 'relation' && relationType !== 'connect') {
+            throw `Line ${lineNumber}: The member name '${name}' have unknown relation type '${relationType}, known types are 'relation' and 'connect'`
+        }
 
-    if (typeParams.length > 1) {
-        const splited = row.split('@')
+        member.relation = {
+            name: relationParamValue,
+            type: relationType === 'relation' ? SchemaModelRelationType.RELATION : SchemaModelRelationType.CONNECT,
+        } as SchemaModelRelation
+
+        // the actual model name will setup from related model
+        // in method relations.ts/setupModelsRelations
+        member.modelName = null
+    } else {
+        member.modelName = type
+    }
+
+    if (options) {
+        const splited = options.split('@')
         splited.shift()
         for (const param of splited) {
             extractMemberFromLineParams(member, `@${param.trim()}`)

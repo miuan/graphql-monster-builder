@@ -53,10 +53,7 @@ export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
     for (const member of model.members) {
         if (!member.relation) {
             continue
-        } else if (
-            member.relation.type === SchemaModelRelationType.ONE_TO_MANY ||
-            member.relation.type === SchemaModelRelationType.MANY_TO_MANY
-        ) {
+        } else if (member.relation.relatedMember.isArray) {
             const relation = member.relation
             const relationName = relation.name
 
@@ -204,7 +201,6 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                     continue
                 }
 
-                const relationType = member.relation.type
                 const relatedModel = member.relation.inputName
                 const createFromAnotherModel = member.relation.createFromAnotherModel
 
