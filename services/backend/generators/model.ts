@@ -1,4 +1,12 @@
-import { SchemaModel, SchemaModelRelationType, StructureBackend, SchemaModelMember } from '../../common/types'
+import { templateFileToText } from '../../common/files'
+import {
+    SchemaModel,
+    SchemaModelRelationType,
+    StructureBackend,
+    SchemaModelMember,
+    SchemaModelType,
+} from '../../common/types'
+import { firstToLower } from '../../common/utils'
 
 const defaultMembers = ['createdAt', 'updatedAt', 'id']
 
@@ -8,143 +16,88 @@ const log = logger.getLogger('model')
 
 export const createMongoModel = (structure: StructureBackend, model: SchemaModel) => {
     const modelName = model.modelName
-    const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1)
-    const varName = lower + 'Schema'
-    let result = `import { Schema, Model, Types, model } from 'mongoose'
-  import { ${modelName}Model } from '../model-types'
-  export { Types } from 'mongoose'
-  
-const ${varName}: Schema = new Schema({
-`
+    const lower = firstToLower(modelName)
+    const schemaName = `${lower}Schema`
+
+    let constructedMembers = ''
+    let constructedIndexies = ''
+    const forConstructingImports = []
 
     for (const member of model.members) {
-        if (defaultMembers.indexOf(member.name) !== -1) {
-            continue
+        if (!defaultMembers.includes(member.name)) {
+            constructedMembers += `\t\t${member.name}: ${constructMember(member, structure)},\n`
         }
 
-        result += `\t\t${member.name}:`
-
-        let params =
-            `{ type: ` +
-            (member.isArray
-                ? `[${transformTypeToMongoType(structure, member)}]`
-                : transformTypeToMongoType(structure, member))
-
-        if (member.relation) {
-            params += `, ref: '${structure.id}_${member.relation.relatedModel.modelName}', index: true`
+        if (member.isUnique && Array.isArray(member.isUnique)) {
+            constructedIndexies += `${schemaName}.index({ ${member.name}: 1`
+            for (const c of member.isUnique as string[]) {
+                constructedIndexies += `,${c}: 1`
+            }
+            constructedIndexies += `}, { unique: true });`
         }
 
-        if (member.isRequired) {
-            params += `, required: true`
+        if (
+            member.relation &&
+            member.relation.type === SchemaModelRelationType.ENTITY &&
+            !forConstructingImports.includes(member.modelName)
+        ) {
+            forConstructingImports.push(member.modelName)
         }
-
-        if (member.isUnique === true) {
-            params += `, unique: true`
-        }
-
-        if (member.default) {
-            params += `, default: '${member.default}'`
-        }
-
-        params += ' },\n'
-        result += params
-
-        // if (member.isArray) {
-        //     result += ` [${params}],\n`
-        // } else {
-        //     result += ` ${params},\n`
-        // }
     }
 
     if (modelName === 'User') {
-        result += `__token: { type: Schema.Types.String, required: false},\n`
-        result += `__refreshToken: { type: Schema.Types.String, required: false},\n`
-        result += `__verifyToken: { type: Schema.Types.String, required: false},\n`
-        result += `__password: { type: Schema.Types.String, required: true},\n`
-        result += `__resetPasswordToken: { type: Schema.Types.String},\n`
-        result += `__parent_access_token: { type: Schema.Types.String},\n`
-    }
+        constructedMembers += `__token: { type: Schema.Types.String, required: false},\n`
+        constructedMembers += `__refreshToken: { type: Schema.Types.String, required: false},\n`
+        constructedMembers += `__verifyToken: { type: Schema.Types.String, required: false},\n`
+        constructedMembers += `__password: { type: Schema.Types.String, required: true},\n`
+        constructedMembers += `__resetPasswordToken: { type: Schema.Types.String},\n`
+        constructedMembers += `__parent_access_token: { type: Schema.Types.String},\n`
 
-    if (modelName === 'File') {
-        result += `__dbx: { type: Schema.Types.String, required: false},\n`
-    }
-
-    result += `},
-{
-  timestamps: true,
-  usePushEach: true,
-  versionKey: false,
-});
-
-// ${varName}.pre('find', function() {
-//   (<any>this)._startTime = Date.now();
-// });
-
-// ${varName}.post('find', function() {
-//   if ((<any>this)._startTime != null) {
-//     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
-//   }
-// })
-
-// ${varName}.pre('findOne', function() {
-//   (<any>this)._startTime = Date.now();
-// });
-
-// ${varName}.post('findOne', function() {
-//   if ((<any>this)._startTime != null) {
-//     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
-//   }
-// })
-
-// ${varName}.pre('update', function() {
-//   (<any>this)._startTime = Date.now();
-// });
-
-// ${varName}.post('update', function() {
-//   if ((<any>this)._startTime != null) {
-//     // console.log('Runtime in MS: ', Date.now() - (<any>this)._startTime);
-//   }
-// })
-`
-
-    if (modelName === 'User') {
         // https://docs.mongodb.com/manual/core/index-partial/#examples
-        result += `
-  ${varName}.index(
+        constructedIndexies += `
+  ${schemaName}.index(
     { __resetPasswordToken: 1 },
     { unique: true, partialFilterExpression: { __resetPasswordToken: { $exists: true } } }
   )
-
-  ${varName}.index(
+  ${schemaName}.index(
     { __verifyToken: 1 },
     { unique: true, partialFilterExpression: { __verifyToken: { $exists: true } } }
   )
- 
 `
     }
 
-    // indexes
-    for (const member of model.members) {
-        const isUnique = member.isUnique
-        if (isUnique && isUnique[0]) {
-            result += `${varName}.index({ ${member.name}: 1`
-            for (const c of isUnique as string[]) {
-                result += `,${c}: 1`
-            }
-            result += `}, { unique: true });`
-        }
+    if (modelName === 'File') {
+        constructedMembers += `__dbx: { type: Schema.Types.String, required: false},\n`
     }
 
-    result += `
-export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>('${structure.id}_${modelName}', ${varName});`
-    return result
+    let modelExport = ''
+    if (model.type === SchemaModelType.MODEL) {
+        modelExport = `
+        export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>(
+            '${structure.id}_${modelName}', ${schemaName}
+        );`
+    }
+
+    const constructedImports = forConstructingImports.reduce((acc, cur) => {
+        acc += `import { ${firstToLower(cur)}Schema } from './${cur}'`
+        return acc
+    }, '')
+
+    return templateFileToText('model.t.ts', {
+        __MODEL_NAME__: modelName,
+        __SCHEMA_NAME__: schemaName,
+        __CONSTRUCTED_MEMBERS__: constructedMembers,
+        __CONSTRUCTED_INDEXIES__: constructedIndexies,
+        __CONSTRUCTED_IMPORTS__: constructedImports,
+        __EXPORT_MODEL__: modelExport,
+    })
 }
 
 export const transformTypeToMongoType = (structure: StructureBackend, member: SchemaModelMember) => {
     if (member.relation) {
-        const result = 'Schema.Types.ObjectId'
-
-        return result
+        return member.relation.type === SchemaModelRelationType.RELATION
+            ? 'Schema.Types.ObjectId'
+            : `${firstToLower(member.type)}Schema`
     }
 
     if (member.modelName === 'DateTime') {
@@ -168,4 +121,29 @@ export const generateModels = (backendDirectory: BackendDirectory, models: Schem
         log.info(`Generate model: ${model.modelName}`)
         generateMongoModelToFile(backendDirectory, model)
     }
+}
+
+function constructMember(member: SchemaModelMember, structure: StructureBackend) {
+    let constructedMember =
+        `type: ` +
+        (member.isArray
+            ? `[${transformTypeToMongoType(structure, member)}]`
+            : transformTypeToMongoType(structure, member))
+
+    if (member.relation && member.relation.type == SchemaModelRelationType.RELATION) {
+        constructedMember += `, ref: '${structure.id}_${member.relation.relatedModel.modelName}', index: true`
+    }
+
+    if (member.isRequired) {
+        constructedMember += `, required: true`
+    }
+
+    if (member.isUnique === true) {
+        constructedMember += `, unique: true`
+    }
+
+    if (member.default) {
+        constructedMember += `, default: '${member.default}'`
+    }
+    return `{${constructedMember}}`
 }

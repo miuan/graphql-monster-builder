@@ -1,4 +1,10 @@
-import { SchemaModel, SchemaModelRelationType, StructureBackend, SchemaModelMember } from '../../common/types'
+import {
+    SchemaModel,
+    SchemaModelRelationType,
+    StructureBackend,
+    SchemaModelMember,
+    SchemaModelType,
+} from '../../common/types'
 
 import { writeToFile, templateFileToText } from '../../common/files'
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
@@ -48,19 +54,17 @@ const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMembe
     return ret
 }
 
-const modelCreateAddRemoveLinks = (model: SchemaModel) => {
+const modelCreateAddRemoveLinks = (model: SchemaModel, membersWirhRelation: SchemaModelMember[]) => {
     const ret = {
         result: '',
         connect: '',
     }
 
-    for (const member of model.members) {
-        if (member.relation) {
-            const { result, connect } = memberCreateAndRemoveLinks(model, member)
+    for (const member of membersWirhRelation) {
+        const { result, connect } = memberCreateAndRemoveLinks(model, member)
 
-            ret.result += result
-            ret.connect += connect
-        }
+        ret.result += result
+        ret.connect += connect
     }
     return ret
 }
@@ -70,12 +74,21 @@ export const createService = (model: SchemaModel) => {
     const lower = firstToLower(modelName)
     const varName = lower + 'Model'
 
-    const allIdsConversionsCreate = conversionsIdsToField(model.members, true)
-    const allIdsConversionsUpdate = conversionsIdsToField(model.members, false)
-    const connectRelationCreate = updateLinkedModels(model.members, 'createdModel.id')
-    const connectRelationUpdate = updateLinkedModels(model.members, 'updatedModel.id')
-    const disconnectRelations = disconnectLinkedModels(modelName, model.members)
-    const disconnectRelationsInRemove = disconnectLinkedModels(modelName, model.members, true)
+    const membersWithRelation = model.members.filter(
+        (model) => model.relation && model.relation.type === SchemaModelRelationType.RELATION,
+    )
+
+    const allIdsConversionsCreate = conversionsIdsToField(membersWithRelation, true)
+    const allIdsConversionsUpdate = conversionsIdsToField(membersWithRelation, false)
+    const connectRelationCreate = updateLinkedModels(membersWithRelation, 'createdModel.id')
+    const connectRelationUpdate = updateLinkedModels(membersWithRelation, 'updatedModel.id')
+    const disconnectRelations = disconnectLinkedModels(modelName, membersWithRelation)
+    const disconnectRelationsInRemove = disconnectLinkedModels(modelName, membersWithRelation, true)
+    const { result: serviceAddRemove, connect: serviceAddRemoveConnect } = modelCreateAddRemoveLinks(
+        model,
+        membersWithRelation,
+    )
+
     let actionBeforeCreate = ''
     let actionAfterCreate = ''
     let actionBeforeUpdate = ''
@@ -89,8 +102,6 @@ export const createService = (model: SchemaModel) => {
         actionAfterCreate = ``
         actionBeforeUpdate = 'extras.checkPasswordIsNotIncluded(data);'
     }
-
-    const { result: serviceAddRemove, connect: serviceAddRemoveConnect } = modelCreateAddRemoveLinks(model)
 
     let result = templateFileToText(`service.ts`, {
         _MODEL_NAME_: modelName,
@@ -115,15 +126,11 @@ export const createService = (model: SchemaModel) => {
     return result
 }
 
-export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], isItForRemove = false) => {
+export const disconnectLinkedModels = (modelName, membersWithRelation: SchemaModelMember[], isItForRemove = false) => {
     let result = ''
     // const membersWithRelation = members.every(m => m.relation != null);
 
-    for (const member of members) {
-        if (!member.relation) {
-            continue
-        }
-
+    for (const member of membersWithRelation) {
         const relation = member.relation
         const relatedModel = relation.relatedModel
         const relationModelName = relatedModel.modelName
@@ -182,15 +189,11 @@ export const disconnectLinkedModels = (modelName, members: SchemaModelMember[], 
     return result
 }
 
-export const updateLinkedModels = (members: SchemaModelMember[], currentIdName, create = false) => {
+export const updateLinkedModels = (membersWithRelation: SchemaModelMember[], currentIdName, create = false) => {
     let result = ''
     // const membersWithRelation = members.every(m => m.relation != null);
 
-    for (const member of members) {
-        if (!member.relation) {
-            continue
-        }
-
+    for (const member of membersWithRelation) {
         const relationModelName = member.relation.relatedModel.modelName
         const relatedModel = member.relation.relatedModel
         const relationName = member.relation.name
@@ -219,15 +222,11 @@ export const updateLinkedModels = (members: SchemaModelMember[], currentIdName, 
     return result
 }
 
-export const conversionsIdsToField = (members: SchemaModelMember[], create = false) => {
+export const conversionsIdsToField = (membersWithRelation: SchemaModelMember[], create = false) => {
     let result = ''
     // const membersWithRelation = members.every(m => m.relation != null);
 
-    for (const member of members) {
-        if (!member.relation) {
-            continue
-        }
-
+    for (const member of membersWithRelation) {
         const isMeMany = member.isArray
         const relationModelName = member.relation.relatedModel.modelName
         const varLinkedIds = `${member.name}LinkedIds`
@@ -284,8 +283,16 @@ export const conversionsIdsToField = (members: SchemaModelMember[], create = fal
     return result
 }
 
+function createEntityService(model: SchemaModel) {
+    const result = templateFileToText('entity.service.t.ts', {
+        __ENTITY_NAME__: model.modelName,
+    })
+
+    return result
+}
+
 export const generateServiceToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
-    const str = createService(model)
+    const str = model.type === SchemaModelType.MODEL ? createService(model) : createEntityService(model)
 
     backendDirectory.servicesWrite(`${model.modelName}`, str)
 }

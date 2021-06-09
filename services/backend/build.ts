@@ -12,6 +12,7 @@ import { generateModelTypes } from './generators/model-types'
 import { BackendDirectory } from './backendDirectory'
 import * as _ from 'lodash'
 import { generateIntegrationTests } from './generators/integration'
+import { SchemaModelType } from '../common/types'
 
 export const exportAs = async (name, from, base = '.', config = {}) => {
     const importedSchema = fs.readFileSync(from, { encoding: 'utf8' })
@@ -30,7 +31,10 @@ export const exportAsFromString = async (name, importedSchema, outDir = '.', con
     generateSchema(backendDirectory, models)
     generateModels(backendDirectory, models)
     generateServices(backendDirectory, models)
-    generateResolvers(backendDirectory, models)
+    generateResolvers(
+        backendDirectory,
+        models.filter((model) => model.type === SchemaModelType.MODEL),
+    )
     generateDataloaders(backendDirectory, models)
     generateModelTypes(backendDirectory, models)
 

@@ -24,6 +24,7 @@ function processEntity(models: SchemaModel[], model: SchemaModel, member: Schema
     member.relation.createFromAnotherModel = true
     member.relation.payloadNameForCreate = member.name
     member.relation.payloadNameForId = null
+    member.relation.inputName = `In${member.modelName}Member${firstToUpper(member.name)}As${relatedModel.modelName}`
 }
 
 function processRelation(models: SchemaModel[], model: SchemaModel, member: SchemaModelMember, relationName: string) {

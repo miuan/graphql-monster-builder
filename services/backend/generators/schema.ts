@@ -52,7 +52,7 @@ export const relatedParamName2Id = (member: SchemaModelMember) => `${relatedPara
 export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
     let result = ''
     for (const member of model.members) {
-        if (member.relation && member.isArray) {
+        if (member.relation?.type === SchemaModelRelationType.RELATION && member.isArray) {
             const relation = member.relation
             const relationName = relation.name
 
@@ -92,7 +92,7 @@ export const genereateSchemaPayloads = (models: SchemaModel[]) => {
 export const genereateSchemaModelPayloads = (model: SchemaModel) => {
     let result = ''
 
-    for (const member of model.members) {
+    for (const member of model.members.filter((member) => member.relation?.type === SchemaModelRelationType.RELATION)) {
         const relation = member.relation
         if (relation && !relation.payloadNameForAddOrDelete) {
             const relationName = relation.name
@@ -137,7 +137,7 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
 
     applayedRelations = []
     for (const model of models) {
-        if (model.type === SchemaModelType.MODEL)
+        if (model.type === SchemaModelType.MODEL) {
             for (const mutation of schemaMutations) {
                 const name = model.modelName
                 const mutationName = mutation[0]
@@ -155,7 +155,8 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
                     result += `  ${mutationName}${name}(${params}): ${name}Model\n`
                 }
             }
-        result += generateMutationAddingsAndRemovings(model)
+            result += generateMutationAddingsAndRemovings(model)
+        }
     }
 
     result += `   login_v1(email: String!, password: String!): UserToken\n`

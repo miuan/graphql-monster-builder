@@ -11,7 +11,10 @@ export const generateEntry = async (backendDirectory: BackendDirectory, models: 
 
 export const genAddingAndRemovingsForModel = (model: SchemaModel) => {
     let result = ''
-    for (const member of model.members) {
+    const membersWithRelations = model.members.filter(
+        (model) => model.relation?.type === SchemaModelRelationType.RELATION,
+    )
+    for (const member of membersWithRelations) {
         const relatedMember = member.relation && getOnlyOneRelatedMember(member)
 
         if (member.relation && relatedMember) {
@@ -33,32 +36,38 @@ export const generateEntryWorker = (structure: StructureBackend, models: SchemaM
     let services = ''
     let resolvers = ''
 
-    for (const model of structure.models.modules) {
-        const lower = model.charAt(0).toLowerCase() + model.slice(1)
+    const properModels = models.filter((model) => model.type === SchemaModelType.MODEL)
+    for (const model of properModels) {
+        const lower = firstToLower(model.modelName)
         const modelName = `${lower}Model`
-        body += `import { ${modelName} } from './models/${model}'\n`
+        body += `import { ${modelName} } from './models/${model.modelName}'\n`
         modelsBody += `entry.models['${lower}'] = ${modelName}\n`
-    }
-    body += '\n'
 
-    for (const model of structure.services.modules) {
-        const lower = model.charAt(0).toLowerCase() + model.slice(1)
-        const modelName = `${lower}Service`
-        body += `import { generate${model}Service } from './services/${model}'\n`
-        services += `entry.services['${lower}'] = generate${model}Service(entry)\n`
-    }
-    body += '\n'
+        body += `import { generate${model.modelName}Service } from './services/${model.modelName}'\n`
+        services += `entry.services['${lower}'] = generate${model.modelName}Service(entry)\n`
 
-    for (const model of structure.resolvers.modules) {
-        const lower = model.charAt(0).toLowerCase() + model.slice(1)
-        const modelName = `${lower}Service`
-        body += `import { generate${model}Resolver } from './resolvers/${model}'\n`
-        resolvers += `entry.resolvers['${lower}'] = generate${model}Resolver(entry)\n`
+        body += `import { generate${model.modelName}Resolver } from './resolvers/${model.modelName}'\n`
+        resolvers += `entry.resolvers['${lower}'] = generate${model.modelName}Resolver(entry)\n`
+
+        body += '\n'
     }
+
+    // for (const model of structure.services.modules) {
+    //     const lower = model.charAt(0).toLowerCase() + model.slice(1)
+    //     const serviceName = `${lower}Service`
+    // }
+    // body += '\n'
+
+    // for (const model of structure.resolvers.modules) {
+    //     const lower = model.charAt(0).toLowerCase() + model.slice(1)
+    //     const modelName = `${lower}Service`
+    //     body += `import { generate${model}Resolver } from './resolvers/${model}'\n`
+    //     resolvers += `entry.resolvers['${lower}'] = generate${model}Resolver(entry)\n`
+    // }
 
     const resolver = createResolvers(structure, models)
 
-    body += templateFileToText('entry.tmpl.ts', {
+    body += templateFileToText('entry.t.ts', {
         _MODELS_BODY_: modelsBody,
         _SERVICES_: services,
         _RE1SOLVERS_: resolvers,
@@ -76,7 +85,7 @@ export const createResolvers = (structure: StructureBackend, models: SchemaModel
     for (const model of models) {
         if (model.type === SchemaModelType.MODEL) {
             const modelName = model.modelName
-            const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1)
+            const lower = firstToLower(modelName)
             queries += `\t\t${modelName}: entry.resolvers['${lower}'].one,\n`
             queries += `\t\tall${modelName}: entry.resolvers['${lower}'].all,\n`
 

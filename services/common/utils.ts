@@ -24,9 +24,7 @@ export const getOnlyOneRelatedMember = (member: SchemaModelMember) => {
         relation: { name: relationName, relatedMember },
     } = member
 
-    log.trace('relationName, member.name ' + relationName, member.modelName, relatedMember.modelName)
-
-    if (member.isArray && (!relatedMember.isArray || member.modelName < relatedMember.modelName)) {
+    if (member.isArray && (!relatedMember.isArray || member.modelName < relatedMember?.modelName)) {
         return member
     }
 
