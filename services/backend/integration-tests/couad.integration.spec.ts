@@ -63,18 +63,18 @@ describe('couad integration', () => {
                     opt: String
                     optInt: Int
                     optFloat: Float
-                    arrName: [String]
-                    arrInt: [Int]
-                    arrFloat: [Float]
+                    arrName: String[]
+                    arrInt: Int[]
+                    arrFloat: Float[]
                     optDateTime: DateTime
-                    model2: [Model2] @relation(name: "Model1OnModel2")
+                    model2: @relation(name: "Model1OnModel2")[]
                 }
 
                 type Model2 @model {
                     name: String!
                     opt: String
                     optFloat: Float
-                    model1: Model1! @relation(name: "Model1OnModel2")
+                    model1: @relation(name: "Model1OnModel2")!
                 }
             `,
             3002,
