@@ -38,22 +38,14 @@ export const _LOWER_NAME_Create = (entry) => {
         // before real object exist
         // we generate TEMPORARY-ID for related objects what they have a required relation...
         const id = Types.ObjectId()
-        let cm
+
         _ALL_IDS_CONVERSIONS_CREATE_
         if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Create']) {
             data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data, ctxUserId })
         }
         _EXTRA_ACTION_BEFORE_CREATE_
-        let createdModel 
-        try{
-            createdModel = await VAR_NAME.create(data)
-            cm = createdModel.toObject()
-            console.log(cm)
-            //createdModel = data
-        } catch(ex){
-            console.log(ex)
-        }
-        
+        let createdModel = await VAR_NAME.create(data)
+
         _EXTRA_ACTION_AFTER_CREATE_
         _CONNECT_RELATION_CREATE_
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Create']) {
@@ -63,7 +55,7 @@ export const _LOWER_NAME_Create = (entry) => {
                 ctxUserId,
             })
         }
-        return cm
+        return createdModel
     }
 }
 
@@ -84,7 +76,7 @@ export const _LOWER_NAME_Update = (entry) => {
         _DISCONNECT_RELATIONS_
         _ALL_IDS_CONVERSIONS_UPDATE_
         _EXTRA_ACTION_BEFORE_UPDATE_
-        let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true }).lean()
+        let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true })
 
         // connect all relations
         _CONNECT_RELATION_UPDATE_
@@ -109,7 +101,7 @@ export const _LOWER_NAME_Remove = (entry, ctxUserId = null) => {
 
         // disconnect all relations
         _DISCONNECT_RELATIONS_IN_REMOVE
-        let removedModel = await VAR_NAME.findByIdAndRemove(id).lean()
+        let removedModel = await VAR_NAME.findByIdAndRemove(id)
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Remove']) {
             removedModel = await entry.hooks.services['after_MODEL_NAME_Remove'](entry, {

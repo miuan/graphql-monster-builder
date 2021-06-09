@@ -128,10 +128,13 @@ export const createResolvers = (structure: StructureBackend, models: SchemaModel
 export const createQueryResolvers = (modules) => {}
 
 export const generateDataloadersForResolver = (model: SchemaModel) => {
-    let body = `
-  ,${model.modelName}Model: {`
+    let body = `,${model.modelName}Model: {`
 
-    const memberWithRelation = model.members.filter((m) => m.relation)
+    // SchemaModelRelationType.ENTITY is actualy part of object
+    // have a dataloader mean it will try to use dataloade but we already have the data
+    const memberWithRelation = model.members.filter(
+        (m) => m.relation && m.relation.type !== SchemaModelRelationType.ENTITY,
+    )
     for (const member of memberWithRelation) {
         const memberName = member.name
         const memberModelName = member.relation.relatedModel.modelName
