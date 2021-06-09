@@ -43,7 +43,14 @@ export const _LOWER_NAME_Create = (entry) => {
             data = await entry.hooks.services['before_MODEL_NAME_Create'](entry, { data, ctxUserId })
         }
         _EXTRA_ACTION_BEFORE_CREATE_
-        let createdModel = await VAR_NAME.create(data)
+        let createdModel 
+        try{
+            createdModel = await VAR_NAME.create(data)
+            //createdModel = data
+        } catch(ex){
+            console.log(ex)
+        }
+        
         _EXTRA_ACTION_AFTER_CREATE_
         _CONNECT_RELATION_CREATE_
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Create']) {

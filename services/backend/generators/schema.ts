@@ -1,3 +1,4 @@
+import { ifError } from 'assert'
 import {
     schemaMutations,
     notMutationFields,
@@ -51,9 +52,7 @@ export const relatedParamName2Id = (member: SchemaModelMember) => `${relatedPara
 export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
     let result = ''
     for (const member of model.members) {
-        if (!member.relation) {
-            continue
-        } else if (member.relation.relatedMember.isArray) {
+        if (member.relation && member.isArray) {
             const relation = member.relation
             const relationName = relation.name
 
@@ -192,8 +191,8 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
     }
 
     for (const member of model.members) {
-        const mame = member.name
-        if (nmf.indexOf(mame) === -1 && !member.isReadonly) {
+        const name = member.name
+        if (nmf.indexOf(name) === -1 && !member.isReadonly) {
             if (member.relation) {
                 if (excludeRelationToModel === member.modelName) {
                     // this relation is excluded
@@ -201,32 +200,46 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                     continue
                 }
 
-                const relatedModel = member.relation.inputName
-                const createFromAnotherModel = member.relation.createFromAnotherModel
-
-                let relationText = ''
-
-                if (member.isArray) {
-                    relationText += `, ${member.relation.payloadNameForId}: [ID!]`
-                    if (createFromAnotherModel)
-                        relationText += `, ${member.relation.payloadNameForCreate}: [${relatedModel}!]`
-                } else {
-                    relationText += `, ${member.relation.payloadNameForId}: ID`
-                    if (createFromAnotherModel)
-                        relationText += `, ${member.relation.payloadNameForCreate}: ${relatedModel}`
+                if (member.relation.payloadNameForId) {
+                    result += `, ${constructMemberWithType(member.relation.payloadNameForId, 'ID', member.isArray)}`
                 }
 
-                result += relationText
+                if (member.relation.createFromAnotherModel) {
+                    result += `, ${constructMemberWithType(
+                        member.relation.payloadNameForCreate,
+                        member.relation.inputName,
+                        member.isArray,
+                    )}`
+                }
             } else {
-                result += `, ${mame}: ${member.type}`
-
-                if (forceRequiredFields && member.isRequired) {
-                    result += `!`
-                }
+                result += `, ${constructMemberWithType(name, member.type, member.isArray, member.isRequired)}`
             }
         }
     }
     return result.substr(2)
+}
+
+export function constructMemberWithType(
+    name: string,
+    baseType: string,
+    isArray: boolean,
+    isRequire = false,
+    haveArrayRequiredItem = false,
+) {
+    let type
+    if (isArray && haveArrayRequiredItem) {
+        type = `[${baseType}!]`
+    } else if (isArray) {
+        type = `[${baseType}]`
+    } else {
+        type = baseType
+    }
+
+    if (isRequire) {
+        type += '!'
+    }
+
+    return `${name}: ${type}`
 }
 
 export const generateSchemaOrder = (model: SchemaModel) => {
@@ -288,19 +301,20 @@ export const generateSchemaModel = (model: SchemaModel) => {
     let result = ``
 
     for (const member of model.members) {
-        let type = ''
+        let constructedMember
         if (member.relation) {
-            type = `${member.relation.relatedModel.modelName}Model`
-            if (member.isArray) type = `[${type}!]`
+            constructedMember = constructMemberWithType(
+                member.name,
+                `${member.relation.relatedModel.modelName}Model`,
+                member.isArray,
+                member.isRequired,
+                true,
+            )
         } else {
-            type = member.type
+            constructedMember = constructMemberWithType(member.name, member.type, member.isArray, member.isRequired)
         }
 
-        if (member.isRequired) {
-            type += '!'
-        }
-
-        result += `\n    ${member.name}: ${type}`
+        result += `\n    ${constructedMember}`
     }
 
     return `

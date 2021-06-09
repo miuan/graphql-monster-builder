@@ -15,7 +15,7 @@ export const genAddingAndRemovingsForModel = (model: SchemaModel) => {
         const relatedMember = member.relation && getOnlyOneRelatedMember(member)
 
         if (member.relation && relatedMember) {
-            const lower = firstToLower(relatedMember.modelName)
+            const lower = firstToLower(model.modelName)
             const relationName = member.relation.name
             const funcAddToName = `addTo${relationName}`
             const funcRemoveFromName = `removeFrom${relationName}`

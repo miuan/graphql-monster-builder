@@ -1,6 +1,7 @@
 import { SchemaModelRelationType, SchemaModel, SchemaModelMember } from '../common/types'
 import * as _ from 'lodash'
 import { isEnumMember } from 'typescript'
+import { firstToUpper } from '../common/utils'
 
 export const setupModelsRelations = (models: SchemaModel[]) => {
     for (const model of models) {
@@ -52,17 +53,17 @@ function processRelation(models: SchemaModel[], model: SchemaModel, member: Sche
     }
 
     // take modelName from each others
-    setupRelation(member, relatedModel, relatedMember)
-    setupRelation(relatedMember, model, member)
+    setupRelation(member, relatedModel, relatedMember, model.modelName)
+    setupRelation(relatedMember, model, member, relatedModel.modelName)
 }
 
-export function setupRelation(member, relatedModel, relatedMember) {
+export function setupRelation(member, relatedModel, relatedMember, modelName) {
     const NO_CREATE_FROM_ANOTHER_MODEL = ['User', 'File']
 
     member.modelName = relatedModel.modelName
     member.relation.relatedModel = relatedModel
     member.relation.relatedMember = relatedMember
-    member.relation.inputName = `${member.name}With${member.modelName}Input`
+    member.relation.inputName = `In${modelName}Member${firstToUpper(member.name)}As${relatedModel.modelName}`
 
     member.relation.createFromAnotherModel = !NO_CREATE_FROM_ANOTHER_MODEL.includes(relatedModel.modelName)
 

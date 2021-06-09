@@ -24,7 +24,15 @@ const ${varName}: Schema = new Schema({
 
         result += `\t\t${member.name}:`
 
-        let params = `{ type: ${transformTypeToMongoType(structure, member)}`
+        let params =
+            `{ type: ` +
+            (member.isArray
+                ? `[${transformTypeToMongoType(structure, member)}]`
+                : transformTypeToMongoType(structure, member))
+
+        if (member.relation) {
+            params += `, ref: '${structure.id}_${member.relation.relatedModel.modelName}', index: true`
+        }
 
         if (member.isRequired) {
             params += `, required: true`
@@ -38,13 +46,14 @@ const ${varName}: Schema = new Schema({
             params += `, default: '${member.default}'`
         }
 
-        params += ' }'
+        params += ' },\n'
+        result += params
 
-        if (member.isArray) {
-            result += ` [${params}],\n`
-        } else {
-            result += ` ${params},\n`
-        }
+        // if (member.isArray) {
+        //     result += ` [${params}],\n`
+        // } else {
+        //     result += ` ${params},\n`
+        // }
     }
 
     if (modelName === 'User') {
@@ -133,8 +142,8 @@ export const ${lower}Model: Model<${modelName}Model> = model<${modelName}Model>(
 
 export const transformTypeToMongoType = (structure: StructureBackend, member: SchemaModelMember) => {
     if (member.relation) {
-        let result = 'Schema.Types.ObjectId, '
-        result += `ref: '${structure.id}_${member.relation.relatedModel.modelName}', index: true`
+        const result = 'Schema.Types.ObjectId'
+
         return result
     }
 

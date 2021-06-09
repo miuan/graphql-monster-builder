@@ -35,3 +35,4 @@ export const getOnlyOneRelatedMember = (member: SchemaModelMember) => {
 }
 
 export const firstToLower = (name) => name.charAt(0).toLowerCase() + name.slice(1)
+export const firstToUpper = (name) => name.charAt(0).toUpperCase() + name.slice(1)
