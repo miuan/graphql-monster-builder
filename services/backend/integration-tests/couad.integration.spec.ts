@@ -438,6 +438,117 @@ describe('couad integration', () => {
         expect(updateModel1Response).toHaveProperty('data.updateModel1.id', createModel1Response.data.createModel1.id)
     })
 
+    it('update Model1 not update required fields', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Data = {
+            name: 'Model1/name/9xdozt5',
+            opt: 'Model1/opt/veuzo6fw',
+            optInt: 178908,
+            optFloat: 270263.47104221646,
+            arrName: ['Model1/arrName/z16efwi', 'Model1/arrName/itt8ze0a', 'Model1/arrName/1hgi59zd'],
+            arrInt: [841914, 706908, 381989],
+            arrFloat: [981172.4638921468, 595172.7641393992, 950648.2557312585],
+            optDateTime: '2020-02-24T23:09:16.338Z',
+            model2: [{ name: 'Model2/name/99wyxtpb', opt: 'Model2/opt/gc9v3645', optFloat: 128002.71510919803 }],
+        }
+        const createModel1Relations = {
+            model2: [
+                {
+                    name: 'Model2/name/xvpbyleg',
+                    opt: 'Model2/opt/brkknrrh',
+                    optFloat: 506870.5727494771,
+                    model1: '607bc7944481571f509470a2',
+                },
+            ],
+        }
+        const createModel1Response = await createModel1(server, token, createModel1Data, createModel1Relations)
+
+        const modelModel2 = server.entry.models['model2']
+
+        const modelModel2Data = await Promise.all([
+            modelModel2.create({
+                name: 'Model2/name/rrf1zue',
+                opt: 'Model2/opt/d5lhpbb',
+                optFloat: 794581.5344788817,
+                model1: '607bc7944481571f509470a2',
+                id: 'Model2/id/kors5ee5',
+            }),
+            modelModel2.create({
+                name: 'Model2/name/y7yyjtxl',
+                opt: 'Model2/opt/ths8b3q9',
+                optFloat: 147313.64317070495,
+                model1: '607bc7944481571f509470a2',
+                id: 'Model2/id/s0zwzo7m',
+            }),
+            modelModel2.create({
+                name: 'Model2/name/ee788yxq',
+                opt: 'Model2/opt/cj2hjyvr',
+                optFloat: 793571.7465582052,
+                model1: '607bc7944481571f509470a2',
+                id: 'Model2/id/d28jo2d',
+            }),
+        ])
+
+        const updateModel1Mutation = `mutation UpdateModel1($name: String,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!],$id: ID!){
+    updateModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids,id: $id) {
+       name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
+
+        const updateModel1Response = await server.mutate(
+            {
+                mutation: updateModel1Mutation,
+                variables: {
+                    opt: 'Model1/opt/iyy46ulc',
+                    optInt: 564003,
+                    optFloat: 710838.0456158707,
+                    id: createModel1Response.data.createModel1.id,
+                },
+            },
+            token,
+        )
+
+        expect(updateModel1Response).not.toHaveProperty('errors')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.name', 'Model1/name/9xdozt5')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.opt', 'Model1/opt/iyy46ulc')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optInt', 564003)
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optFloat', 710838.0456158707)
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', [
+            'Model1/arrName/z16efwi', 'Model1/arrName/itt8ze0a', 'Model1/arrName/1hgi59zd'
+        ])
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrInt', [841914, 706908, 381989])
+        expect(updateModel1Response).toHaveProperty(
+            'data.updateModel1.arrFloat',
+            [981172.4638921468, 595172.7641393992, 950648.2557312585],
+        )
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optDateTime', '2020-02-24T23:09:16.338Z')
+        expect(updateModel1Response.data.updateModel1.model2).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: 'Model2/name/99wyxtpb', opt: 'Model2/opt/gc9v3645', optFloat: 128002.71510919803,
+                    model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
+                }),
+            ]),
+        )
+        expect(updateModel1Response.data.updateModel1.model2).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: createModel1Response.data.createModel1.model2[0].id,
+                    model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
+                }),
+                expect.objectContaining({
+                    id: createModel1Response.data.createModel1.model2[1].id,
+                    model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
+                }),
+            ]),
+        )
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.model2.0.id')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.model2.1.id')
+        expect(updateModel1Response).not.toHaveProperty('data.updateModel1.model2.2.id')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.id', createModel1Response.data.createModel1.id)
+    })
+
     it('all Model1', async () => {
         const token = res.data.login_v1.token
 

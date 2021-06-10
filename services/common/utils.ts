@@ -24,7 +24,7 @@ export const getOnlyOneRelatedMember = (member: SchemaModelMember) => {
         relation: { name: relationName, relatedMember },
     } = member
 
-    if (member.isArray && (!relatedMember.isArray || member.modelName < relatedMember?.modelName)) {
+    if (member.isArray && (!relatedMember.isArray || member.modelName > relatedMember?.modelName)) {
         return member
     }
 

@@ -150,7 +150,7 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
                 } else {
                     const params = generateInputParamsForMutationModel(model, {
                         includeId: mutationParams === 'ALWAYS_ID',
-                        forceRequiredFields: mutationName === 'create',
+                        ignoreRequired: mutationName === 'update',
                     })
                     result += `  ${mutationName}${name}(${params}): ${name}Model\n`
                 }
@@ -181,7 +181,7 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
 
     const includeId = options && options.includeId
     const excludeRelationToModel = options && options.excludeRelationToModel
-    const forceRequiredFields = options && options.forceRequiredFields
+    const ignoreRequired = options?.ignoreRequired
 
     if (notMutationFields[model.modelName] && notMutationFields[model.modelName].length > 0) {
         nmf.push(...notMutationFields[model.modelName])
@@ -213,7 +213,7 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                     )}`
                 }
             } else {
-                result += `, ${constructMemberWithType(name, member.type, member.isArray, member.isRequired)}`
+                result += `, ${constructMemberWithType(name, member.type, member.isArray, !ignoreRequired && member.isRequired)}`
             }
         }
     }
@@ -353,8 +353,7 @@ export const generateSchemaInputsForModel = (modelName: string, relatedModel: Sc
 
     result += generateInputParamsForMutationModel(relatedModel, {
         includeID: false,
-        excludeRelationToModel: modelName,
-        forceRequiredFields: true,
+        excludeRelationToModel: modelName
     })
 
     result += '\n}\n'

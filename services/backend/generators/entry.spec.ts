@@ -16,7 +16,7 @@ const modelZero = {
 
 const memberAnaconda = {
     name: 'memberAnaconda',
-    modelName: 'Anaconda',
+    modelName: 'modelAnaconda',
     relation: { name: 'relation1', relatedModel: modelZero, relatedMember: modelZero.members[0] },
     isArray: true,
 } as SchemaModelMember
