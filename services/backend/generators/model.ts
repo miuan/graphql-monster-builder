@@ -1,11 +1,5 @@
 import { templateFileToText } from '../../common/files'
-import {
-    SchemaModel,
-    SchemaModelRelationType,
-    StructureBackend,
-    SchemaModelMember,
-    SchemaModelType,
-} from '../../common/types'
+import { SchemaModel, SchemaModelRelationType, StructureBackend, SchemaModelMember, SchemaModelType } from '../../common/types'
 import { firstToLower } from '../../common/utils'
 
 const defaultMembers = ['createdAt', 'updatedAt', 'id']
@@ -36,11 +30,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
             constructedIndexies += `}, { unique: true });`
         }
 
-        if (
-            member.relation &&
-            member.relation.type === SchemaModelRelationType.ENTITY &&
-            !forConstructingImports.includes(member.modelName)
-        ) {
+        if (member.relation && member.relation.type === SchemaModelRelationType.ENTITY && !forConstructingImports.includes(member.modelName)) {
             forConstructingImports.push(member.modelName)
         }
     }
@@ -67,7 +57,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
     }
 
     if (modelName === 'File') {
-        constructedMembers += `__dbx: { type: Schema.Types.String, required: false},\n`
+        constructedMembers += `__path: { type: Schema.Types.String, required: true, index: true},\n`
     }
 
     let modelExport = ''
@@ -95,9 +85,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
 
 export const transformTypeToMongoType = (structure: StructureBackend, member: SchemaModelMember) => {
     if (member.relation) {
-        return member.relation.type === SchemaModelRelationType.RELATION
-            ? 'Schema.Types.ObjectId'
-            : `${firstToLower(member.type)}Schema`
+        return member.relation.type === SchemaModelRelationType.RELATION ? 'Schema.Types.ObjectId' : `${firstToLower(member.type)}Schema`
     }
 
     if (member.modelName === 'DateTime') {
@@ -124,11 +112,7 @@ export const generateModels = (backendDirectory: BackendDirectory, models: Schem
 }
 
 function constructMember(member: SchemaModelMember, structure: StructureBackend) {
-    let constructedMember =
-        `type: ` +
-        (member.isArray
-            ? `[${transformTypeToMongoType(structure, member)}]`
-            : transformTypeToMongoType(structure, member))
+    let constructedMember = `type: ` + (member.isArray ? `[${transformTypeToMongoType(structure, member)}]` : transformTypeToMongoType(structure, member))
 
     if (member.relation && member.relation.type == SchemaModelRelationType.RELATION) {
         constructedMember += `, ref: '${structure.id}_${member.relation.relatedModel.modelName}', index: true`

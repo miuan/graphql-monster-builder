@@ -1,10 +1,4 @@
-import {
-    SchemaModel,
-    SchemaModelProtectionParam,
-    SchemaModelProtectionType,
-    SchemaModelRelationType,
-    SchemaModelType,
-} from '../common/types'
+import { SchemaModel, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType, SchemaModelType } from '../common/types'
 
 const DEFAULT_ADMIN_ROLE: SchemaModelProtectionParam = {
     roles: ['admin'],
@@ -100,7 +94,7 @@ const FILE_MEMBERS = [
         modelName: 'String',
         type: 'String',
         isRequired: true,
-        isUnique: true,
+        isUnique: false,
         relation: null,
         isArray: false,
         row: -1,
@@ -115,7 +109,29 @@ const FILE_MEMBERS = [
         relation: null,
         isArray: false,
         row: -1,
+        isReadonly: true,
+    },
+    {
+        name: 'type',
+        modelName: 'String',
+        type: 'String',
+        isRequired: true,
+        isUnique: false,
+        relation: null,
+        isArray: false,
+        row: -1,
         isReadonly: false,
+    },
+    {
+        name: 'size',
+        modelName: 'Int',
+        type: 'Int',
+        isRequired: true,
+        isUnique: false,
+        relation: null,
+        isArray: false,
+        row: -1,
+        isReadonly: true,
     },
 ]
 

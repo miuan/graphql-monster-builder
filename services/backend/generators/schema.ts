@@ -1,18 +1,7 @@
 import { ifError } from 'assert'
-import {
-    schemaMutations,
-    notMutationFields,
-    schemaFilterStringValue,
-    schemaFilterNumberValue,
-} from '../../common/constatns'
+import { schemaMutations, notMutationFields, schemaFilterStringValue, schemaFilterNumberValue } from '../../common/constatns'
 
-import {
-    StructureBackend,
-    SchemaModel,
-    SchemaModelRelationType,
-    SchemaModelMember,
-    SchemaModelType,
-} from '../../common/types'
+import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelMember, SchemaModelType, MODELS_NOT_HAVE_CREATE } from '../../common/types'
 import { getOnlyOneRelatedMember } from '../../common/utils'
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
@@ -41,12 +30,9 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
 export const cleanApplayedRelations = () => {
     applayedRelations = []
 }
-export const relatedParamName1 = (model: SchemaModel, relatedMember: SchemaModelMember) =>
-    `${relatedMember.name}${model.modelName}`
-export const relatedParamName2 = (member: SchemaModelMember) =>
-    `${member.name}${member.relation.relatedModel.modelName}`
-export const relatedParamName1Id = (model: SchemaModel, relatedMember: SchemaModelMember) =>
-    `${relatedParamName1(model, relatedMember)}Id`
+export const relatedParamName1 = (model: SchemaModel, relatedMember: SchemaModelMember) => `${relatedMember.name}${model.modelName}`
+export const relatedParamName2 = (member: SchemaModelMember) => `${member.name}${member.relation.relatedModel.modelName}`
+export const relatedParamName1Id = (model: SchemaModel, relatedMember: SchemaModelMember) => `${relatedParamName1(model, relatedMember)}Id`
 export const relatedParamName2Id = (member: SchemaModelMember) => `${relatedParamName2(member)}Id`
 
 export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
@@ -143,7 +129,7 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
                 const mutationName = mutation[0]
                 const mutationParams = mutation[1]
 
-                if (name == 'User' && mutationName == 'create') continue
+                if (mutationName == 'create' && MODELS_NOT_HAVE_CREATE.includes(name)) continue
 
                 if (mutationParams === 'ONLY_ID') {
                     result += `  ${mutationName}${name}(id: ID!): ${name}Model\n`
@@ -206,11 +192,7 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                 }
 
                 if (member.relation.createFromAnotherModel) {
-                    result += `, ${constructMemberWithType(
-                        member.relation.payloadNameForCreate,
-                        member.relation.inputName,
-                        member.isArray,
-                    )}`
+                    result += `, ${constructMemberWithType(member.relation.payloadNameForCreate, member.relation.inputName, member.isArray)}`
                 }
             } else {
                 result += `, ${constructMemberWithType(name, member.type, member.isArray, !ignoreRequired && member.isRequired)}`
@@ -220,13 +202,7 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
     return result.substr(2)
 }
 
-export function constructMemberWithType(
-    name: string,
-    baseType: string,
-    isArray: boolean,
-    isRequire = false,
-    haveArrayRequiredItem = false,
-) {
+export function constructMemberWithType(name: string, baseType: string, isArray: boolean, isRequire = false, haveArrayRequiredItem = false) {
     let type
     if (isArray && haveArrayRequiredItem) {
         type = `[${baseType}!]`
@@ -304,13 +280,7 @@ export const generateSchemaModel = (model: SchemaModel) => {
     for (const member of model.members) {
         let constructedMember
         if (member.relation) {
-            constructedMember = constructMemberWithType(
-                member.name,
-                `${member.relation.relatedModel.modelName}Model`,
-                member.isArray,
-                member.isRequired,
-                true,
-            )
+            constructedMember = constructMemberWithType(member.name, `${member.relation.relatedModel.modelName}Model`, member.isArray, member.isRequired, true)
         } else {
             constructedMember = constructMemberWithType(member.name, member.type, member.isArray, member.isRequired)
         }
@@ -335,11 +305,7 @@ export const generateSchemaInputs = (models: SchemaModel[]) => {
     for (const model of models) {
         for (const member of model.members) {
             if (member.relation && member.relation.createFromAnotherModel) {
-                result += generateSchemaInputsForModel(
-                    model.modelName,
-                    member.relation.relatedModel,
-                    member.relation.inputName,
-                )
+                result += generateSchemaInputsForModel(model.modelName, member.relation.relatedModel, member.relation.inputName)
             }
         }
     }
@@ -353,7 +319,7 @@ export const generateSchemaInputsForModel = (modelName: string, relatedModel: Sc
 
     result += generateInputParamsForMutationModel(relatedModel, {
         includeID: false,
-        excludeRelationToModel: modelName
+        excludeRelationToModel: modelName,
     })
 
     result += '\n}\n'

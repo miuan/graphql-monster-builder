@@ -1,4 +1,4 @@
-import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelType } from '../../common/types'
+import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelType, MODELS_NOT_HAVE_CREATE } from '../../common/types'
 import { writeToFile, templateToText, templateFileToText } from '../../common/files'
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
 import { BackendDirectory } from '../backendDirectory'
@@ -11,9 +11,7 @@ export const generateEntry = async (backendDirectory: BackendDirectory, models: 
 
 export const genAddingAndRemovingsForModel = (model: SchemaModel) => {
     let result = ''
-    const membersWithRelations = model.members.filter(
-        (model) => model.relation?.type === SchemaModelRelationType.RELATION,
-    )
+    const membersWithRelations = model.members.filter((model) => model.relation?.type === SchemaModelRelationType.RELATION)
     for (const member of membersWithRelations) {
         const relatedMember = member.relation && getOnlyOneRelatedMember(member)
 
@@ -89,7 +87,7 @@ export const createResolvers = (structure: StructureBackend, models: SchemaModel
             queries += `\t\t${modelName}: entry.resolvers['${lower}'].one,\n`
             queries += `\t\tall${modelName}: entry.resolvers['${lower}'].all,\n`
 
-            if (modelName !== 'User') mutations += `\t\tcreate${modelName}: entry.resolvers['${lower}'].create,\n`
+            if (!MODELS_NOT_HAVE_CREATE.includes(modelName)) mutations += `\t\tcreate${modelName}: entry.resolvers['${lower}'].create,\n`
             mutations += `\t\tupdate${modelName}: entry.resolvers['${lower}'].update,\n`
             mutations += `\t\tremove${modelName}: entry.resolvers['${lower}'].remove,\n`
 
@@ -132,9 +130,7 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
 
     // SchemaModelRelationType.ENTITY is actualy part of object
     // have a dataloader mean it will try to use dataloade but we already have the data
-    const memberWithRelation = model.members.filter(
-        (m) => m.relation && m.relation.type !== SchemaModelRelationType.ENTITY,
-    )
+    const memberWithRelation = model.members.filter((m) => m.relation && m.relation.type !== SchemaModelRelationType.ENTITY)
     for (const member of memberWithRelation) {
         const memberName = member.name
         const memberModelName = member.relation.relatedModel.modelName

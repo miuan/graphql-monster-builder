@@ -90,21 +90,17 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
         if (modelsList.includes(model.modelName)) {
             const previous = models.find((m) => m.modelName == model.modelName)
 
-            throw new Error(
-                `Line ${model.start}: Model name '${model.modelName}' is already use in Line ${previous.start}. Inside schema have to be every model named uniquely`,
-            )
+            throw new Error(`Line ${model.start}: Model name '${model.modelName}' is already use in Line ${previous.start}. Inside schema have to be every model named uniquely`)
         }
 
-        if (model.modelName == 'UserRole')
-            throw `Line ${model.start}: Model with name '${model.modelName}' have reserved name and will be add automaticaly`
+        if (model.modelName == 'UserRole') throw `Line ${model.start}: Model with name '${model.modelName}' have reserved name and will be add automaticaly`
 
         for (const member of model.members) {
             if (model.modelName == 'User' && reservedInUser.indexOf(member.name) != -1)
                 throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInUser} reserved and will be add automaticaly`
             else if (model.modelName == 'File' && reservedInFile.indexOf(member.name) != -1)
                 throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInFile} reserved and will be add automaticaly`
-            else if (member.name == 'id')
-                throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`id\` that is reserved and will be add automaticaly`
+            else if (member.name == 'id') throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`id\` that is reserved and will be add automaticaly`
 
             if (memberList.includes(member.name)) {
                 const previous = model.members.find((m) => m.name == member.name)
@@ -117,9 +113,8 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
             memberList.push(member.name)
         }
 
-        const onlyRelations = model.members.every((member) => member.relation)
-        if (onlyRelations)
-            throw `Line ${model.start}: Model with name '${model.modelName}' has only relations and but any scalar type`
+        const onlyRelations = model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION)
+        // if (onlyRelations) throw `Line ${model.start}: Model with name '${model.modelName}' has only relations but any scalar type`
 
         modelsList.push(model.modelName)
     }
@@ -186,13 +181,7 @@ export const scanProtectionUnit = (unit: string, protection: SchemaModelProtecti
     }
 }
 
-export const protectionCheckTheParameter = (
-    param: SchemaModelProtectionParam,
-    typeName: string,
-    value: string,
-    unit: string,
-    row: number,
-) => {
+export const protectionCheckTheParameter = (param: SchemaModelProtectionParam, typeName: string, value: string, unit: string, row: number) => {
     if (typeName === 'public') {
         updateType(param, typeName, SchemaModelProtectionType.PUBLIC)
     } else if (typeName === 'user') {
@@ -293,10 +282,10 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 }
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
-    const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+)?/)
+    const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+\\(\\)\\'\\")?/)
 
     if (!match) {
-        throw `Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`
+        throw new Error(`Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`)
     }
 
     const {
