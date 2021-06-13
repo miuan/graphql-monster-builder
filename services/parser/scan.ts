@@ -110,11 +110,18 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
                 )
             }
 
+            if(model.type === SchemaModelType.ENTITY && member.relation && member.relation.type === SchemaModelRelationType.RELATION){
+                throw new Error(
+                    `Line ${member.row}: Entity with name '${model.modelName}' have a full relation '${member.relation.name}' what is not possible`,
+                )
+            }
+
             memberList.push(member.name)
         }
 
         const onlyRelations = model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION)
-        // if (onlyRelations) throw `Line ${model.start}: Model with name '${model.modelName}' has only relations but any scalar type`
+        // in generate create and update method is not counting there is anything to create or updated
+        if (onlyRelations) throw `Line ${model.start}: Model with name '${model.modelName}' has only relations but any scalar type`
 
         modelsList.push(model.modelName)
     }
@@ -282,7 +289,7 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 }
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
-    const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+\\(\\)\\'\\")?/)
+    const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+\(*\)*\'*\"*)?/)
 
     if (!match) {
         throw new Error(`Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`)

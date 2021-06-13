@@ -80,7 +80,7 @@ describe('scan', () => {
                     model1:  @relation(name: "RelationName1")
                 }
             `),
-            ).toThrowError(`Line 2: Model with name 'Model1' has only relations and but any scalar type`)
+            ).toThrowError(`Line 2: Model with name 'Model1' has only relations but any scalar type`)
         })
 
         it('relation not have a mate', async () => {
@@ -182,6 +182,24 @@ describe('scan', () => {
             expect(models[1].members[1]).toHaveProperty('isRequired', true)
             expect(models[1].members[1].relation).toHaveProperty('relatedModel', models[0])
             expect(models[1].members[1].relation).toHaveProperty('relatedMember', models[0].members[1])
+        })
+
+        it('relation in entity', async () => {
+            expect(() =>
+                getModelsFromSchema(`
+                type Model1 @model {
+                    name: String
+                    model2: @relation(name: "RelationName1")[]
+                }
+    
+                type Entity1 @entity {
+                    name: String
+                    model1: @relation(name="RelationName1")
+                }
+            `),
+            ).toThrowError(
+                `Line 9: Entity with name 'Entity1' have a full relation 'RelationName1' what is not possible`,
+            )
         })
     })
 
