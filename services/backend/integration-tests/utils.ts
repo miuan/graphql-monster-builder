@@ -167,32 +167,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
 
     const integrationTestServerPath = path.resolve(`../__generated_servers_for_integration_test__/${name}`)
 
-    fs.rmdirSync(integrationTestServerPath, { recursive: true })
-    await exportAsFromString(name, schema, integrationTestServerPath, {
-        server: {
-            config: {
-                "./gen/graphql.schema'": `../__generated_servers_for_integration_test__/${name}/gen/graphql.schema'`,
-                "path: './config/environment'": `path: '../__generated_servers_for_integration_test__/${name}/config/environment'`,
-            },
-        },
-        extras: {
-            config: { "from './sendMail'": "from '../services/sendMail'" },
-        },
-    })
-
-    const modules = path.resolve(`./node_modules`)
-
-    fs.symlinkSync(modules, path.join(integrationTestServerPath, 'node_modules'))
-
-    const envPath = path.join(integrationTestServerPath, 'config/environment/')
-    fs.mkdirSync(envPath, { recursive: true })
-    fs.writeFileSync(
-        path.join(envPath, '.env'),
-        `PORT=${port}
-ADMIN_EMAIL=admin1
-ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
-    `,
-    )
+    await remakeServer(integrationTestServerPath, name, schema, port)
 
     try {
         const module = require(path.join(integrationTestServerPath, 'server'))
@@ -246,6 +221,35 @@ ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
     } catch (ex) {
         console.error(ex)
     }
+}
+
+async function remakeServer(integrationTestServerPath: string, name: string, schema: string, port: number) {
+    fs.rmdirSync(integrationTestServerPath, { recursive: true })
+    await exportAsFromString(name, schema, integrationTestServerPath, {
+        server: {
+            config: {
+                "./gen/graphql.schema'": `../__generated_servers_for_integration_test__/${name}/gen/graphql.schema'`,
+                "path: './config/environment'": `path: '../__generated_servers_for_integration_test__/${name}/config/environment'`,
+            },
+        },
+        extras: {
+            config: { "from './sendMail'": "from '../services/sendMail'" },
+        },
+    })
+
+    const modules = path.resolve(`./node_modules`)
+
+    fs.symlinkSync(modules, path.join(integrationTestServerPath, 'node_modules'))
+
+    const envPath = path.join(integrationTestServerPath, 'config/environment/')
+    fs.mkdirSync(envPath, { recursive: true })
+    fs.writeFileSync(
+        path.join(envPath, '.env'),
+        `PORT=${port}
+ADMIN_EMAIL=admin1
+ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
+    `
+    )
 }
 
 export async function disconnectFromServer(server: any) {

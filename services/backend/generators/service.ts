@@ -103,6 +103,12 @@ export const createService = (model: SchemaModel) => {
         actionBeforeUpdate = 'extras.checkPasswordIsNotIncluded(data);'
     }
 
+    if (modelName === 'File') {
+        actionBeforeCreate = `await entry.storage.saveDataToFile(fileModel, data)`
+        actionAfterCreate = ``
+        actionBeforeUpdate = 'await entry.storage.saveDataToFile(fileModel, data)'
+    }
+
     let result = templateFileToText(`service.ts`, {
         _MODEL_NAME_: modelName,
         _LOWER_NAME_: lower,

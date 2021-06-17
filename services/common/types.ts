@@ -41,6 +41,7 @@ export type SchemaModelMember = {
     isArray: boolean
     row: number
     isReadonly: boolean
+    isVirtual: boolean
     default?: number | string
     regExp?: string
     placeholder?: string
@@ -102,4 +103,4 @@ export type StructureFrontend = Structure & {
 }
 
 export const MODEL_TYPES = ['type', 'model', 'entity']
-export const MODELS_NOT_HAVE_CREATE = ['User', 'File']
+export const MODELS_NOT_HAVE_CREATE = ['User']

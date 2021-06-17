@@ -83,6 +83,10 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
     member.regExp = matched[0]
   }
 
+  else if (params === '@isVirtual') {
+    member.isVirtual = true
+  }
+
   else {
     throw new Error(`Line: ${member.row}: unknown param '${params}'`)
   }

@@ -2,7 +2,7 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
-import {sendVerifyEmail, sendForgottenPasswordEmail } from './sendMail'
+import { sendVerifyEmail, sendForgottenPasswordEmail } from './sendMail'
 
 export async function generateHash(password) {
   return bcrypt.hash(password, 10)

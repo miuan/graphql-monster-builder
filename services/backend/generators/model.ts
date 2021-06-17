@@ -8,7 +8,7 @@ import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
 const log = logger.getLogger('model')
 
-export const createMongoModel = (structure: StructureBackend, model: SchemaModel) => {
+export const createMongoModel = (structure: StructureBackend, model: SchemaModel, notVirtualMembers: SchemaModelMember[]) => {
     const modelName = model.modelName
     const lower = firstToLower(modelName)
     const schemaName = `${lower}Schema`
@@ -17,7 +17,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
     let constructedIndexies = ''
     const forConstructingImports = []
 
-    for (const member of model.members) {
+    for (const member of notVirtualMembers) {
         if (!defaultMembers.includes(member.name)) {
             constructedMembers += `\t\t${member.name}: ${constructMember(member, structure)},\n`
         }
@@ -97,19 +97,19 @@ export const transformTypeToMongoType = (structure: StructureBackend, member: Sc
     }
 }
 
-export const generateMongoModelToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
-    const str = createMongoModel(backendDirectory.structure, model)
+export const generateMongoModelToFile = (backendDirectory: BackendDirectory, model: SchemaModel, notVirtualMembers: SchemaModelMember[]) => {
+    const str = createMongoModel(backendDirectory.structure, model, notVirtualMembers)
 
     backendDirectory.modelsWrite(`${model.modelName}`, str)
 }
 
-export const generateModels = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
-    log.trace('generateModels')
-    for (const model of models) {
-        log.info(`Generate model: ${model.modelName}`)
-        generateMongoModelToFile(backendDirectory, model)
-    }
-}
+// export const generateModels = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
+//     log.trace('generateModels')
+//     for (const model of models) {
+//         log.info(`Generate model: ${model.modelName}`)
+//         generateMongoModelToFile(backendDirectory, model)
+//     }
+// }
 
 function constructMember(member: SchemaModelMember, structure: StructureBackend) {
     let constructedMember = `type: ` + (member.isArray ? `[${transformTypeToMongoType(structure, member)}]` : transformTypeToMongoType(structure, member))

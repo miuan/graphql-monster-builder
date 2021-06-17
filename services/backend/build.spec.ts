@@ -1,236 +1,103 @@
+import { SchemaModel, SchemaModelRelation, SchemaModelType } from "../common/types"
+import { BackendDirectory } from "./backendDirectory"
+import { generateAll } from "./build"
+import {generateMongoModelToFile} from './generators/model'
+import {createModelTypeFromModel} from './generators/model-types'
+import { generateSchema } from './generators/schema'
+import { generateResolverToFile } from './generators/resolvers'
+import { generateServiceToFile } from './generators/service'
+import { SchemaType } from "mongoose"
 
-import {
-  getModelsFromSchema,
-  extractMemberFromLine,
-} from '../parser/scan';
+jest.mock('./generators/model')
+jest.mock('./generators/model-types')
+jest.mock('./generators/schema')
+jest.mock('./generators/resolvers')
+jest.mock('./generators/service')
 
-import {
-  generateInputParamsForMutationModel,
-  generateSchemaInputs,
-  genereateSchemaModelPayloads,
-  generateMutationAddingsAndRemovings,
-  cleanApplayedRelations,
-} from './generators/schema';
+  describe('generate:build', ()=>{
+       
+    it('should call 2x createTypescriptType and 1x writeToFile inside generateTypescriptTypes', ()=>{
+        const backendDirectory = new BackendDirectory()
+        backendDirectory.genWrite = jest.fn()
+        backendDirectory.modelsWrite = jest.fn()
+        backendDirectory.servicesWrite = jest.fn()
+        backendDirectory.resolversWrite = jest.fn()
 
+        // (modelGenerator as any).generateMongoModelToFile = jest.fn()
 
-const importedModelFileForSchema = `
-type File @model {
-  contentType: String!
-  createdAt: DateTime!
-  id: ID! @isUnique
-  name: String!
-  secret: String! @isUnique
-  size: Int!
-  updatedAt: DateTime!
-  url: String! @isUnique
-}
-`;
+        const modelTodo = {
+          modelName: 'Todo',
+          type: SchemaModelType.MODEL,
+          members:[
+            {
+              name: 'email',
+              type: 'String'
+            },
+            {
+              name: 'virtual',
+              type: 'String',
+              isVirtual: true
+            }
+          ]
+      } as SchemaModel
 
-const importedModelTodoItemForSchema = `
-type TodoItem @model {
-  completed: Boolean! @defaultValue(false)
-  createdAt: DateTime!
-  id: ID! @isUnique
-  title: String!
-  user: User @relation(name: "TodoItemOnUser")
-  images: [ImageTodoItem!] @relation(name: "ImageTodoItemOnTodoItem")
-}
-`;
-
-const importedModelImageTodoItemForSchema = `
-type ImageTodoItem @model {
-  createdAt: DateTime!
-  id: ID! @isUnique
-  url: String!
-  todo: TodoItem @relation(name: "ImageTodoItemOnTodoItem")
-}
-`;
-
-const importedModelUserForSchema = `
-type User @model {
-  createdAt: DateTime!
-  todoItems: [TodoItem!]! @relation(name: "TodoItemOnUser")
-  student: User @relation(name: "StudentOnUser")
-}
-`;
-
-const importedModelStudentForSchema = `
-type Student @model {
-  createdAt: DateTime!
-  id: ID! @isUnique
-  updatedAt: DateTime!
-
-  user: User @relation(name: "StudentOnUser")
-  classes: [Class!]! @relation(name: "ClassOnStudent")
-  fullname: String! @isUnique
-  age: Int
-}
-`;
-
-const importedModelClassForSchema = `
-type Class @model {
-  createdAt: DateTime!
-  id: ID! @isUnique
-  updatedAt: DateTime!
-  students: [Student!] @relation(name: "ClassOnStudent")
-  name: String! @isUnique
-}
-`;
-
-const importedSchema = `
-${importedModelFileForSchema}
-
-${importedModelTodoItemForSchema}
-
-${importedModelUserForSchema}
-
-${importedModelImageTodoItemForSchema}
-${importedModelClassForSchema}
-${importedModelStudentForSchema}
-
-`;
-
-const testLinesTest1 = [
-  ['updatedAt: DateTime', 'updatedAt', 'DateTime'],
-  ['contentType: String', 'contentType', 'String'],
-  ['size: Int', 'size', 'Int'],
-];
-
-describe('Schema Export', () => {
-  it('get models from schema', async () => {
-
-    const models = await getModelsFromSchema(importedSchema);
-
-    expect(models.length).toEqual(7);
-  });
-
-  describe('inputs',  () => {
-    it('student have two imputs', async () => {
-      const modelInText = `
-        ${importedModelTodoItemForSchema}
-        ${importedModelImageTodoItemForSchema}
-        ${importedModelClassForSchema}
-        ${importedModelStudentForSchema}
-        ${importedModelUserForSchema}
-      `
-      const models = await getModelsFromSchema(modelInText);
-      const result = generateSchemaInputs(models);
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toMatchSnapshot()
-    });
-  });
-  describe('mutations', () => {
-    it('todo item have userId: ID instad user: User', async () => {
-      const models = await getModelsFromSchema(importedSchema);
-      const result = generateInputParamsForMutationModel(models[1]);
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toEqual('completed: Boolean, title: String, userId: ID, imagesIds: [ID!], images: [TodoItemimagesImageTodoItem!]');
-    });
-
-    it('todo item have todoItemsId: [ID!] instad of todoItemsId: ID', async () => {
-      const models = await getModelsFromSchema(importedSchema);
-      const result = generateInputParamsForMutationModel(models[2]);
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toEqual('todoItemsIds: [ID!], todoItems: [UsertodoItemsTodoItem!], studentId: ID, rolesIds: [ID!], roles: [UserrolesUserRole!]');
-    });
-
-    it('todo item have todoItemsId: [ID!] instad of todoItemsId: ID', async () => {
-      const models = await getModelsFromSchema(importedSchema);
-      const result = generateInputParamsForMutationModel(models[2], { includeId: true });
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toEqual('id: ID!, todoItemsIds: [ID!], todoItems: [UsertodoItemsTodoItem!], studentId: ID, rolesIds: [ID!], roles: [UserrolesUserRole!]');
-    });
-
-    it('todo item have todoItemsId: [ID!] instad of todoItemsId: ID', async () => {
-      const models = await getModelsFromSchema(importedSchema);
-      const result = generateInputParamsForMutationModel(models[1], { excludeRelationToModel: 'ImageTodoItem' });
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toEqual('completed: Boolean, title: String, userId: ID');
-    });
- 
-    it('todo item have payloads for Add and Remove', async () => {
-      cleanApplayedRelations();
-      const models = await getModelsFromSchema(importedSchema);
-      const result = genereateSchemaModelPayloads(models[1]);
-
-      // tslint:disable-next-line:max-line-length
-      expect(result).toMatchSnapshot();
-    });
-  });
-
-  describe('get line', () => {
-    it('not required', async () => {
-      for (const tl of testLinesTest1) {
-        const member = extractMemberFromLine(tl[0], 0);
-        expect(member.name).toEqual(tl[1]);
-        expect(member.type).toEqual(tl[2]);
-        expect(member.isRequired).toBeFalsy();
-        expect(member.isUnique).toBeFalsy();
-      }
-    });
-
-    it('required', async () => {
-      for (const tl of testLinesTest1) {
-        const member = extractMemberFromLine(tl[0] + '!', 0);
-        expect(member.name).toEqual(tl[1]);
-        expect(member.type).toEqual(tl[2]);
-        expect(member.isRequired).toBeTruthy();
-        expect(member.isUnique).toBeFalsy();
-      }
-    });
+      const modelUser = {
+        modelName: 'User',
+        type: SchemaModelType.ENTITY,
+        members: [{
+            name: 'email',
+            type: 'String'
+        },{
+            name: 'password',
+            type: 'Boolean',
+            isVirtual: true
+        },{
+            name: 'todos',
+            type: 'Todo',
+            isArray: true,
+            relation:{
+                relatedModel:{modelName: 'Todo'}
+            } as SchemaModelRelation
+        }]
+    } as SchemaModel
 
 
-    it('isUnique and required', async () => {
-      for (const tl of testLinesTest1) {
-        const member = extractMemberFromLine('id: ID! @isUnique', 0);
-        expect(member.name).toEqual('id');
-        expect(member.type).toEqual('ID');
-        expect(member.isRequired).toBeTruthy();
-        expect(member.isUnique).toBeTruthy();
-      }
-    });
+        generateAll(backendDirectory, [modelTodo, modelUser], {})
 
-    it('@relation multi to one', async () => {
-      for (const tl of testLinesTest1) {
-        const member = extractMemberFromLine('todoItems: [TodoItem!]! @relation(name: "TodoItemOnUser")', 0);
-        expect(member.name).toEqual('todoItems');
-        expect(member.type).toEqual('[TodoItem!]');
-        expect(member.relation).toHaveProperty('name');
-        expect(member.relation.name).toEqual('TodoItemOnUser');
-        expect(member.isRequired).toBeTruthy();
-        expect(member.isUnique).toBeFalsy();
-      }
-    });
+        expect(generateSchema).toBeCalledTimes(1)
 
-    it('@relation one to multi', async () => {
-      for (const tl of testLinesTest1) {
-        const member = extractMemberFromLine('user: User @relation(name: "TodoItemOnUser")', 0);
-        expect(member.name).toEqual('user');
-        expect(member.type).toEqual('User');
-        expect(member.relation).toHaveProperty('name');
-        expect(member.relation.name).toEqual('TodoItemOnUser');
-        expect(member.isRequired).toBeFalsy();
-        expect(member.isUnique).toBeFalsy();
-      }
-    });
+        expect(generateMongoModelToFile).toBeCalledTimes(2)
+        expect((generateMongoModelToFile as any).mock.calls[0]).toEqual([backendDirectory, modelTodo, expect.not.arrayContaining([expect.objectContaining({isVirtual:true})])])
+        expect((generateMongoModelToFile as any).mock.calls[1]).toEqual([backendDirectory, modelUser, expect.not.arrayContaining([expect.objectContaining({isVirtual:true})])])
+        
+        expect(createModelTypeFromModel).toBeCalledTimes(2)
+        expect((createModelTypeFromModel as any).mock.calls).toEqual(expect.arrayContaining([
+          [modelTodo, expect.not.arrayContaining([expect.objectContaining({isVirtual:true})])],
+          [modelUser, expect.not.arrayContaining([expect.objectContaining({isVirtual:true})])]
+        ]))
+        
+        
+        expect(generateServiceToFile).toBeCalledTimes(2)
+        expect((generateServiceToFile as any).mock.calls).toEqual(expect.arrayContaining([
+          [backendDirectory, modelTodo],
+          [backendDirectory, modelUser]
+        ]))
 
-    it('@relation one to multi', async () => {
-      for (const tl of testLinesTest1) {
-        const member = extractMemberFromLine('images: [ImageTodoItem!] @relation(name: "ImageTodoItemOnTodoItem")', 0);
-        expect(member.name).toEqual('images');
-        expect(member.type).toEqual('[ImageTodoItem!]');
-        expect(member.relation).toHaveProperty('name');
-        expect(member.relation.name).toEqual('ImageTodoItemOnTodoItem');
-        expect(member.isRequired).toBeFalsy();
-        expect(member.isUnique).toBeFalsy();
-      }
-    });
+        expect(generateResolverToFile).toBeCalledTimes(1)
+        expect((generateResolverToFile as any).mock.calls).toEqual(expect.arrayContaining([
+          [backendDirectory, expect.not.objectContaining({type: SchemaModelType.ENTITY})]
+        ]))
+        
+        const modelTypesCall = (backendDirectory.genWrite as any).mock.calls.find((calls=>calls[0]=='model-types.ts'))
+        expect(modelTypesCall).toBeDefined()
 
-  });
-  
-});
+        const dataloadersCall = (backendDirectory.genWrite as any).mock.calls.find((calls=>calls[0]=='dataloaders'))
+        expect(dataloadersCall).toBeDefined()
+
+        const entryCall = (backendDirectory.genWrite as any).mock.calls.find((calls=>calls[0]=='entry'))
+        expect(entryCall).toBeDefined()
+
+    })
+
+})
+

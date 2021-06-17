@@ -84,10 +84,11 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
         files.createDirs(this.structure)
     }
 
-    public writeWithConfig(file: string, config: any, outDir=null){
+    public writeWithConfig(templateName: string, config: any, outDir=null){
+        const file = templateName.match(/(\w+)(\.t)?/)[1]
         const myConfig = config[file]
 
-        const templateFileName = myConfig?.template || `${file}.ts`
+        const templateFileName = myConfig?.template || `${templateName}.ts`
         const outputFileName = myConfig?.output || (outDir ? `${outDir}/${file}` : file)
 
         const data = files.templateFileToText(templateFileName, myConfig?.config)

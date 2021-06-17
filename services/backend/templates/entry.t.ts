@@ -1,5 +1,6 @@
 import { generateDataloaders } from './dataloaders'
 import * as extras from './extras'
+import {registerStorageService} from './storage'
 
 let hooks
 
@@ -25,6 +26,7 @@ export const generateResolver = (setting = {}) => {
       services: {},
       resolvers: {}
     },
+    storage: {} as ReturnType<typeof registerStorageService>
   }
 
   if( hooks.services ){

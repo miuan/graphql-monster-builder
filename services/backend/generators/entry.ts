@@ -133,11 +133,19 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
     const memberWithRelation = model.members.filter((m) => m.relation && m.relation.type !== SchemaModelRelationType.ENTITY)
     for (const member of memberWithRelation) {
         const memberName = member.name
-        const memberModelName = member.relation.relatedModel.modelName
-        const lower = memberModelName.charAt(0).toLowerCase() + memberModelName.slice(1)
+        const lower = firstToLower(member.relation.relatedModel.modelName)
         const many = member.isArray
-        body += `\n\t\t${memberName}: async (root, data, ctx) => {
-      return await entry.dataloaders['${lower}'](ctx, root.${memberName},${many})
+        body += `
+    ${memberName}: async (${lower}Model, data, koaContext) => {
+      return await entry.dataloaders['${lower}'](koaContext, ${lower}Model.${memberName},${many})
+    },`
+
+    
+    }
+    if(model.modelName == 'File'){
+        body += `
+    data: async (fileModel, data, koaContext) => {
+      return await entry.storage.loadDataFromFile(fileModel, data, koaContext)
     },`
     }
     body += `

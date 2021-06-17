@@ -17,9 +17,10 @@ const USER_MEMBERS = [
         isArray: false,
         isRequired: true,
         isUnique: true,
+        isVirtual: false,
         isReadonly: true,
-        row: -1,
         relation: null,
+        row: -1,
     },
     {
         name: 'password',
@@ -28,10 +29,11 @@ const USER_MEMBERS = [
         isArray: false,
         isRequired: true,
         isUnique: false,
+        isVirtual: false,
         isReadonly: true,
-        row: -1,
         relation: null,
         default: '*****',
+        row: -1,
     },
     {
         name: 'verified',
@@ -40,9 +42,10 @@ const USER_MEMBERS = [
         isArray: false,
         isRequired: false,
         isUnique: false,
+        isVirtual:false,
         isReadonly: true,
-        row: -1,
         relation: null,
+        row: -1,
     },
 ]
 
@@ -79,8 +82,9 @@ const USERROLE_MODEL = {
             isUnique: true,
             relation: null,
             isArray: false,
-            row: -1,
+            isVirtual: false,
             isReadonly: false,
+            row: -1,
         },
     ],
     start: -1,
@@ -97,19 +101,21 @@ const FILE_MEMBERS = [
         isUnique: false,
         relation: null,
         isArray: false,
-        row: -1,
+        isVirtual: false,
         isReadonly: false,
+        row: -1,
     },
     {
-        name: 'publicToken',
+        name: 'publicKey',
         modelName: 'String',
         type: 'String',
-        isRequired: true,
-        isUnique: true,
-        relation: null,
         isArray: false,
-        row: -1,
+        isUnique: true,
+        isVirtual: false,
         isReadonly: true,
+        isRequired: true,
+        relation: null,
+        row: -1,
     },
     {
         name: 'type',
@@ -119,8 +125,10 @@ const FILE_MEMBERS = [
         isUnique: false,
         relation: null,
         isArray: false,
-        row: -1,
+        isVirtual: false,
         isReadonly: false,
+        default: 'text/plain',
+        row: -1
     },
     {
         name: 'size',
@@ -130,8 +138,21 @@ const FILE_MEMBERS = [
         isUnique: false,
         relation: null,
         isArray: false,
-        row: -1,
+        isVirtual: false,
         isReadonly: true,
+        row: -1,
+    },
+    {
+        name: 'data',
+        modelName: 'String',
+        type: 'String',
+        isRequired: true,
+        isUnique: false,
+        relation: null,
+        isArray: false,
+        isVirtual: true,
+        isReadonly: false,
+        row: -1,
     },
 ]
 
@@ -181,6 +202,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isArray: true,
         isRequired: false,
         isUnique: false,
+        isVirtual: false,
         isReadonly: false,
         row: -1,
         relation: {
@@ -203,6 +225,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isArray: true,
         isRequired: false,
         isUnique: false,
+        isVirtual: false,
         isReadonly: false,
         row: -1,
         relation: {
@@ -226,6 +249,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isArray: true,
         isRequired: false,
         isUnique: false,
+        isVirtual: false,
         isReadonly: false,
         row: -1,
         relation: {
@@ -247,6 +271,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isArray: false,
         isRequired: true,
         isUnique: false,
+        isVirtual: false,
         isReadonly: false,
         row: -1,
         relation: {
@@ -262,18 +287,4 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
     }
     modelFile.members.push(memberUserInFile)
     memberFilesInUser.relation.relatedMember = memberUserInFile
-
-    for (const model of models) {
-        model.members.push({
-            name: 'id',
-            type: 'ID',
-            modelName: 'ID',
-            isArray: false,
-            isRequired: true,
-            isUnique: true,
-            isReadonly: true,
-            row: -1,
-            relation: null,
-        })
-    }
 }

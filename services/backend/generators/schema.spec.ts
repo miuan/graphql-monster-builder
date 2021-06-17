@@ -48,6 +48,14 @@ describe('schema', () => {
 
             expect(genModel).toEqual('reqMember1: String, optMember2: String')
         })
+
+        it('not required if have default', ()=>{
+            const genModel = generateInputParamsForMutationModel({modelName: 'model1', members: [
+                {name: 'reqMember1', type: 'String', isRequired: true, default: 'defValue'}
+            ]} as SchemaModel)
+
+            expect(genModel).toEqual('reqMember1: String')
+        })
     })
 
     describe('generateInputParamsForMutationModel', () => {
@@ -66,4 +74,5 @@ describe('schema', () => {
             expect(inputParams).toEqual('id: ID!, member1: [String]')
         })
     })
+
 })

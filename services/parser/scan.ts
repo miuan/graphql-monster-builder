@@ -76,12 +76,42 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
     checkForErrorsInModels(models)
     addDefaultModelsAndMembers(models)
 
+    const modelsWithOnlyRelations = models.filter((model)=>model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION))
+    // in generate create and update method is not counting there is anything to create or updated
+    if (modelsWithOnlyRelations?.length) {
+        throw new Error(
+            modelsWithOnlyRelations
+                .reduce((a, c) => {
+                    a += `\nLine ${c.start}: Model with name '${c.modelName}' has only relations but any scalar type`
+                    return a
+                }, '')
+                .substr(1),
+        )
+    }
+
+    models
+        .filter((model) => model.type === SchemaModelType.MODEL)
+        .forEach((model) => {
+            model.members.unshift({
+                name: 'id',
+                type: 'ID',
+                modelName: 'ID',
+                isArray: false,
+                isRequired: true,
+                isUnique: true,
+                isVirtual: false,
+                isReadonly: true,
+                relation: null,
+                row: -1,
+            } as SchemaModelMember)
+    })
+
     return models
 }
 
 export const checkForErrorsInModels = (models: SchemaModel[]) => {
     const reservedInUser = ['email', 'password', 'verified', 'roles', 'files']
-    const reservedInFile = ['name', 'publicToken', 'user']
+    const reservedInFile = ['name', 'publicToken', 'user', 'size', 'type', 'data']
     const modelsList = []
 
     for (const model of models) {
@@ -118,10 +148,6 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
 
             memberList.push(member.name)
         }
-
-        const onlyRelations = model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION)
-        // in generate create and update method is not counting there is anything to create or updated
-        if (onlyRelations) throw `Line ${model.start}: Model with name '${model.modelName}' has only relations but any scalar type`
 
         modelsList.push(model.modelName)
     }
@@ -326,6 +352,7 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         isArray: !!isArray,
         isRequired: !!isRequired,
         isUnique: false,
+        isVirtual: false
     } as SchemaModelMember
 
     if (relationType) {

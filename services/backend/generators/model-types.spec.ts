@@ -1,5 +1,5 @@
 import { SchemaModel, SchemaModelMember, SchemaModelRelation } from "../../common/types"
-import { createModelTypeFromModel, generateModelTypes, transformMemberTypeToTypescriptType } from "./model-types"
+import { createModelTypeFromModel, transformMemberTypeToTypescriptType } from "./model-types"
 import { BackendDirectory } from "../backendDirectory";
 
 describe('typescript-type', ()=>{
@@ -51,53 +51,14 @@ describe('typescript-type', ()=>{
 
     describe('createTypescriptType', ()=>{
         expect(createModelTypeFromModel({
-            modelName: 'Todo',
-            members: [{
-                name: 'name',
-                type: 'String'
-            },{
-                name: 'isDone',
-                type: 'Boolean'
-            }]
-        } as SchemaModel)).toMatchSnapshot()
+            modelName: 'Todo'
+        } as SchemaModel, [{
+            name: 'name',
+            type: 'String'
+        },{
+            name: 'isDone',
+            type: 'Boolean'
+        }] as SchemaModelMember[])).toMatchSnapshot()
     })
 
-    describe('generateTypescriptTypes', ()=>{
-       
-        it('should call 2x createTypescriptType and 1x writeToFile inside generateTypescriptTypes', ()=>{
-            const backendDirectory = new BackendDirectory()
-            backendDirectory.genWrite = jest.fn()
-
-            generateModelTypes(backendDirectory, [{
-                modelName: 'Todo',
-                members: [{
-                    name: 'name',
-                    type: 'String'
-                },{
-                    name: 'isDone',
-                    type: 'Boolean'
-                }]
-            } as SchemaModel,
-            {
-                modelName: 'User',
-                members: [{
-                    name: 'email',
-                    type: 'String'
-                },{
-                    name: 'password',
-                    type: 'Boolean'
-                },{
-                    name: 'todos',
-                    isArray: true,
-                    relation:{
-                        relatedModel:{modelName: 'Todo'}
-                    } as SchemaModelRelation
-                }]
-            } as SchemaModel])
-
-            expect(backendDirectory.genWrite).toHaveBeenCalledTimes(1)
-            expect((<any>backendDirectory.genWrite).mock.calls[0]).toMatchSnapshot()
-        })
-
-    })
 })

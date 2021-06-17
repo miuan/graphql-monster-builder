@@ -195,7 +195,13 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                     result += `, ${constructMemberWithType(member.relation.payloadNameForCreate, member.relation.inputName, member.isArray)}`
                 }
             } else {
-                result += `, ${constructMemberWithType(name, member.type, member.isArray, !ignoreRequired && member.isRequired)}`
+                // 1. required member have to be present for creation
+                // 2. ignoreRequired if you generate mutation for update, 
+                //    we expect the already created object have all required fields 
+                //    so we need push user to include them all time he need update it
+                // 3. if member have default value, it is included in mongoose model schema 
+                //    and is not necessary to push user to include it even for creation
+                result += `, ${constructMemberWithType(name, member.type, member.isArray, member.isRequired && !ignoreRequired && !member.default)}`
             }
         }
     }
@@ -219,10 +225,10 @@ export function constructMemberWithType(name: string, baseType: string, isArray:
     return `${name}: ${type}`
 }
 
-export const generateSchemaOrder = (model: SchemaModel) => {
+export const generateSchemaOrder = (model: SchemaModel, notVirtualMembers: SchemaModelMember[]) => {
     let result = `enum ${model.modelName}OrderBy {\n`
 
-    for (const member of model.members) {
+    for (const member of notVirtualMembers) {
         result += `  ${member.name}_ASC\n`
         result += `  ${member.name}_DESC\n`
     }
@@ -232,14 +238,14 @@ export const generateSchemaOrder = (model: SchemaModel) => {
     return result
 }
 
-export const generateSchameFilter = (model: SchemaModel) => {
+export const generateSchameFilter = (model: SchemaModel, notVirtualMembers: SchemaModelMember[]) => {
     const filterName = `${model.modelName}Filter`
     let result = `input ${filterName} {\n
   AND: [${filterName}!]
   OR: [${filterName}!]
   `
 
-    for (const member of model.members) {
+    for (const member of notVirtualMembers) {
         // in case the member is related to another member
         if (member.relation) {
             result += `  ${member.name}_every: ${member.relation.relatedModel.modelName}Filter\n`
@@ -334,14 +340,9 @@ export const generateSchemaAsString = (models: SchemaModel[]): string => {
     let queriesAndMutations = ''
 
     for (const model of models) {
-        orders += generateSchemaOrder(model)
-    }
-
-    for (const model of models) {
-        filters += generateSchameFilter(model)
-    }
-
-    for (const model of models) {
+        const notVirtualMembers = model.members.filter((member) => !member.isVirtual) 
+        orders += generateSchemaOrder(model, notVirtualMembers)
+        filters += generateSchameFilter(model, notVirtualMembers)
         generatedModels += generateSchemaModel(model)
     }
 
