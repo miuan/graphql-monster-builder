@@ -1,10 +1,4 @@
-import {
-    SchemaModel,
-    SchemaModelRelationType,
-    StructureBackend,
-    SchemaModelMember,
-    SchemaModelType,
-} from '../../common/types'
+import { SchemaModel, SchemaModelRelationType, StructureBackend, SchemaModelMember, SchemaModelType } from '../../common/types'
 
 import { writeToFile, templateFileToText } from '../../common/files'
 import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
@@ -74,9 +68,7 @@ export const createService = (model: SchemaModel) => {
     const lower = firstToLower(modelName)
     const varName = lower + 'Model'
 
-    const membersWithRelation = model.members.filter(
-        (model) => model.relation && model.relation.type === SchemaModelRelationType.RELATION,
-    )
+    const membersWithRelation = model.members.filter((model) => model.relation && model.relation.type === SchemaModelRelationType.RELATION)
 
     const allIdsConversionsCreate = conversionsIdsToField(membersWithRelation, true)
     const allIdsConversionsUpdate = conversionsIdsToField(membersWithRelation, false)
@@ -84,14 +76,13 @@ export const createService = (model: SchemaModel) => {
     const connectRelationUpdate = updateLinkedModels(membersWithRelation, 'updatedModel.id')
     const disconnectRelations = disconnectLinkedModels(modelName, membersWithRelation)
     const disconnectRelationsInRemove = disconnectLinkedModels(modelName, membersWithRelation, true)
-    const { result: serviceAddRemove, connect: serviceAddRemoveConnect } = modelCreateAddRemoveLinks(
-        model,
-        membersWithRelation,
-    )
+    const { result: serviceAddRemove, connect: serviceAddRemoveConnect } = modelCreateAddRemoveLinks(model, membersWithRelation)
 
     let actionBeforeCreate = ''
     let actionAfterCreate = ''
     let actionBeforeUpdate = ''
+    let actionBeforeRemove = ''
+
     if (modelName === 'User') {
         actionBeforeCreate = `
     if(data.password) {
@@ -104,9 +95,9 @@ export const createService = (model: SchemaModel) => {
     }
 
     if (modelName === 'File') {
-        actionBeforeCreate = `await entry.storage.saveDataToFile(fileModel, data)`
-        actionAfterCreate = ``
-        actionBeforeUpdate = 'await entry.storage.saveDataToFile(fileModel, data)'
+        actionBeforeCreate = `await entry.storage.saveDataToFile(null, data)`
+        actionBeforeUpdate = 'await entry.storage.saveDataToFile(id, data)'
+        actionBeforeRemove = 'await entry.storage.unlinkFile(id)'
     }
 
     let result = templateFileToText(`service.ts`, {
@@ -125,6 +116,7 @@ export const createService = (model: SchemaModel) => {
         _EXTRA_ACTION_AFTER_CREATE_: actionAfterCreate,
         _EXTRA_ACTION_BEFORE_UPDATE_: actionBeforeUpdate,
         _EXTRA_ACTION_AFTER_UPDATE_: '',
+        _EXTRA_ACTION_BEFORE_REMOVE_: actionBeforeRemove,
         _SERVICE_ADD_REMOVE_CONNECT_: serviceAddRemoveConnect,
         _SERVICE_ADD_REMOVE_: serviceAddRemove,
     })
@@ -238,42 +230,34 @@ export const conversionsIdsToField = (membersWithRelation: SchemaModelMember[], 
         const varLinkedIds = `${member.name}LinkedIds`
         const lower = relationModelName.charAt(0).toLowerCase() + relationModelName.slice(1)
 
-        const relatedConnecteMember = member.relation.relatedModel.members.find(
-            (member) => member.relation && member.relation.name === member.relation.name,
-        )
+        const relatedConnecteMember = member.relation.relatedModel.members.find((member) => member.relation && member.relation.name === member.relation.name)
         const isHeMany = relatedConnecteMember.isArray
 
         let swithcOfLInkedIds
         let switchOfAddConnectedId = ''
         if (create) {
             if (relatedConnecteMember.isRequired) {
-                switchOfAddConnectedId =
-                    '// the related member is required so we need for creation a id (TEMPORARY-ID)\n\t\t'
-                swithcOfLInkedIds =
-                    '// backward relation is setup just with TEMPORARY-ID so need update later with REAL-ID\n\t\t'
+                switchOfAddConnectedId = '// the related member is required so we need for creation a id (TEMPORARY-ID)\n\t\t'
+                swithcOfLInkedIds = '// backward relation is setup just with TEMPORARY-ID so need update later with REAL-ID\n\t\t'
             } else {
-                switchOfAddConnectedId =
-                    '// the related member is NOT required so we will update later with REAL-ID\n\t\t// '
+                switchOfAddConnectedId = '// the related member is NOT required so we will update later with REAL-ID\n\t\t// '
                 swithcOfLInkedIds = '// backward relation is not setup yet, so need update later with REAL-ID\n\t\t '
             }
         } else {
             swithcOfLInkedIds = '// backward relation is already setup, so no need any update aditional\n\t\t// '
         }
 
-        const transformIds = templateFileToText(
-            isMeMany ? 'service-transform-many-ids.ts' : 'service-transform-one-id.ts',
-            {
-                _LOWER_NAME_: lower,
-                _LINKDED_IDS_: varLinkedIds,
-                _CONNECTED_MEMBER_NAME_: relatedConnecteMember.relation.payloadNameForId,
-                _CONNECTED_MEMBER_ID_: isHeMany ? '[id]' : 'id',
-                _MEMBER_NAME_: member.name,
-                _SWITCH_OF_ADD_CONNECTED_ID_: switchOfAddConnectedId,
-                _SWITCH_OF_ADD_TO_LINKED_IDS_: swithcOfLInkedIds,
-                _PAYLOAD_NAME_FOR_ID_: member.relation.payloadNameForId,
-                _PAYLOAD_NAME_FOR_CREATE_: member.relation.payloadNameForCreate,
-            },
-        )
+        const transformIds = templateFileToText(isMeMany ? 'service-transform-many-ids.ts' : 'service-transform-one-id.ts', {
+            _LOWER_NAME_: lower,
+            _LINKDED_IDS_: varLinkedIds,
+            _CONNECTED_MEMBER_NAME_: relatedConnecteMember.relation.payloadNameForId,
+            _CONNECTED_MEMBER_ID_: isHeMany ? '[id]' : 'id',
+            _MEMBER_NAME_: member.name,
+            _SWITCH_OF_ADD_CONNECTED_ID_: switchOfAddConnectedId,
+            _SWITCH_OF_ADD_TO_LINKED_IDS_: swithcOfLInkedIds,
+            _PAYLOAD_NAME_FOR_ID_: member.relation.payloadNameForId,
+            _PAYLOAD_NAME_FOR_CREATE_: member.relation.payloadNameForCreate,
+        })
 
         if (isMeMany) {
             result += `

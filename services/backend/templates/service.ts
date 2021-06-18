@@ -101,6 +101,7 @@ export const _LOWER_NAME_Remove = (entry, ctxUserId = null) => {
 
         // disconnect all relations
         _DISCONNECT_RELATIONS_IN_REMOVE
+        _EXTRA_ACTION_BEFORE_REMOVE_
         let removedModel = await VAR_NAME.findByIdAndRemove(id)
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Remove']) {
