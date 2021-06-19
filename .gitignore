@@ -2,6 +2,7 @@ node_modules
 test*
 #server will igner server.ts from templates
 #server*
+file-storage
 
 .env.local
 .env.*.local
