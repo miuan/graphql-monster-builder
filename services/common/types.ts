@@ -42,7 +42,7 @@ export type SchemaModelMember = {
     row: number
     isReadonly: boolean
     isVirtual: boolean
-    default?: number | string
+    default?: number | string | boolean
     regExp?: string
     placeholder?: string
 }

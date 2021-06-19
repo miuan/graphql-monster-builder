@@ -9,17 +9,17 @@ describe('scan', () => {
         expect(models[1].modelName).toEqual('User')
         expect(models[2].modelName).toEqual('File')
 
-        const file = models.find((model)=>model.modelName === 'File')
+        const file = models.find((model) => model.modelName === 'File')
         expect(file).not.toBeNull()
 
-        const fileName = file.members.find((member)=>member.name === 'name')
+        const fileName = file.members.find((member) => member.name === 'name')
         expect(fileName).not.toBeUndefined()
         expect(fileName).toHaveProperty('isArray', false)
         expect(fileName).toHaveProperty('isVirtual', false)
         expect(fileName).toHaveProperty('isReadonly', false)
         expect(fileName).toHaveProperty('isRequired', true)
 
-        const fileType = file.members.find((member)=>member.name === 'type')
+        const fileType = file.members.find((member) => member.name === 'type')
         expect(fileType).not.toBeUndefined()
         expect(fileType).toHaveProperty('isArray', false)
         expect(fileType).toHaveProperty('isVirtual', false)
@@ -27,14 +27,14 @@ describe('scan', () => {
         expect(fileType).toHaveProperty('isRequired', true)
         expect(fileType).toHaveProperty('default', 'text/plain')
 
-        const fileSize = file.members.find((member)=>member.name === 'size')
+        const fileSize = file.members.find((member) => member.name === 'size')
         expect(fileSize).not.toBeUndefined()
         expect(fileSize).toHaveProperty('isArray', false)
         expect(fileSize).toHaveProperty('isVirtual', false)
         expect(fileSize).toHaveProperty('isReadonly', true)
         expect(fileSize).toHaveProperty('isRequired', true)
 
-        const filePublicKey = file.members.find((member)=>member.name === 'publicKey')
+        const filePublicKey = file.members.find((member) => member.name === 'publicKey')
         expect(filePublicKey).not.toBeUndefined()
         expect(filePublicKey).toHaveProperty('isArray', false)
         expect(filePublicKey).toHaveProperty('isVirtual', false)
@@ -42,7 +42,7 @@ describe('scan', () => {
         expect(filePublicKey).toHaveProperty('isReadonly', true)
         expect(filePublicKey).toHaveProperty('isRequired', true)
 
-        const fileDatas = file.members.filter((member)=>member.name === 'data')
+        const fileDatas = file.members.filter((member) => member.name === 'data')
         expect(fileDatas).toHaveLength(1)
         const fileData = fileDatas[0]
         expect(fileData).not.toBeUndefined()
@@ -171,9 +171,7 @@ describe('scan', () => {
                    
                 }
             `),
-            ).toThrowError(
-                `Line: 4 Relation with name 'RelationName1' have recursion to the same model 'Model1' on line: 5. Relation have to be a connection between two models`,
-            )
+            ).toThrowError(`Line: 4 Relation with name 'RelationName1' have recursion to the same model 'Model1' on line: 5. Relation have to be a connection between two models`)
         })
 
         it('relation to many connections', async () => {
@@ -190,9 +188,7 @@ describe('scan', () => {
                     model1: @relation(name="RelationName1")
                 }
             `),
-            ).toThrowError(
-                `Line: 4 To many relation with name 'RelationName1' on lines: 4, 5, 10 expecting only two mates`,
-            )
+            ).toThrowError(`Line: 4 To many relation with name 'RelationName1' on lines: 4, 5, 10 expecting only two mates`)
         })
 
         it('array with required relation is not supported', async () => {
@@ -253,9 +249,7 @@ describe('scan', () => {
                     model1: @relation(name="RelationName1")
                 }
             `),
-            ).toThrowError(
-                `Line 9: Entity with name 'Entity1' have a full relation 'RelationName1' what is not possible`,
-            )
+            ).toThrowError(`Line 9: Entity with name 'Entity1' have a full relation 'RelationName1' what is not possible`)
         })
     })
 
@@ -358,7 +352,7 @@ describe('scan', () => {
             expect(member).toHaveProperty('name', 'name1')
             expect(member).toHaveProperty('type', 'String')
             expect(member).toHaveProperty('modelName', 'String')
-            
+
             expect(member).toHaveProperty('isArray', false)
             expect(member).toHaveProperty('isUnique', false)
             expect(member).toHaveProperty('isVirtual', true)
@@ -374,6 +368,92 @@ describe('scan', () => {
             expect(member).toHaveProperty('isUnique', false)
             expect(member).toHaveProperty('isVirtual', true)
             expect(member).toHaveProperty('isRequired', false)
+        })
+
+        it('default text', () => {
+            const member = extractMemberFromLine('defMember1: String! @default("def member value")', 10)
+            expect(member).toHaveProperty('name', 'defMember1')
+            expect(member).toHaveProperty('type', 'String')
+            expect(member).toHaveProperty('modelName', 'String')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', true)
+            expect(member).toHaveProperty('default', 'def member value')
+        })
+
+        it('default text array', () => {
+            expect(() => extractMemberFromLine('defMember2: String[] @default("def member value")', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
+        })
+
+        it('default text into Int', () => {
+            expect(() => extractMemberFromLine('defMember3: Int @default("def member value")', 1)).toThrowError(/modificator @default contain a text, but member with name 'defMember3' is type 'Int'/)
+        })
+
+        it('default number 123 (Int)', () => {
+            const member = extractMemberFromLine('defMember1: Int @default(123)', 10)
+            expect(member).toHaveProperty('name', 'defMember1')
+            expect(member).toHaveProperty('type', 'Int')
+            expect(member).toHaveProperty('modelName', 'Int')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', false)
+            expect(member).toHaveProperty('default', 123)
+        })
+
+        it('default number 123 (Float)', () => {
+            const member = extractMemberFromLine('defMember2: Float! @default(123)', 10)
+            expect(member).toHaveProperty('name', 'defMember2')
+            expect(member).toHaveProperty('type', 'Float')
+            expect(member).toHaveProperty('modelName', 'Float')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', true)
+            expect(member).toHaveProperty('default', 123)
+        })
+
+        it('default number 123 array', () => {
+            expect(() => extractMemberFromLine('defMember2: Int[] @default(123)', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
+        })
+
+        it('default text into Int', () => {
+            expect(() => extractMemberFromLine('defMember3: String @default(123)', 1)).toThrowError(/modificator @default contain a number, but member with name 'defMember3' is type 'String'/)
+        })
+
+        it('default boolean (false)', () => {
+            const member = extractMemberFromLine('defMember3: Boolean! @default(false)', 10)
+            expect(member).toHaveProperty('name', 'defMember3')
+            expect(member).toHaveProperty('type', 'Boolean')
+            expect(member).toHaveProperty('modelName', 'Boolean')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', true)
+            expect(member).toHaveProperty('default', false)
+        })
+
+        it('default boolean (true)', () => {
+            const member = extractMemberFromLine('defMember3: Boolean! @default(true)', 10)
+            expect(member).toHaveProperty('name', 'defMember3')
+            expect(member).toHaveProperty('type', 'Boolean')
+            expect(member).toHaveProperty('modelName', 'Boolean')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', true)
+            expect(member).toHaveProperty('default', true)
+        })
+
+        it('default boolean array', () => {
+            expect(() => extractMemberFromLine('defMember2: Boolean[] @default(false)', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
+        })
+
+        it('default boolean false into Int', () => {
+            expect(() => extractMemberFromLine('defMember3: String @default(false)', 1)).toThrowError(
+                /modificator @default contain a boolean value, but member with name 'defMember3' is type 'String'/,
+            )
         })
     })
 })

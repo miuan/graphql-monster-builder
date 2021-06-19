@@ -21,16 +21,15 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
     let currentProtection: SchemaModelProtection = generateBaseProtection()
     const models: SchemaModel[] = [] as SchemaModel[]
 
-    const modelRegExp = new RegExp('(type|model|entity) (w+) ?(@model|@entity)? ?{')
     let lineNumber = 1
     for (const currentRow of rows) {
-        const matched = currentRow.match(/ *(\w+) *(\w+) *(@((\w+)))? *{/)
+        const matched = currentRow.match(/ *(?<modelType1>type|model|entity) *(?<modelName>\w+) *(?:@(?<modelType2>model|entity))? *{/)
         if (currentRow.indexOf('#') === 0) {
             // ** COMMENTS
         } else if (matched && matched.length > 1) {
             // ** START WITH LOADING MEMBER TO MODEL **
-            const modelType = matched[5] || matched[1]
-            const modelName = matched[2]
+            const { modelName, modelType1, modelType2 } = matched.groups
+            const modelType = modelType2 || modelType1
 
             if (!/^[A-Z]/.test(modelName)) {
                 throw `Line ${lineNumber}: The model name '${modelName}' should start with capital leter '[A-Z]'`
@@ -76,7 +75,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
     checkForErrorsInModels(models)
     addDefaultModelsAndMembers(models)
 
-    const modelsWithOnlyRelations = models.filter((model)=>model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION))
+    const modelsWithOnlyRelations = models.filter((model) => model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION))
     // in generate create and update method is not counting there is anything to create or updated
     if (modelsWithOnlyRelations?.length) {
         throw new Error(
@@ -104,7 +103,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 relation: null,
                 row: -1,
             } as SchemaModelMember)
-    })
+        })
 
     return models
 }
@@ -140,10 +139,8 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
                 )
             }
 
-            if(model.type === SchemaModelType.ENTITY && member.relation && member.relation.type === SchemaModelRelationType.RELATION){
-                throw new Error(
-                    `Line ${member.row}: Entity with name '${model.modelName}' have a full relation '${member.relation.name}' what is not possible`,
-                )
+            if (model.type === SchemaModelType.ENTITY && member.relation && member.relation.type === SchemaModelRelationType.RELATION) {
+                throw new Error(`Line ${member.row}: Entity with name '${model.modelName}' have a full relation '${member.relation.name}' what is not possible`)
             }
 
             memberList.push(member.name)
@@ -315,22 +312,16 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 }
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
-    const match = row.match(/ *(\w+) *: *((@(\w+) *\(((\w+) *[:|=])? *"(\w+)" *\)|\w+)) *(\[\])? *(\!)?(.*\w+\(*\)*\'*\"*)?/)
+    const match = row.match(
+        / *(?<name>\w+) *: *(?:(?<type>@(?<relationType>\w+) *\(((?<relationParamName>\w+) *[:|=])? *"(?<relationParamValue>\w+)" *\)|\w+)) *(?<isArray>\[\])? *(?<isRequired>\!)?(?<options>.*)?/,
+    )
 
     if (!match) {
         throw new Error(`Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`)
     }
 
-    const {
-        1: name,
-        3: type,
-        4: relationType, // 'relation' or 'connect'
-        5: relationParamName, // 'name' or 'entity'
-        7: relationParamValue,
-        8: isArray,
-        9: isRequired,
-        10: options,
-    } = match
+    const { name, type, relationType, relationParamName, relationParamValue, isArray, isRequired, options } = match.groups
+
     // empty line we can skip
     if (match.length < 2) {
         return null
@@ -352,7 +343,7 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         isArray: !!isArray,
         isRequired: !!isRequired,
         isUnique: false,
-        isVirtual: false
+        isVirtual: false,
     } as SchemaModelMember
 
     if (relationType) {
