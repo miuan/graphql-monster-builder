@@ -120,7 +120,7 @@ app.use(healthCheck.allowedMethods())
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // STORAGE
-const storageTargetDir = process.env.STORAGE_DIR || '../storage/'
+const storageTargetDir = process.env.STORAGE_DIR || './file-storage/'
 if (!fs.existsSync(storageTargetDir)) {
     fs.mkdirSync(storageTargetDir, { recursive: true })
 }

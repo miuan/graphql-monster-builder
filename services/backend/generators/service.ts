@@ -95,8 +95,8 @@ export const createService = (model: SchemaModel) => {
     }
 
     if (modelName === 'File') {
-        actionBeforeCreate = `await entry.storage.saveDataToFile(null, data)`
-        actionBeforeUpdate = 'await entry.storage.saveDataToFile(id, data)'
+        actionBeforeCreate = `if (data.data) await entry.storage.saveDataToFile(null, data)`
+        actionBeforeUpdate = 'if (data.data) await entry.storage.saveDataToFile(id, data)'
         actionBeforeRemove = 'await entry.storage.unlinkFile(id)'
     }
 

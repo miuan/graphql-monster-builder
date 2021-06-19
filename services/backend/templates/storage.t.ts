@@ -1,7 +1,7 @@
 import { rejects } from 'assert'
 import * as crypto from 'crypto'
 import * as fs from 'fs'
-import * as send from 'koa' // 'koa-send'
+import * as send from 'koa-send'
 import * as path from 'path'
 import { resolve } from 'path'
 
@@ -116,11 +116,12 @@ export function registerStorageRouter(entry: any, router: any, targetDir: any) {
 
             file = await fileModel.findById(id).lean()
         } else {
-            file = await fileModel.findOne({ publicToken: id }).lean()
+            file = await fileModel.findOne({ publicKey: id }).lean()
         }
 
         ctx.set('Content-disposition', 'attachment; filename=' + file.name)
         ctx.set('Content-type', file.type)
+        await send(ctx, file.__path)
     })
 }
 

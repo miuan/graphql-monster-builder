@@ -179,10 +179,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
         // const { query, mutate } = createTestClient(server.apollo)
 
         const query = async (body: { query: string; variables: any }, token?: string) => {
-            const req = request(server.koa)
-                .post('/graphql')
-                .set('Content-Type', 'application/json')
-                .set('Accept', 'application/json')
+            const req = request(server.koa).post('/graphql').set('Content-Type', 'application/json').set('Accept', 'application/json')
 
             if (token) {
                 req.set('Authorization', `Bearer ${token}`)
@@ -248,7 +245,7 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
         `PORT=${port}
 ADMIN_EMAIL=admin1
 ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
-    `
+    `,
     )
 }
 

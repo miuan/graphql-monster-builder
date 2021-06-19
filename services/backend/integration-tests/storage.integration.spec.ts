@@ -1,9 +1,8 @@
 import * as request from 'supertest'
-import { serialize } from 'v8'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 import * as fs from 'fs'
 
-describe('couad integration', () => {
+describe('storage integration', () => {
     let server
     let res
 
@@ -39,6 +38,7 @@ describe('couad integration', () => {
 
     afterAll(async () => {
         await disconnectFromServer(server)
+        fs.rmdirSync('./file-storage/', { recursive: true })
     })
 
     it('createFile', async () => {
@@ -112,6 +112,30 @@ describe('couad integration', () => {
         expect(oneFileResponse2).not.toHaveProperty('data.File.data')
 
         expect(loadDataFromFileSpy).toBeCalledTimes(1)
+
+        const uploadJSON = oneFileResponse.data.File
+        // download with public key
+        const downloadRequestPublicKey = await request(server.koa).get('/download/' + uploadJSON.publicKey)
+        expect(downloadRequestPublicKey).toHaveProperty('ok', true)
+        expect(downloadRequestPublicKey).toHaveProperty('text', 'File/data/fgh47mk')
+        expect(downloadRequestPublicKey).toHaveProperty('headers.content-disposition', 'attachment; filename=File/name/xid52tc')
+        expect(downloadRequestPublicKey).toHaveProperty('headers.content-type', 'text/plain')
+        expect(downloadRequestPublicKey).toHaveProperty('headers.content-length', `${uploadJSON.size}`)
+
+        // download with id WITH token
+        const downloadRequestIdToken = await request(server.koa)
+            .get('/download/' + uploadJSON.id)
+            .set('Authorization', 'Bearer ' + token)
+        expect(downloadRequestIdToken).toHaveProperty('ok', true)
+        expect(downloadRequestIdToken).toHaveProperty('text', 'File/data/fgh47mk')
+        expect(downloadRequestIdToken).toHaveProperty('headers.content-disposition', 'attachment; filename=File/name/xid52tc')
+        expect(downloadRequestIdToken).toHaveProperty('headers.content-type', 'text/plain')
+        expect(downloadRequestIdToken).toHaveProperty('headers.content-length', `${uploadJSON.size}`)
+
+        // download with id without token
+        const downloadRequestId = await request(server.koa).get('/download/' + uploadJSON.id)
+        expect(downloadRequestId).toHaveProperty('ok', false)
+        expect(downloadRequestId.body).toEqual(expect.objectContaining({ error: { message: 'Unauthorized' } }))
 
         loadDataFromFileSpy.mockRestore()
     })
@@ -224,5 +248,67 @@ describe('couad integration', () => {
         expect(removeFileResponse).toHaveProperty('data.removeFile.id', createModel1Response.data.createFile.id)
 
         expect(() => fs.statSync(createFileRaw.__path)).toThrowError(/ENOENT: no such file/)
+    })
+
+    it('upload file', async () => {
+        const token = res.data.login_v1.token
+        const uploadRequest = await request(server.koa)
+            .post('/upload')
+            .set('Authorization', 'Bearer ' + token)
+            .attach('name', './package.json')
+
+        expect(uploadRequest.text).toBeDefined()
+        const uploadJSON = JSON.parse(uploadRequest.text)
+        expect(uploadJSON).toHaveProperty('id')
+        expect(uploadJSON).toHaveProperty('publicKey')
+        expect(uploadJSON).toHaveProperty('size')
+        expect(uploadJSON).toHaveProperty('name', 'package.json')
+        expect(uploadJSON).toHaveProperty('type', 'application/json')
+
+        const oneFileQuery = `query File($id: ID!){
+            File(id: $id) {
+                data,name,type,size,publicKey,id
+            }
+        }`
+
+        const oneFileResponse = await server.query(
+            {
+                query: oneFileQuery,
+                variables: { id: uploadJSON.id },
+            },
+            token,
+        )
+
+        expect(oneFileResponse).not.toHaveProperty('errors')
+        expect(oneFileResponse).toHaveProperty('data.File.name', 'package.json')
+        expect(oneFileResponse).toHaveProperty('data.File.size', uploadJSON.size)
+        expect(oneFileResponse).toHaveProperty('data.File.type', uploadJSON.type)
+        expect(oneFileResponse).toHaveProperty('data.File.publicKey', uploadJSON.publicKey)
+
+        const packageJson = fs.readFileSync('./package.json').toString()
+        expect(oneFileResponse).toHaveProperty('data.File.data', packageJson)
+
+        // download with public key
+        const downloadRequestPublicKey = await request(server.koa).get('/download/' + uploadJSON.publicKey)
+        expect(downloadRequestPublicKey).toHaveProperty('ok', true)
+        expect(downloadRequestPublicKey).toHaveProperty('text', packageJson)
+        expect(downloadRequestPublicKey).toHaveProperty('headers.content-disposition', 'attachment; filename=package.json')
+        expect(downloadRequestPublicKey).toHaveProperty('headers.content-type', 'application/json')
+        expect(downloadRequestPublicKey).toHaveProperty('headers.content-length', `${uploadJSON.size}`)
+
+        // download with id WITH token
+        const downloadRequestIdToken = await request(server.koa)
+            .get('/download/' + uploadJSON.id)
+            .set('Authorization', 'Bearer ' + token)
+        expect(downloadRequestIdToken).toHaveProperty('ok', true)
+        expect(downloadRequestIdToken).toHaveProperty('text', packageJson)
+        expect(downloadRequestIdToken).toHaveProperty('headers.content-disposition', 'attachment; filename=package.json')
+        expect(downloadRequestIdToken).toHaveProperty('headers.content-type', 'application/json')
+        expect(downloadRequestIdToken).toHaveProperty('headers.content-length', `${uploadJSON.size}`)
+
+        // download with id without token
+        const downloadRequestId = await request(server.koa).get('/download/' + uploadJSON.id)
+        expect(downloadRequestId).toHaveProperty('ok', false)
+        expect(downloadRequestId.body).toEqual(expect.objectContaining({ error: { message: 'Unauthorized' } }))
     })
 })
