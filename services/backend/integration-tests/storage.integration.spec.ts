@@ -47,7 +47,7 @@ describe('storage integration', () => {
 
         const loadDataFromFileSpy = jest.spyOn(server.entry.storage, 'loadDataFromFile')
 
-        const createModel1Mutation = `mutation Filr($name: String!,$data: String!, $userId:ID){
+        const createModel1Mutation = `mutation File($name: String!,$data: String!, $userId:ID){
             createFile(name: $name,data: $data, userId:$userId) {
                id,name,type,size,publicKey,user{id}
             }
@@ -144,7 +144,7 @@ describe('storage integration', () => {
         const token = res.data.login_v1.token
         const modelFile = server.entry.models['file']
 
-        const createModel1Mutation = `mutation Filr($name: String!,$data: String!, $userId:ID){
+        const createModel1Mutation = `mutation File($name: String!,$data: String!, $userId:ID){
             createFile(name: $name,data: $data, userId:$userId) {
                id,name,type,size,publicKey,user{id}
             }
@@ -204,7 +204,7 @@ describe('storage integration', () => {
         const token = res.data.login_v1.token
         const modelFile = server.entry.models['file']
 
-        const createModel1Mutation = `mutation Filr($name: String!,$data: String!, $userId:ID){
+        const createModel1Mutation = `mutation File($name: String!,$data: String!, $userId:ID){
             createFile(name: $name,data: $data, userId:$userId) {
                id,name,type,size,publicKey,user{id}
             }
