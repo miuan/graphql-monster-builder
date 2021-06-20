@@ -54,6 +54,7 @@ export function registerStorageService(fileModel, targetDir: any): any {
 export function registerStorageRouter(entry: any, router: any, targetDir: any) {
     const fileService = entry.services['file']
     const fileModel = entry.models['file']
+    const userModel = entry.models['user']
     // const targetDir = `./__clients__/${clientId}/${projectId}/upload`
     // if (!fs.existsSync(targetDir)) {
     //     fs.mkdirSync(targetDir, { recursive: true })
@@ -71,6 +72,11 @@ export function registerStorageRouter(entry: any, router: any, targetDir: any) {
 
         if (!user?.id) {
             ctx.throw(401, 'Unauthorized')
+        }
+
+        const userExists = await userModel.exists({_id: user.id})
+        if (!userExists) {
+            ctx.throw(401, 'Unauthorized: unknown user')
         }
 
         for (const uploadingFile of uploadingFiles) {
