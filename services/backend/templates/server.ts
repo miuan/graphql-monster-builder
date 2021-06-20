@@ -19,6 +19,7 @@ import * as proxy from 'koa-proxy'
 import allPassportSetup from './services/passport'
 import { generateHash } from './gen/extras'
 import { registerStorageService, registerStorageRouter } from './gen/storage'
+import { registerSendMailService } from './services/sendMail'
 
 const app: Koa = new Koa()
 
@@ -132,6 +133,19 @@ const storageRouter = new Router('/storage')
 registerStorageRouter(entry, storageRouter, storageTargetDir)
 app.use(storageRouter.routes())
 app.use(storageRouter.allowedMethods())
+
+
+////////////////////////////////////////////////////////////////////////////////////////
+// EMAIL
+entry['email'] = registerSendMailService({
+    SERVICE_NAME: process.env.SERVICE_NAME,
+    REPLY_EMAIL:process.env.REPLY_EMAIL,
+    SERVICE_URL:process.env.SERVICE_URL,
+    EMAIL_WELLCOME_TITLE: process.env.EMAIL_WELLCOME_TITLE,
+    EMAIL_WELLCOME_MESSAGE:process.env.EMAIL_WELLCOME_MESSAGE,
+    EMAIL_FORGOTTEN_PASSWORD_TITLE:process.env.EMAIL_FORGOTTEN_PASSWORD_TITLE,
+    EMAIL_FORGOTTEN_PASSWORD_MESSAGE:process.env.EMAIL_FORGOTTEN_PASSWORD_MESSAGE,
+})
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // GRAPHQL

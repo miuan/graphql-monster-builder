@@ -1,9 +1,12 @@
 import * as request from 'supertest'
+import { isExportDeclaration } from 'typescript'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
 describe('integration', () => {
     describe('login', () => {
         let server
+        let spyOnSendMail
+        let userModel
 
         beforeAll(async () => {
             server = await generateAndRunServerFromSchema(
@@ -30,9 +33,17 @@ describe('integration', () => {
                 }
             `,
             )
+
+            spyOnSendMail = jest.spyOn(server.entry['email'], 'sendMail').mockImplementation(() => {})
+            userModel = server.entry.models['user']
+        })
+
+        beforeEach(() => {
+            spyOnSendMail.mockReset()
         })
 
         afterAll(async () => {
+            spyOnSendMail.mockRestore()
             await disconnectFromServer(server)
         })
 
@@ -71,6 +82,7 @@ describe('integration', () => {
             })
 
             expect(res).toHaveProperty('data.login_v1.token')
+            expect(res.data.login_v1.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
             expect(res).toHaveProperty('data.login_v1.refreshToken')
             expect(res).toHaveProperty('data.login_v1.user.id')
             expect(res).toHaveProperty('data.login_v1.user.email', 'admin1')
@@ -149,16 +161,9 @@ describe('integration', () => {
             expect(createModel1Response).toHaveProperty('data.createModel1.opt', 'Model1/opt/h8mh2hvi')
             expect(createModel1Response).toHaveProperty('data.createModel1.optInt', 398661)
             expect(createModel1Response).toHaveProperty('data.createModel1.optFloat', 941035.4038235695)
-            expect(createModel1Response).toHaveProperty('data.createModel1.arrName', [
-                'Model1/arrName/7gbcv779',
-                'Model1/arrName/zvw8w4wo',
-                'Model1/arrName/otkz4x6o',
-            ])
+            expect(createModel1Response).toHaveProperty('data.createModel1.arrName', ['Model1/arrName/7gbcv779', 'Model1/arrName/zvw8w4wo', 'Model1/arrName/otkz4x6o'])
             expect(createModel1Response).toHaveProperty('data.createModel1.arrInt', [589617, 788864, 367384])
-            expect(createModel1Response).toHaveProperty(
-                'data.createModel1.arrFloat',
-                [354413.2473262602, 583756.2763030699, 175525.17500836527],
-            )
+            expect(createModel1Response).toHaveProperty('data.createModel1.arrFloat', [354413.2473262602, 583756.2763030699, 175525.17500836527])
             expect(createModel1Response).toHaveProperty('data.createModel1.optDateTime', '2021-02-04T23:21:30.194Z')
             expect(createModel1Response.data.createModel1.model2).toEqual(
                 expect.arrayContaining([
@@ -220,30 +225,12 @@ describe('integration', () => {
             expect(oneModel1Response).not.toHaveProperty('errors')
             expect(oneModel1Response).toHaveProperty('data.Model1.name', createModel1Response.data.createModel1.name)
             expect(oneModel1Response).toHaveProperty('data.Model1.opt', createModel1Response.data.createModel1.opt)
-            expect(oneModel1Response).toHaveProperty(
-                'data.Model1.optInt',
-                createModel1Response.data.createModel1.optInt,
-            )
-            expect(oneModel1Response).toHaveProperty(
-                'data.Model1.optFloat',
-                createModel1Response.data.createModel1.optFloat,
-            )
-            expect(oneModel1Response).toHaveProperty(
-                'data.Model1.arrName',
-                createModel1Response.data.createModel1.arrName,
-            )
-            expect(oneModel1Response).toHaveProperty(
-                'data.Model1.arrInt',
-                createModel1Response.data.createModel1.arrInt,
-            )
-            expect(oneModel1Response).toHaveProperty(
-                'data.Model1.arrFloat',
-                createModel1Response.data.createModel1.arrFloat,
-            )
-            expect(oneModel1Response).toHaveProperty(
-                'data.Model1.optDateTime',
-                createModel1Response.data.createModel1.optDateTime,
-            )
+            expect(oneModel1Response).toHaveProperty('data.Model1.optInt', createModel1Response.data.createModel1.optInt)
+            expect(oneModel1Response).toHaveProperty('data.Model1.optFloat', createModel1Response.data.createModel1.optFloat)
+            expect(oneModel1Response).toHaveProperty('data.Model1.arrName', createModel1Response.data.createModel1.arrName)
+            expect(oneModel1Response).toHaveProperty('data.Model1.arrInt', createModel1Response.data.createModel1.arrInt)
+            expect(oneModel1Response).toHaveProperty('data.Model1.arrFloat', createModel1Response.data.createModel1.arrFloat)
+            expect(oneModel1Response).toHaveProperty('data.Model1.optDateTime', createModel1Response.data.createModel1.optDateTime)
             expect(oneModel1Response.data.Model1.model2).toEqual(
                 expect.arrayContaining([
                     expect.objectContaining({
@@ -283,24 +270,33 @@ describe('integration', () => {
             const res = await server.mutate({
                 mutation: registerQL,
                 variables: {
-                    email: 'user1',
+                    email: 'createdUser@createdUser33yhlzcf.com',
                     pass: 'user1',
                 },
             })
 
+            expect(res).not.toHaveProperty('errors')
             expect(res).toHaveProperty('data.register_v1.token')
             expect(res).toHaveProperty('data.register_v1.refreshToken')
             expect(res).toHaveProperty('data.register_v1.user.id')
-            expect(res).toHaveProperty('data.register_v1.user.email', 'user1')
+            expect(res).toHaveProperty('data.register_v1.user.email', 'createdUser@createdUser33yhlzcf.com')
             expect(res).toHaveProperty('data.register_v1.user.roles', [])
-            expect(res).not.toHaveProperty('errors')
 
+            // CHECK if correct email was sent
+            const userBeforeResetPassword = await userModel.findOne({ email: 'createdUser@createdUser33yhlzcf.com' }).lean()
+            expect(userBeforeResetPassword.__verifyToken).toBeDefined()
+
+            expect(spyOnSendMail).toBeCalledTimes(1)
+            expect(spyOnSendMail.mock.calls[0][1]).toEqual('createdUser@createdUser33yhlzcf.com')
+            expect(spyOnSendMail.mock.calls[0][2]).toMatch(/Wellcome in/g)
+            expect(spyOnSendMail.mock.calls[0][3]).toMatch(new RegExp(`<a href="undefined/email/${userBeforeResetPassword.__verifyToken}/verify"`, 'g'))
+
+            // TEST LOGIN with created user1
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
-
             const res2 = await server.mutate({
                 mutation: loginQL,
                 variables: {
-                    email: 'user1',
+                    email: 'createdUser@createdUser33yhlzcf.com',
                     pass: 'user1',
                 },
             })
@@ -308,9 +304,119 @@ describe('integration', () => {
             expect(res2).toHaveProperty('data.login_v1.token')
             expect(res2).toHaveProperty('data.login_v1.refreshToken')
             expect(res2).toHaveProperty('data.login_v1.user.id')
-            expect(res2).toHaveProperty('data.login_v1.user.email', 'user1')
+            expect(res2).toHaveProperty('data.login_v1.user.email', 'createdUser@createdUser33yhlzcf.com')
             expect(res2).toHaveProperty('data.login_v1.user.roles', [])
             expect(res2).not.toHaveProperty('errors')
+        })
+
+        it('forgotten password request', async () => {
+            const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register.gql')
+            const regRes = await server.mutate({
+                mutation: registerQL,
+                variables: {
+                    email: 'userWithLostPass@userWithLostPass90yhlzxw.com',
+                    pass: 'userWithLostPass1',
+                },
+            })
+
+            spyOnSendMail.mockReset()
+
+            // CREATE REQUEST
+            const forgottenPasswordRequest = loadGraphQL('./services/backend/integration-tests/graphql/login/forgotten-password-request.gql')
+            const res = await server.mutate({
+                mutation: forgottenPasswordRequest,
+                variables: {
+                    email: 'userWithLostPass@userWithLostPass90yhlzxw.com',
+                },
+            })
+
+            expect(res).not.toHaveProperty('errors')
+            expect(res).toHaveProperty('data.forgottenPassword_v1.email')
+            expect(res).toHaveProperty('data.forgottenPassword_v1.status', 'sent')
+
+            // CHECK if correct email was sent
+            const userBeforeResetPassword = await userModel.findOne({ email: 'userWithLostPass@userWithLostPass90yhlzxw.com' }).lean()
+            expect(userBeforeResetPassword.__resetPasswordToken).toBeDefined()
+
+            expect(spyOnSendMail).toBeCalledTimes(1)
+            expect(spyOnSendMail.mock.calls[0][1]).toEqual('userWithLostPass@userWithLostPass90yhlzxw.com')
+            expect(spyOnSendMail.mock.calls[0][2]).toMatch(/Change password/g)
+            expect(spyOnSendMail.mock.calls[0][3]).toMatch(new RegExp(`<a href="undefined/forgotten-password/${userBeforeResetPassword.__resetPasswordToken}"`, 'g'))
+
+            // CHECK IF check worrks
+            const forgottenPasswordCheck = loadGraphQL('./services/backend/integration-tests/graphql/login/forgotten-password-check.gql')
+            const forgottenPasswordCheckRes = await server.mutate({
+                mutation: forgottenPasswordCheck,
+                variables: {
+                    token: userBeforeResetPassword.__resetPasswordToken,
+                },
+            })
+
+            expect(forgottenPasswordCheckRes).not.toHaveProperty('errors')
+            expect(forgottenPasswordCheckRes).toHaveProperty('data.check.status', 'valid')
+
+            // CHECK IF reset works
+            const forgottenPasswordReset = loadGraphQL('./services/backend/integration-tests/graphql/login/forgotten-password-reset.gql')
+            const forgottenPasswordResetRes = await server.mutate({
+                mutation: forgottenPasswordReset,
+                variables: {
+                    token: userBeforeResetPassword.__resetPasswordToken,
+                    password: 'userWithLostPass2',
+                },
+            })
+
+            expect(forgottenPasswordResetRes).not.toHaveProperty('errors')
+            expect(forgottenPasswordResetRes).toHaveProperty('data.reset.token')
+            expect(forgottenPasswordResetRes.data.reset.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
+            expect(forgottenPasswordResetRes).toHaveProperty('data.reset.refreshToken')
+            expect(forgottenPasswordResetRes).toHaveProperty('data.reset.user.email', 'userWithLostPass@userWithLostPass90yhlzxw.com')
+
+            const userAfterChangePass = await userModel.findOne({ email: 'userWithLostPass@userWithLostPass90yhlzxw.com' }).lean()
+            expect(userAfterChangePass.__resetPasswordToken).not.toBeDefined()
+            expect(userAfterChangePass.__password).not.toEqual(userBeforeResetPassword.__password)
+
+            // CHECK IF reset pass works for login
+            const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
+            const loginRes = await server.mutate({
+                mutation: loginQL,
+                variables: {
+                    email: 'userWithLostPass@userWithLostPass90yhlzxw.com',
+                    pass: 'userWithLostPass2',
+                },
+            })
+            expect(loginRes).not.toHaveProperty('errors')
+            expect(loginRes).toHaveProperty('data.login_v1.token')
+            expect(loginRes.data.login_v1.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
+        })
+
+        it('forgotten password check with WRONG token', async () => {
+            const forgottenPasswordCheck = loadGraphQL('./services/backend/integration-tests/graphql/login/forgotten-password-check.gql')
+            const forgottenPasswordCheckWrongRes = await server.mutate({
+                mutation: forgottenPasswordCheck,
+                variables: {
+                    token: `wrong token`,
+                },
+            })
+
+            expect(forgottenPasswordCheckWrongRes).toHaveProperty('errors')
+            expect(forgottenPasswordCheckWrongRes.errors[0].message).toMatch(/'wrong token' is not valid/)
+            expect(forgottenPasswordCheckWrongRes).not.toHaveProperty('data.check.status')
+        })
+
+        it('forgotten password reset with WRONG token', async () => {
+            const forgottenPasswordReset = loadGraphQL('./services/backend/integration-tests/graphql/login/forgotten-password-reset.gql')
+            const forgottenPasswordResetRes = await server.mutate({
+                mutation: forgottenPasswordReset,
+                variables: {
+                    token: `wrong token`,
+                    password: 'userWithLostPass3',
+                },
+            })
+
+            expect(forgottenPasswordResetRes).toHaveProperty('errors')
+            expect(forgottenPasswordResetRes).not.toHaveProperty('data.reset.token')
+            expect(forgottenPasswordResetRes).not.toHaveProperty('data.reset.refreshToken')
+            expect(forgottenPasswordResetRes).not.toHaveProperty('data.reset.user.email')
         })
     })
 })

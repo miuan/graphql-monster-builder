@@ -2,7 +2,6 @@ import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
-import { sendVerifyEmail, sendForgottenPasswordEmail } from './sendMail'
 
 export async function generateHash(password) {
   return bcrypt.hash(password, 10)
@@ -95,7 +94,8 @@ export const generateRegister = (entry) => async (root, {email, password}, ctx) 
   // save the tokens into model
   createdUser.save()
   
-  sendVerifyEmail(createdUser)
+  if(entry['email']) entry['email'].sendVerifyEmail(createdUser)
+
   return {
     token: createdUser.__token,
     refreshToken: createdUser.__refreshToken,
@@ -168,7 +168,7 @@ export const generateVerifyEmailResend = (entry) => async (root, {userId}, ctx) 
     await user.save()
   }
 
-  sendVerifyEmail(user)
+  if(entry['email']) entry['email'].sendVerifyEmail(user)
 
   return {
     email: user.email,
@@ -192,7 +192,7 @@ export const generateChangePassword = (entry) => async (root, data, ctx) => {
       throw `Unauthorized`;
     }
 
-    userForUpdate.__password = generateHash(data.newPassword)
+    userForUpdate.__password = await generateHash(data.newPassword)
     genPasswordAndTokens(userForUpdate)
 
     userForUpdate.save()
@@ -209,6 +209,10 @@ const RESET_PASSWORD_TOKEN_SIZE = 64
 export const generateForgottenPassword = (entry) => async (root, {email}, ctx) => {
   const userModel = await entry.models['user']
   
+  if(!entry['email']) {
+    throw new Error(`The email services in ForgottenPassword call is not defined`)
+  }
+
   const user = await userModel.findOne({email})
 
   if(!user){
@@ -226,7 +230,8 @@ export const generateForgottenPassword = (entry) => async (root, {email}, ctx) =
   user.__resetPasswordToken = __resetPasswordToken
   
   await user.save()
-  sendForgottenPasswordEmail(user)
+  
+  entry['email'].sendForgottenPasswordEmail(user)
   
   return {
     email: user.email,
@@ -257,7 +262,7 @@ export const generateForgottenPasswordReset = (entry) => async (root, {token, pa
     throw `The forgotten password token '${token}' is not valid`
   }
 
-  user.__password = generateHash(password) 
+  user.__password = await generateHash(password) 
   user.__resetPasswordToken = undefined
   genPasswordAndTokens(user)
   await user.save()

@@ -24,25 +24,43 @@ export const run = async (cmd): Promise<RunType> => ( new Promise<RunType>((reso
     })
 )
 
-export const sendVerifyEmail = async (user) => {
-    const welcome = EMAIL_WELLCOME_TITLE() || 'Wellcome in {{SERVICE_NAME}}'
-    const message = EMAIL_WELLCOME_MESSAGE() || `Please verify your email by click to this <a href="{{SERVICE_URL}}/email/${user.__verifyToken}/verify">{{SERVICE_URL}}/email/${user.__verifyToken}/verify</a>`
-    return sendMail(user.email, welcome, message)
-}
-  
-export const sendForgottenPasswordEmail = async (user) => {
-    const welcome = EMAIL_FORGOTTEN_PASSWORD_TITLE() || 'Change password request for {{SERVICE_NAME}}'
-    const message = EMAIL_FORGOTTEN_PASSWORD_MESSAGE() || `We recaive request about reset Your password. If is not your action, please ignore this message. If you want reset your password follow instruction on this link <a href="{{SERVICE_URL}}/forgotten-password/${user.__resetPasswordToken}">{{SERVICE_URL}}/forgotten-password/${user.__resetPasswordToken}</a>`
-    return sendMail(user.email, welcome, message)
+function sendMail(emailFrom, emailTo, rawTitle, rawMessage){
+    console.log('mail', `mail -a "Content-type: text/html;\nFrom: ${emailFrom}" -s "${rawTitle}" ${emailTo}`)
+    run(`echo "${rawMessage}" | mail -a "Content-type: text/html;\nFrom: ${emailFrom}" -s "${rawTitle}" ${emailTo}`)
 }
 
+export function registerSendMailService(config){
+    const {
+        SERVICE_URL, 
+        REPLY_EMAIL,
+        NOTREPLY_EMAIL,
+        SERVICE_NAME,
+        EMAIL_WELLCOME_TITLE = 'Wellcome in {{SERVICE_NAME}}',
+        EMAIL_WELLCOME_MESSAGE = 'Please verify your email by click to this <a href="{{SERVICE_URL}}/email/{{USER_VERIFY_TOKEN}}/verify">{{SERVICE_URL}}/email/{{SERVICE_URL}}/verify</a>',
+        EMAIL_FORGOTTEN_PASSWORD_TITLE = 'Change password request for {{SERVICE_NAME}}',
+        EMAIL_FORGOTTEN_PASSWORD_MESSAGE = 'We recaive request about reset Your password. If is not your action, please ignore this message. If you want reset your password follow instruction on this link <a href="{{SERVICE_URL}}/forgotten-password/{{USER_RESET_PASSWORD_TOKEN}}">{{SERVICE_URL}}/forgotten-password/{{USER_RESET_PASSWORD_TOKEN}}</a>'
+    } = config
 
-export const sendMail = async (emailTo, rawTitle, rawMessage) => {
-    const title = rawTitle.replace(/{{SERVICE_URL}}/g, SERVICE_URL()).replace(/{{EMAIL_FROM}}/g, EMAIL_FROM()).replace(/{{SERVICE_NAME}}/g, SERVICE_NAME())
-    const message = rawMessage.replace(/{{SERVICE_URL}}/g, SERVICE_URL()).replace(/{{EMAIL_FROM}}/g, EMAIL_FROM()).replace(/{{SERVICE_NAME}}/g, SERVICE_NAME())
+    function replaceWithConfig(text){
+        return text.replace(/{{SERVICE_URL}}/g, SERVICE_URL).replace(/{{SERVICE_NAME}}/g, SERVICE_NAME)
+    }
     
-    console.log('mail', `mail -a "Content-type: text/html;\nFrom: ${EMAIL_FROM()}" -s "${title}" ${emailTo}`)
-    run(`echo "${message}" | mail -a "Content-type: text/html;\nFrom: ${EMAIL_FROM()}" -s "${title}" ${emailTo}`)
+    const sendMailService = {
+        sendVerifyEmail: async (user) => {
+            const welcome = replaceWithConfig(EMAIL_WELLCOME_TITLE)
+            const message = replaceWithConfig(EMAIL_WELLCOME_MESSAGE).replace(/{{USER_VERIFY_TOKEN}}/g, user.__verifyToken)
+            return sendMailService.sendMail(REPLY_EMAIL, user.email, welcome, message)
+        },
+        sendForgottenPasswordEmail: async (user) => {
+            const title = replaceWithConfig(EMAIL_FORGOTTEN_PASSWORD_TITLE)
+            const message = replaceWithConfig(EMAIL_FORGOTTEN_PASSWORD_MESSAGE).replace(/{{USER_RESET_PASSWORD_TOKEN}}/g, user.__resetPasswordToken)
+            return sendMailService.sendMail(REPLY_EMAIL, user.email, title, message)
+        },
+        sendMail,
+        replaceWithConfig
+    }
+
+    return sendMailService
 }
 
-export default sendMail
+
