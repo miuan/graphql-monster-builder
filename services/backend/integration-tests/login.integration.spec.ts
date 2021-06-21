@@ -51,7 +51,7 @@ describe('integration', () => {
             // console.log(server)
             const response = await request(server.koa).get('/health')
             expect(response.status).toBe(200)
-            expect(response.body).toEqual({ health: 'ok' })
+            expect(response.body).toHaveProperty('health', 'ok')
         })
 
         it('login fail', async () => {

@@ -16,7 +16,7 @@ import { createUser, createRole, generateParentLogin } from './gen/extras'
 // server specific
 import * as proxy from 'koa-proxy'
 
-import allPassportSetup from './services/passport'
+import passportSetupAll from './services/passport'
 import { generateHash } from './gen/extras'
 import { registerStorageService, registerStorageRouter } from './gen/storage'
 import { registerSendMailService } from './services/sendMail'
@@ -31,10 +31,22 @@ dotenv.config({
 if (!process.env.PORT) {
     console.warn('PORT is not setup, you can use .env file')
 }
-
 console.info(`ENVIRONMENT:  process - ${process.env.NODE_ENV}  app - ${app.env}`)
+const PORT = process.env.PORT
 
-const PORT = process.env.PORT || 3001
+app.on('error', (err) => {
+    const date = new Date()
+    const timestamp = date.toLocaleString()
+    console.error('[server error] ' + timestamp, err)
+})
+
+// If the Node process ends, close the Mongoose connection
+process.on('SIGINT', () => {
+    mongoDB.close(() => {
+        console.debug('Mongoose default connection disconnected through app termination')
+        process.exit(0)
+    })
+})
 
 // handle errors
 app.use(async (ctx, next) => {
@@ -76,30 +88,19 @@ app.use(
 )
 app.use(koaBody({ multipart: true }))
 
-app.on('error', (err) => {
-    const date = new Date()
-    const timestamp = date.toLocaleString()
-    console.error('[server error] ' + timestamp, err)
-})
-
-// NOTE: for access graphiql pass token to query
-app.use(async (ctx, next) => {
-    // if not exists header or header.authorization
-    // and otherhand exist query.token
-    if ((!ctx.header || !ctx.header.authorization) && ctx.request && ctx.request.query && ctx.request.query.token) {
-        const header = ctx.header || {}
-        header.authorization = 'Bearer ' + ctx.request.query.token
-        ctx.request.header = header
-    }
-
-    console.log('auth:', ctx.header && ctx.header.authorization ? ctx.header.authorization.substr(12) + '...' : 'none provided')
-
-    await next()
-})
-
-allPassportSetup(app)
-
 const { entry, resolvers } = generateResolver({})
+
+////////////////////////////////////////////////////////////////////////////////////////
+// PASSPORT
+const publicPasswordConfig = passportSetupAll(app, entry.models['user'], {
+    GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+    FACEBOOK_APP_ID: process.env.FACEBOOK_APP_ID,
+    FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
+    SERVICE_URL: process.env.SERVICE_URL,
+})
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // PARENT ACCESS
@@ -107,45 +108,6 @@ const parentAccess = new Router()
 parentAccess.post(`/parent/:parentAccessToken/user/:parentUserId`, generateParentLogin(entry))
 app.use(parentAccess.routes())
 app.use(parentAccess.allowedMethods())
-
-////////////////////////////////////////////////////////////////////////////////////////
-// HEALTCHECK
-const healthCheck = new Router()
-healthCheck.get(`/health`, (ctx) => {
-    ctx.body = {
-        health: 'ok',
-    }
-})
-app.use(healthCheck.routes())
-app.use(healthCheck.allowedMethods())
-
-////////////////////////////////////////////////////////////////////////////////////////
-// STORAGE
-const storageTargetDir = process.env.STORAGE_DIR || './file-storage/'
-if (!fs.existsSync(storageTargetDir)) {
-    fs.mkdirSync(storageTargetDir, { recursive: true })
-}
-
-// TODO: please introduce better solution that with this entry
-entry['storage'] = registerStorageService(entry.models['file'], storageTargetDir)
-
-const storageRouter = new Router('/storage')
-registerStorageRouter(entry, storageRouter, storageTargetDir)
-app.use(storageRouter.routes())
-app.use(storageRouter.allowedMethods())
-
-
-////////////////////////////////////////////////////////////////////////////////////////
-// EMAIL
-entry['email'] = registerSendMailService({
-    SERVICE_NAME: process.env.SERVICE_NAME,
-    REPLY_EMAIL:process.env.REPLY_EMAIL,
-    SERVICE_URL:process.env.SERVICE_URL,
-    EMAIL_WELLCOME_TITLE: process.env.EMAIL_WELLCOME_TITLE,
-    EMAIL_WELLCOME_MESSAGE:process.env.EMAIL_WELLCOME_MESSAGE,
-    EMAIL_FORGOTTEN_PASSWORD_TITLE:process.env.EMAIL_FORGOTTEN_PASSWORD_TITLE,
-    EMAIL_FORGOTTEN_PASSWORD_MESSAGE:process.env.EMAIL_FORGOTTEN_PASSWORD_MESSAGE,
-})
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // GRAPHQL
@@ -168,20 +130,56 @@ const apollo = new ApolloServer({
 apollo.applyMiddleware({ app })
 
 ////////////////////////////////////////////////////////////////////////////////////////
+// EMAIL
+entry['email'] = registerSendMailService({
+    SERVICE_NAME: process.env.SERVICE_NAME,
+    REPLY_EMAIL:process.env.REPLY_EMAIL,
+    SERVICE_URL:process.env.SERVICE_URL,
+    EMAIL_WELLCOME_TITLE: process.env.EMAIL_WELLCOME_TITLE,
+    EMAIL_WELLCOME_MESSAGE:process.env.EMAIL_WELLCOME_MESSAGE,
+    EMAIL_FORGOTTEN_PASSWORD_TITLE:process.env.EMAIL_FORGOTTEN_PASSWORD_TITLE,
+    EMAIL_FORGOTTEN_PASSWORD_MESSAGE:process.env.EMAIL_FORGOTTEN_PASSWORD_MESSAGE,
+})
+
+////////////////////////////////////////////////////////////////////////////////////////
+// STORAGE
+const storageTargetDir = process.env.STORAGE_DIR || './file-storage/'
+if (!fs.existsSync(storageTargetDir)) {
+    fs.mkdirSync(storageTargetDir, { recursive: true })
+}
+
+// TODO: please introduce better solution that with this entry
+entry['storage'] = registerStorageService(entry.models['file'], storageTargetDir)
+
+const storageRouter = new Router('/storage')
+registerStorageRouter(entry, storageRouter, storageTargetDir)
+app.use(storageRouter.routes())
+app.use(storageRouter.allowedMethods())
+
+////////////////////////////////////////////////////////////////////////////////////////
+// HEALTCHECK
+const healthCheck = new Router()
+healthCheck.get(`/health`, (ctx) => {
+    ctx.body = {
+        health: 'ok',
+        service: {
+            SERVICE_NAME: process.env.SERVICE_NAME,
+            SERVICE_URL: process.env.SERVICE_URL,
+            REPLY_EMAIL: process.env.REPLY_EMAIL,
+        },
+        passport: publicPasswordConfig
+    }
+})
+app.use(healthCheck.routes())
+app.use(healthCheck.allowedMethods())
+
+////////////////////////////////////////////////////////////////////////////////////////
 // Setup connection to DB
 
 const connOptions = {
     host: process.env.DB_HOST,
     db: process.env.DB_NAME,
 }
-
-// If the Node process ends, close the Mongoose connection
-process.on('SIGINT', () => {
-    mongoDB.close(() => {
-        console.debug('Mongoose default connection disconnected through app termination')
-        process.exit(0)
-    })
-})
 
 export async function updateAdminUser(rawPassword = true) {
     const admin_email = process.env.ADMIN_EMAIL || `admin`

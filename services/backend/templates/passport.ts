@@ -1,197 +1,224 @@
 import * as passport from 'koa-passport'
-import {Strategy as FacebookStrategy} from 'passport-facebook'
-import {Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt'
-import {Strategy as GitHubStrategy } from 'passport-github2'
-import {OAuth2Strategy as GoogleStrategy } from 'passport-google-oauth'
-import {Strategy as AnonymousStrategy } from 'passport-anonymous'
-
-
+import { Strategy as FacebookStrategy } from 'passport-facebook'
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt'
+import { Strategy as GitHubStrategy } from 'passport-github2'
+import { OAuth2Strategy as GoogleStrategy } from 'passport-google-oauth'
+import { Strategy as AnonymousStrategy } from 'passport-anonymous'
+import { genPasswordAndTokens } from '../gen/extras'
 import * as Router from 'koa-router'
 
-import {userModel} from '../gen/models/User'
-import { genPasswordAndTokens } from '../gen/extras'
+export const passportSetupAll = (app, userModel, config) => {
+    passportSetupJwt(app)
 
-export const allSetup = (app) =>{
-    jwtSetup(app)
-    
-    const authRouter = new Router( {prefix: '/auth' })
-    
-    othersSetup(authRouter) 
-    
+    const authRouter = new Router({ prefix: '/auth' })
+
+    const publicPassportConfig = passportSetup3Party(authRouter, userModel, config)
+
     app.use(authRouter.routes())
-    app.use(authRouter.allowedMethods());
+    app.use(authRouter.allowedMethods())
+
+    return publicPassportConfig
 }
 
-export const jwtSetup = (app) => {
+export const passportSetupJwt = (app) => {
+    // const authRouter = new Router({ prefix: '/auth' })
     passport.serializeUser<any, any>((req, user, done) => {
-        done(undefined, user);
-    });
-    
+        done(undefined, user)
+    })
+
     passport.deserializeUser((id, done) => {
         console.log('deserializeUser', id)
         done(id)
-    });
+    })
 
     // http://www.passportjs.org/packages/passport-jwt/
-    passport.use(new JwtStrategy({
-            jwtFromRequest: ExtractJwt.fromExtractors([ExtractJwt.fromAuthHeaderAsBearerToken(), ExtractJwt.fromUrlQueryParameter('token')]),
-            secretOrKey: process.env.JWT_TOKEN_SECRET || 'protectql_test_secret'
-        }, (jwt_payload, done) => {
-        console.log('jwt_payload', jwt_payload)
-        done(null, jwt_payload)
-    }))
+    passport.use(
+        new JwtStrategy(
+            {
+                jwtFromRequest: ExtractJwt.fromExtractors([
+                    ExtractJwt.fromAuthHeaderAsBearerToken(),
+                    ExtractJwt.fromUrlQueryParameter('token'),
+                ]),
+                secretOrKey: process.env.JWT_TOKEN_SECRET || 'protectql_test_secret',
+            },
+            (jwt_payload, done) => {
+                console.log('jwt_payload', jwt_payload)
+                done(null, jwt_payload)
+            },
+        ),
+    )
 
     passport.use(new AnonymousStrategy())
-    
-    // Initialize Passport and restore authentication state, if any, from the
-    // session.
-    app.use(passport.initialize());
-    // app.use(passport.session());
+
+    // Initialize Passport and restore authentication state, if any, from the session.
+    // It is use for GithubStrategy, GoogleStrategy, FacebookStrategy, ...
+    app.use(passport.initialize())
     app.use(passport.authenticate(['jwt', 'anonymous']))
 }
 
-const checkIfStrategyConfigured = (config) => !!config.clientID || !!config.clientSecret || !!config.callbackURL
+export const passportSetup3Party = (authRouter, userModel, config) => {
+    const sentTokenFor3partyLogin = async (ctx) => {
+        console.log('handleIncomingFrom3party', ctx, ctx.req?.user)
 
-const checkErrorsInConfForStrategy = (config) => {
-    const result = []
+        const userId = ctx.req?.user?.id
+        const user = await userModel.findById(userId)
 
-    if(!config.clientID){
-        result.push('Client ID is empty')
-    }
+        genPasswordAndTokens(user)
+        await user.save()
 
-    if(!config.clientSecret){
-        result.push('Client Secret is empty')
-    }
-
-    if(!config.callbackURL){
-        result.push('Callback URL is empty')
-    }
-
-    if(config.callbackURL && !config.callbackURL?.startsWith('http://') && !config.callbackURL?.startsWith('https://')){
-        result.push(`Callback URL should start with 'http://' or 'https://'`)
-    }
-
-    return result.length ? result : false
-}
-
-
-const setupStrategy = (passport, Strategy, name, config, cb) => {
-    // not configured at all
-    if(!checkIfStrategyConfigured(config)) return false
-
-    // configured with errors
-    const errors = checkErrorsInConfForStrategy(config)
-    if(errors){
-        console.log(`ERROR: Strategy with name: ${name} have followed errors`, errors)
-        return false
-    }
-    
-    passport.use(name, new Strategy(config, cb))
-    return true
-}
-
-const go = async (ctx) => {
-    console.log('GO', ctx, ctx.req?.user)
-   
-    const userId = ctx.req?.user?.id
-    const user = await userModel.findById(userId)
-    
-    genPasswordAndTokens(user)
-    user.verified = true
-    await user.save()
-    
-    ctx.body = {
-        user:{
-            id: user._id,
-            email: user.email,
-            roles: user.roles
-        },
-        token: user.__token,
-        refreshToken: user.__refreshToken
-    }
-
-    // Successful authentication, redirect home.
-   
-}
-
-export const othersSetup = (authRouter, name=null) => {
-    const facebookName = name ? `facebook-${name}`: 'facebook'
-    const githubName = name ? `github-${name}`: 'github'
-    const googleName = name ? `google-${name}`: 'google'
-
-    const facebookConnect = setupStrategy(passport, FacebookStrategy, facebookName, {
-        clientID: process.env.FACEBOOK_APP_ID,
-        clientSecret: process.env.FACEBOOK_APP_SECRET,
-        callbackURL: process.env.FACEBOOK_APP_CALLBACK_URL,
-        profileFields: ["name", "email", "link", "locale", "timezone"]
-    },  (accessToken, refreshToken, profile, cb) => {
-        console.log('Facebook profile', {accessToken, refreshToken, profile})
-       userModel.findOne({ __password:  `facebook-id:${profile.id}`}, {_id: 1, roles:1}, {}, (err, existingUser) => {
-            if(existingUser) return cb(null, existingUser)
-
-            userModel.create({email: `${profile.name.givenName} ${profile.name.familyName}`, roles:[], __password:`facebook-id:${profile.id}`, password:'*****'}, (errCreate, createdUser) => {
-                cb(errCreate, createdUser)
-            })
-        })
-    })
-
-
-    const githubConnect = setupStrategy(passport, GitHubStrategy, githubName, {
-        clientID: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: process.env.GITHUB_CLIENT_CALLBACK_URL
-    },  (accessToken, refreshToken, profile, cb) => {
-        console.log('GitHub profile', {accessToken, refreshToken, profile})
-        userModel.findOne({ __password:  `github-id:${profile.id}`}, {_id: 1, roles:1}, {}, (err:any, existingUser:any) => {
-            if(existingUser) return cb(null, existingUser)
-
-            userModel.create({email: `${profile.emails[0]}`, roles:[], __password:`github-id:${profile.id}`, password:'*****'}, (errCreate, createdUser) => {
-                cb(errCreate, createdUser)
-            })
-        })
-    })
-
-
-    const googleConnect = setupStrategy(passport, GitHubStrategy, githubName, {
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CLIENT_CALLBACK_URL
-    }, (request, accessToken, refreshToken, profile, done) => {
-        (accessToken, refreshToken, profile, cb) => {
-            console.log('GOOGLE profile', {accessToken, refreshToken, profile})
-            userModel.findOne({ __password:  `google-id:${profile.id}`}, {_id: 1, roles:1}, {}, (err:any, existingUser:any) => {
-                if(existingUser) return cb(null, existingUser)
-    
-                userModel.create({email: `${profile.emails[0]}`, roles:[], __password:`google-id:${profile.id}`, password:'*****'}, (errCreate, createdUser) => {
-                    cb(errCreate, createdUser)
-                })
-            })
+        ctx.body = {
+            user: {
+                id: user._id,
+                email: user.email,
+                roles: user.roles,
+            },
+            token: user.__token,
+            refreshToken: user.__refreshToken,
         }
-      }
-    )
-
-    
-    if(facebookConnect){
-        authRouter.get('/facebook', passport.authenticate(facebookName));
-        authRouter.get('/facebook/callback', passport.authenticate(facebookName), go);
-        console.log(`Strategy for Facebook with name: ${facebookName} registrated on '/facebook/callback'`)
     }
 
-    if(githubConnect){
-        authRouter.get('/github', passport.authenticate(githubName, { scope: [ 'user:email' ] }));
-        authRouter.get('/github/callback', passport.authenticate(githubName, { failureRedirect: '/login' }), go);
-        console.log(`Strategy for Github with name: ${githubName} registrated on '/github/callback'`)
+    const findOrCreateUser = (type) => (accessToken, refreshToken, profile, done) => {
+        const email = profile.emails.length > 0 && profile.emails[0].value
+        if (!email) {
+            const capType = capitalizeFirstLetter(type)
+            console.error(`Service ${capType} doesn't send a email. Without email we can't register a user`, profile)
+            return done(new Error(`Service ${capType} doesn't send a email. Without email we can't register a user`))
+        }
+        const verified = profile.emails[0].verified
+        const __password = `passport:${type}:${profile.id}`
+
+        const handleExistiongUser = (err, existingUser) => {
+            if (existingUser) return done(null, existingUser)
+
+            userModel.create(
+                {
+                    email,
+                    verified,
+                    __password,
+                    roles: [],
+                    password: '*****',
+                },
+                (errCreate, createdUser) => {
+                    if (errCreate && errCreate.message.match(/index: email_1 dup key/)) {
+                        const capType = capitalizeFirstLetter(type)
+                        console.error(
+                            `You trying to register user through ${capType} but user with this email (${email}) already exist`,
+                            profile,
+                        )
+                        return done(
+                            new Error(
+                                `You trying to register user through ${capType} but user with this email (${email}) already exist`,
+                            ),
+                        )
+                    }
+
+                    done(errCreate, createdUser)
+                },
+            )
+        }
+
+        userModel.findOne({ __password }, { _id: 1, roles: 1 }, null, handleExistiongUser)
     }
 
-    
-    if(googleConnect){
-        authRouter.get('/google', passport.authenticate(googleName, {scope: [
-            'https://www.googleapis.com/auth/userinfo.profile',
-            'https://www.googleapis.com/auth/userinfo.email'
-        ] }));
-        authRouter.get('/google/callback', passport.authenticate(googleName, { failureRedirect: '/login' }), go);
-        console.log(`Strategy for Google with name: ${googleName} registrated on '/google/callback'`)
+    if (githubActive(config)) {
+        // https://github.com/settings/developers
+        passport.use(
+            new GitHubStrategy(
+                {
+                    clientID: config.GITHUB_CLIENT_ID,
+                    clientSecret: config.GITHUB_CLIENT_SECRET,
+                    callbackURL: `${config.SERVICE_URL}/login/github`,
+                },
+                findOrCreateUser('github'),
+            ),
+        )
+
+        authRouter.get('/github', passport.authenticate('github', { scope: ['user:email'] }))
+        authRouter.get(
+            '/github/callback',
+            passport.authenticate('github', { failureRedirect: '/login' }),
+            sentTokenFor3partyLogin,
+        )
+    }
+
+    if (googleActive(config)) {
+        // https://console.cloud.google.com/apis/credentials?folder=&organizationId=&project=voc4uga
+        passport.use(
+            new GoogleStrategy(
+                {
+                    clientID: config.GOOGLE_CLIENT_ID,
+                    clientSecret: config.GOOGLE_CLIENT_SECRET,
+                    callbackURL: `${config.SERVICE_URL}/login/google`,
+                    // callbackURL: "http://localhost/login/google"
+                },
+                findOrCreateUser('google'),
+            ),
+        )
+
+        authRouter.get(
+            '/google',
+            passport.authenticate('google', {
+                scope: [
+                    'https://www.googleapis.com/auth/userinfo.profile',
+                    'https://www.googleapis.com/auth/userinfo.email',
+                ],
+            }),
+        )
+        authRouter.get(
+            '/google/callback',
+            passport.authenticate('google', { failureRedirect: '/login' }),
+            sentTokenFor3partyLogin,
+        )
+    }
+
+    if (facebookActive(config)) {
+        passport.use(
+            new FacebookStrategy(
+                {
+                    clientID: config.FACEBOOK_APP_ID,
+                    clientSecret: config.FACEBOOK_APP_SECRET,
+                    callbackURL: `${config.SERVICE_URL}/login/facebook`,
+                    profileFields: ['name', 'emails', 'link', 'locale', 'timezone'],
+                },
+                findOrCreateUser('facebook'),
+            ),
+        )
+
+        authRouter.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }))
+        authRouter.get('/facebook/callback', passport.authenticate('facebook'), sentTokenFor3partyLogin)
+    }
+
+    return publicPasswordConfig(config)
+}
+
+export function githubActive(config) {
+    return !!config.GITHUB_CLIENT_ID && !!config.GITHUB_CLIENT_SECRET
+}
+
+export function googleActive(config) {
+    return !!config.GOOGLE_CLIENT_ID && !!config.GOOGLE_CLIENT_SECRET
+}
+
+export function facebookActive(config) {
+    return !!config.FACEBOOK_APP_ID && !!config.FACEBOOK_APP_SECRET
+}
+
+export function publicPasswordConfig(config) {
+    return {
+        GITHUB_CLIENT_ID: !!config.GITHUB_CLIENT_ID,
+        GITHUB_CLIENT_SECRET: !!config.GITHUB_CLIENT_SECRET,
+        githubActive: githubActive(config),
+        GOOGLE_CLIENT_ID: !!config.GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET: !!config.GOOGLE_CLIENT_SECRET,
+        googleActive: googleActive(config),
+        FACEBOOK_APP_ID: !!config.FACEBOOK_APP_ID,
+        FACEBOOK_APP_SECRET: !!config.FACEBOOK_APP_SECRET,
+        facebookActive: facebookActive(config),
     }
 }
 
-export default allSetup
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1)
+}
+
+export default passportSetupAll
