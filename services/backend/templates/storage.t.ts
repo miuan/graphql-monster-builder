@@ -125,6 +125,10 @@ export function registerStorageRouter(entry: any, router: any, targetDir: any) {
             file = await fileModel.findOne({ publicKey: id }).lean()
         }
 
+        if (!file) {
+            throw new Error('File not found')
+        }
+
         ctx.set('Content-disposition', 'attachment; filename=' + file.name)
         ctx.set('Content-type', file.type)
         await send(ctx, file.__path)
