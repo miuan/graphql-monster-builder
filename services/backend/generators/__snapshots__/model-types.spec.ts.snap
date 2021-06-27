@@ -9,36 +9,3 @@ exports[` 1`] = `
     }
   "
 `;
-
-exports[`typescript-type generateTypescriptTypes should call 2x createTypescriptType and 1x writeToFile inside generateTypescriptTypes 1`] = `
-Array [
-  "model-types.ts",
-  "import { Document } from 'mongoose'
-
-    // type for model: \`Todo\`
-    export interface TodoModel extends Document {
-		name: string
-		isDone: Boolean
-    }
-  
-    // type for model: \`User\`
-    export interface UserModel extends Document {
-		email: string
-		password: Boolean
-		todos: TodoModel[]
-		__token?: string,
-
-		__refreshToken?: string,
-
-		__verifyToken?: string,
-
-		__password: string,
-
-		__resetPasswordToken: string,
-
-		__parent_access_token: string,
-
-    }
-  ",
-]
-`;
