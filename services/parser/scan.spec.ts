@@ -92,7 +92,7 @@ describe('scan', () => {
         it('model Model1 {...', async () => {
             const models = await getModelsFromSchema(`
                 model Model1 {
-                    name: String! @isUnique
+                    name: String @isUnique
                 }
             `)
             expect(models.length).toEqual(4)
@@ -214,12 +214,12 @@ describe('scan', () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String @isUnique
-                    model2: @relation("Model1OnModel2")[]
+                    model2?: @relation("Model1OnModel2")[]
                 }
     
                 type Model2 @model {
                     name: String
-                    model1: @relation(name="Model1OnModel2")!
+                    model1: @relation(name="Model1OnModel2")
                 }
             `)
             expect(models.length).toEqual(5)
@@ -258,7 +258,7 @@ describe('scan', () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String @isUnique
-                    entity1: Entity1[]
+                    entity1?: Entity1[]
                 }
     
                 type Entity1 @entity {
@@ -300,7 +300,7 @@ describe('scan', () => {
         })
 
         it('not required array', () => {
-            const member = extractMemberFromLine('name3: Int[]', 1)
+            const member = extractMemberFromLine('name3?: Int[]', 1)
             expect(member).toHaveProperty('name', 'name3')
             expect(member).toHaveProperty('type', 'Int')
             expect(member).toHaveProperty('modelName', 'Int')
@@ -311,7 +311,7 @@ describe('scan', () => {
         })
 
         it('relation shortcat', () => {
-            const member = extractMemberFromLine('rel1: @relation("relationName1")', 1)
+            const member = extractMemberFromLine('rel1?: @relation("relationName1")', 1)
             expect(member).toHaveProperty('name', 'rel1')
             expect(member).toHaveProperty('type', '@relation("relationName1")')
             expect(member).toHaveProperty('modelName', null)
@@ -323,7 +323,7 @@ describe('scan', () => {
             expect(member).toHaveProperty('relation.type', 'RELATION')
         })
         it('relation name=', () => {
-            const member = extractMemberFromLine('rel2: @relation(name="relationName2")', 1)
+            const member = extractMemberFromLine('rel2?: @relation(name="relationName2")', 1)
             expect(member).toHaveProperty('name', 'rel2')
             expect(member).toHaveProperty('type', '@relation(name="relationName2")')
             expect(member).toHaveProperty('modelName', null)
@@ -335,7 +335,7 @@ describe('scan', () => {
             expect(member).toHaveProperty('relation.type', 'RELATION')
         })
         it('relation name:', () => {
-            const member = extractMemberFromLine('rel3: @relation(name:"relationName3")[]', 1)
+            const member = extractMemberFromLine('rel3?: @relation(name:"relationName3")[]', 1)
             expect(member).toHaveProperty('name', 'rel3')
             expect(member).toHaveProperty('type', '@relation(name:"relationName3")')
             expect(member).toHaveProperty('modelName', null)
@@ -348,7 +348,7 @@ describe('scan', () => {
         })
 
         it('string virtual', () => {
-            const member = extractMemberFromLine('name1: String @isVirtual', 10)
+            const member = extractMemberFromLine('name1?: String @isVirtual', 10)
             expect(member).toHaveProperty('name', 'name1')
             expect(member).toHaveProperty('type', 'String')
             expect(member).toHaveProperty('modelName', 'String')
@@ -360,7 +360,7 @@ describe('scan', () => {
         })
 
         it('array string virtual', () => {
-            const member = extractMemberFromLine('name1: String[] @isVirtual', 10)
+            const member = extractMemberFromLine('name1?: String[] @isVirtual', 10)
             expect(member).toHaveProperty('name', 'name1')
             expect(member).toHaveProperty('type', 'String')
             expect(member).toHaveProperty('modelName', 'String')
@@ -391,7 +391,7 @@ describe('scan', () => {
         })
 
         it('default number 123 (Int)', () => {
-            const member = extractMemberFromLine('defMember1: Int @default(123)', 10)
+            const member = extractMemberFromLine('defMember1?: Int @default(123)', 10)
             expect(member).toHaveProperty('name', 'defMember1')
             expect(member).toHaveProperty('type', 'Int')
             expect(member).toHaveProperty('modelName', 'Int')
@@ -454,6 +454,28 @@ describe('scan', () => {
             expect(() => extractMemberFromLine('defMember3: String @default(false)', 1)).toThrowError(
                 /modificator @default contain a boolean value, but member with name 'defMember3' is type 'String'/,
             )
+        })
+
+        it('required boolean', () => {
+            const member = extractMemberFromLine('reqBool: boolean', 10)
+            expect(member).toHaveProperty('name', 'reqBool')
+            expect(member).toHaveProperty('type', 'Boolean')
+            expect(member).toHaveProperty('modelName', 'Boolean')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', true)
+        })
+
+        it('optional string', () => {
+            const member = extractMemberFromLine('optString?: string', 10)
+            expect(member).toHaveProperty('name', 'optString')
+            expect(member).toHaveProperty('type', 'String')
+            expect(member).toHaveProperty('modelName', 'String')
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isRequired', false)
         })
     })
 })

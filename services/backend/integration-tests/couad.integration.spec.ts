@@ -59,22 +59,22 @@ describe('couad integration', () => {
             `
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
-                    name: String!
-                    opt: String
-                    optInt: Int
-                    optFloat: Float
-                    arrName: String[]
-                    arrInt: Int[]
-                    arrFloat: Float[]
-                    optDateTime: DateTime
-                    model2: @relation(name: "Model1OnModel2")[]
+                    name: String
+                    opt?: String
+                    optInt?: Int
+                    optFloat?: Float
+                    arrName?: String[]
+                    arrInt?: Int[]
+                    arrFloat?: Float[]
+                    optDateTime?: DateTime
+                    model2?: @relation(name: "Model1OnModel2")[]
                 }
 
                 type Model2 @model {
-                    name: String!
-                    opt: String
-                    optFloat: Float
-                    model1: @relation(name: "Model1OnModel2")!
+                    name: String
+                    opt?: String
+                    optFloat?: Float
+                    model1: @relation(name: "Model1OnModel2")
                 }
             `,
             3002,
@@ -176,16 +176,9 @@ describe('couad integration', () => {
         expect(createModel1Response).toHaveProperty('data.createModel1.opt', 'Model1/opt/allzauub')
         expect(createModel1Response).toHaveProperty('data.createModel1.optInt', 521167)
         expect(createModel1Response).toHaveProperty('data.createModel1.optFloat', 617953.2791989135)
-        expect(createModel1Response).toHaveProperty('data.createModel1.arrName', [
-            'Model1/arrName/e9a6l28',
-            'Model1/arrName/3ux94bkk',
-            'Model1/arrName/p3po6mke',
-        ])
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrName', ['Model1/arrName/e9a6l28', 'Model1/arrName/3ux94bkk', 'Model1/arrName/p3po6mke'])
         expect(createModel1Response).toHaveProperty('data.createModel1.arrInt', [950283, 522416, 826893])
-        expect(createModel1Response).toHaveProperty(
-            'data.createModel1.arrFloat',
-            [570636.4829223385, 507513.37424710894, 37220.60960374929],
-        )
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrFloat', [570636.4829223385, 507513.37424710894, 37220.60960374929])
         expect(createModel1Response).toHaveProperty('data.createModel1.optDateTime', '2021-01-03T23:46:55.883Z')
         expect(createModel1Response.data.createModel1.model2).toEqual(
             expect.arrayContaining([
@@ -275,20 +268,11 @@ describe('couad integration', () => {
         expect(oneModel1Response).toHaveProperty('data.Model1.name', createModel1Response.data.createModel1.name)
         expect(oneModel1Response).toHaveProperty('data.Model1.opt', createModel1Response.data.createModel1.opt)
         expect(oneModel1Response).toHaveProperty('data.Model1.optInt', createModel1Response.data.createModel1.optInt)
-        expect(oneModel1Response).toHaveProperty(
-            'data.Model1.optFloat',
-            createModel1Response.data.createModel1.optFloat,
-        )
+        expect(oneModel1Response).toHaveProperty('data.Model1.optFloat', createModel1Response.data.createModel1.optFloat)
         expect(oneModel1Response).toHaveProperty('data.Model1.arrName', createModel1Response.data.createModel1.arrName)
         expect(oneModel1Response).toHaveProperty('data.Model1.arrInt', createModel1Response.data.createModel1.arrInt)
-        expect(oneModel1Response).toHaveProperty(
-            'data.Model1.arrFloat',
-            createModel1Response.data.createModel1.arrFloat,
-        )
-        expect(oneModel1Response).toHaveProperty(
-            'data.Model1.optDateTime',
-            createModel1Response.data.createModel1.optDateTime,
-        )
+        expect(oneModel1Response).toHaveProperty('data.Model1.arrFloat', createModel1Response.data.createModel1.arrFloat)
+        expect(oneModel1Response).toHaveProperty('data.Model1.optDateTime', createModel1Response.data.createModel1.optDateTime)
         expect(oneModel1Response.data.Model1.model2).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -395,16 +379,9 @@ describe('couad integration', () => {
         expect(updateModel1Response).toHaveProperty('data.updateModel1.opt', 'Model1/opt/iyy46ulc')
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optInt', 564003)
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optFloat', 710838.0456158707)
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', [
-            'Model1/arrName/18cic326',
-            'Model1/arrName/uoib8f8k',
-            'Model1/arrName/4vsdxon',
-        ])
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', ['Model1/arrName/18cic326', 'Model1/arrName/uoib8f8k', 'Model1/arrName/4vsdxon'])
         expect(updateModel1Response).toHaveProperty('data.updateModel1.arrInt', [969299, 459931, 920080])
-        expect(updateModel1Response).toHaveProperty(
-            'data.updateModel1.arrFloat',
-            [919167.4541117561, 816683.5093124962, 811748.9766200358],
-        )
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrFloat', [919167.4541117561, 816683.5093124962, 811748.9766200358])
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optDateTime', '2020-08-31T22:21:58.155Z')
         expect(updateModel1Response.data.updateModel1.model2).toEqual(
             expect.arrayContaining([
@@ -514,19 +491,16 @@ describe('couad integration', () => {
         expect(updateModel1Response).toHaveProperty('data.updateModel1.opt', 'Model1/opt/iyy46ulc')
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optInt', 564003)
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optFloat', 710838.0456158707)
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', [
-            'Model1/arrName/z16efwi', 'Model1/arrName/itt8ze0a', 'Model1/arrName/1hgi59zd'
-        ])
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', ['Model1/arrName/z16efwi', 'Model1/arrName/itt8ze0a', 'Model1/arrName/1hgi59zd'])
         expect(updateModel1Response).toHaveProperty('data.updateModel1.arrInt', [841914, 706908, 381989])
-        expect(updateModel1Response).toHaveProperty(
-            'data.updateModel1.arrFloat',
-            [981172.4638921468, 595172.7641393992, 950648.2557312585],
-        )
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrFloat', [981172.4638921468, 595172.7641393992, 950648.2557312585])
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optDateTime', '2020-02-24T23:09:16.338Z')
         expect(updateModel1Response.data.updateModel1.model2).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
-                    name: 'Model2/name/99wyxtpb', opt: 'Model2/opt/gc9v3645', optFloat: 128002.71510919803,
+                    name: 'Model2/name/99wyxtpb',
+                    opt: 'Model2/opt/gc9v3645',
+                    optFloat: 128002.71510919803,
                     model1: expect.objectContaining({ id: updateModel1Response.data.updateModel1.id }),
                 }),
             ]),
@@ -774,9 +748,7 @@ describe('couad integration', () => {
         const model2Check = await server.entry.models['model2'].findById(createModel2Response.data.createModel2.id)
         expect(model2Check).toBeNull()
 
-        const model1Check1 = await server.entry.models['model1'].findById(
-            createModel2Response.data.createModel2.model1.id,
-        )
+        const model1Check1 = await server.entry.models['model1'].findById(createModel2Response.data.createModel2.model1.id)
         expect(model1Check1).not.toBeNull()
     })
 })

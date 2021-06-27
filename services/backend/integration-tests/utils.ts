@@ -11,9 +11,9 @@ import * as mongoose from 'mongoose'
 
 import * as request from 'supertest'
 
-export const TEST_DIR = 'templates/__generated_services_for_test__'
+export const TEST_DIR = '../__generated_services_for_unit_test__'
 const SERVICE_BACKEND = './services/backend/'
-export const testDirFullPath = `${SERVICE_BACKEND}${TEST_DIR}`
+export const testDirFullPath = `${TEST_DIR}`
 
 export function prepareDirectories() {
     if (!fs.existsSync(testDirFullPath)) {
@@ -71,24 +71,26 @@ export const createService = (model) => {
     }
 }
 
-export function createServiceWithRelation(meType, required) {
+export function createServiceWithRelation(meIsArray, themIsArray, required) {
     let relationService
-    const modelName = _.camelCase(`Relation ${meType} ${required} `)
+    const modelName = _.camelCase(`Relation ${themIsArray} ${required} `)
     const memberWeWithRelationOthers = {
         name: 'toThem',
         relation: {
             name: 'WeConnectToOthers',
             isRequired: false,
-            type: meType,
+            isArray: themIsArray,
+            type: SchemaModelRelationType.RELATION,
             relatedModel: {
                 modelName: 'ModelWithOthers',
                 members: [
                     {
                         name: 'backToMe',
                         isRequired: required === 'required',
+                        isArray: meIsArray,
+                        type: SchemaModelRelationType.RELATION,
                         relation: {
                             name: 'WeConnectToOthers',
-                            type: meType,
                         },
                     },
                 ],

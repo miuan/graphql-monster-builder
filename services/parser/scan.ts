@@ -13,6 +13,7 @@ import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
 import { setupModelsRelations } from './relations'
 import { addDefaultModelsAndMembers } from './defaultModels'
+import { firstToUpper } from '../common/utils'
 
 export const getModelsFromSchema = (schema): SchemaModel[] => {
     const rows = schema.split('\n').map((r) => r.trim())
@@ -313,14 +314,15 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
     const match = row.match(
-        / *(?<name>\w+) *: *(?:(?<type>@(?<relationType>\w+) *\(((?<relationParamName>\w+) *[:|=])? *"(?<relationParamValue>\w+)" *\)|\w+)) *(?<isArray>\[\])? *(?<isRequired>\!)?(?<options>.*)?/,
+        / *(?<name>\w+) *(?<isOptional>\?)? *: *(?:(?<type>@(?<relationType>\w+) *\(((?<relationParamName>\w+) *[:|=])? *"(?<relationParamValue>\w+)" *\)|\w+)) *(?<isArray>\[\])? *(?<options>.*)?/,
     )
 
     if (!match) {
         throw new Error(`Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`)
     }
 
-    const { name, type, relationType, relationParamName, relationParamValue, isArray, isRequired, options } = match.groups
+    const { name, type: typeRaw, relationType, relationParamName, relationParamValue, isArray, isOptional, options } = match.groups
+    const type = firstToUpper(typeRaw)
 
     // empty line we can skip
     if (match.length < 2) {
@@ -341,7 +343,7 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         name,
         type,
         isArray: !!isArray,
-        isRequired: !!isRequired,
+        isRequired: !isOptional,
         isUnique: false,
         isVirtual: false,
     } as SchemaModelMember

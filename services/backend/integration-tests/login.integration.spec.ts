@@ -14,21 +14,21 @@ describe('integration', () => {
                 `
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
-                    name: String!
-                    opt: String
-                    optInt: Int
-                    optFloat: Float
-                    arrName: String[]
-                    arrInt: Int[]
-                    arrFloat: Float[]
-                    optDateTime: DateTime
-                    model2: @relation(name: "Model1OnModel2")[]
+                    name: String
+                    opt?: String
+                    optInt?: Int
+                    optFloat?: Float
+                    arrName?: String[]
+                    arrInt?: Int[]
+                    arrFloat?: Float[]
+                    optDateTime?: DateTime
+                    model2?: @relation(name: "Model1OnModel2")[]
                 }
 
                 type Model2 @model {
-                    name: String!
-                    opt: String
-                    optFloat: Float
+                    name: String
+                    opt?: String
+                    optFloat?: Float
                     model1: @relation(name: "Model1OnModel2")
                 }
             `,
