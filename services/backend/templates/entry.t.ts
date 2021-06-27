@@ -1,60 +1,56 @@
 import { generateDataloaders } from './dataloaders'
 import * as extras from './extras'
-import {registerStorageService} from './storage'
+import { registerStorageService } from './storage'
 
 let hooks
 
 try {
-  hooks = require(`${process.cwd()}/services/entryHooks.ts`).hooks
-} catch( ex ) {
-  if(ex.code == 'MODULE_NOT_FOUND') {
-    hooks = {}
-    console.log(`missing ${process.cwd()}/services/entryHooks.ts`)
-  } else {
-    console.error(ex)
-    throw ex
-  }
+    hooks = require(`${process.cwd()}/services/entryHooks.ts`).hooks
+} catch (ex) {
+    if (ex.code == 'MODULE_NOT_FOUND') {
+        hooks = {}
+        console.log(`missing ${process.cwd()}/services/entryHooks.ts`)
+    } else {
+        console.error(ex)
+        throw ex
+    }
 }
 
 export const generateResolver = (setting = {}) => {
-  const entry = {
-    models:{},
-    services:{},
-    resolvers:{},
-    dataloaders:{},
-    hooks:{
-      services: {},
-      resolvers: {}
-    },
-    storage: {} as ReturnType<typeof registerStorageService>
-  }
-
-  if( hooks.services ){
-    for( const serviceHookName in hooks.services ) {
-      console.log('Register ' + serviceHookName + ' for service')
-      entry.hooks.services[serviceHookName] = hooks.services[serviceHookName]
+    const entry = {
+        models: {},
+        services: {},
+        resolvers: {},
+        dataloaders: {},
+        hooks: {
+            services: {},
+            resolvers: {},
+        },
+        storage: {} as ReturnType<typeof registerStorageService>,
     }
-  }
-  
 
-  if( hooks.resolvers ){
-    for( const serviceHookName in hooks.resolvers ) {
-      console.log('Register ' + serviceHookName + ' for resolver')
-      entry.hooks.resolvers[serviceHookName] = hooks.resolvers[serviceHookName]
+    if (hooks.services) {
+        for (const serviceHookName in hooks.services) {
+            entry.hooks.services[serviceHookName] = hooks.services[serviceHookName]
+        }
     }
-  }
-  
 
- _MODELS_BODY_
-_SERVICES_
-_RE1SOLVERS_
-  
-  generateDataloaders(entry)
+    if (hooks.resolvers) {
+        for (const serviceHookName in hooks.resolvers) {
+            entry.hooks.resolvers[serviceHookName] = hooks.resolvers[serviceHookName]
+        }
+    }
 
-  const resolvers = _RESOLVER_
+    _MODELS_BODY_
+    _SERVICES_
+    _RE1SOLVERS_
 
-  return {
-    entry,
-    resolvers,
-  }
+    generateDataloaders(entry)
+
+    const resolvers = _RESOLVER_
+
+    return {
+        entry,
+        resolvers,
+    }
 }
