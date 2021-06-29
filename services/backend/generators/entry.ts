@@ -15,14 +15,13 @@ export const genAddingAndRemovingsForModel = (model: SchemaModel) => {
     for (const member of membersWithRelations) {
         const relatedMember = member.relation && getOnlyOneRelatedMember(member)
 
-        if (member.relation && relatedMember) {
+        if (member.relation?.linkNames) {
             const lower = firstToLower(model.modelName)
-            const relationName = member.relation.name
-            const funcAddToName = `addTo${relationName}`
-            const funcRemoveFromName = `removeFrom${relationName}`
+            const linkNames = member.relation?.linkNames
 
-            result += `\t\t${funcAddToName}: entry.resolvers['${lower}'].${funcAddToName},\n`
-            result += `\t\t${funcRemoveFromName}: entry.resolvers['${lower}'].${funcRemoveFromName},\n`
+            result += `\t\t${linkNames.linkName}: entry.resolvers['${lower}'].${linkNames.linkName},
+\t\t${linkNames.unlinkName}: entry.resolvers['${lower}'].${linkNames.unlinkName},
+`
         }
     }
     return result
@@ -139,10 +138,8 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
     ${memberName}: async (${lower}Model, data, koaContext) => {
       return await entry.dataloaders['${lower}'](koaContext, ${lower}Model.${memberName},${many})
     },`
-
-    
     }
-    if(model.modelName == 'File'){
+    if (model.modelName == 'File') {
         body += `
     data: async (fileModel, data, koaContext) => {
       return await entry.storage.loadDataFromFile(fileModel, data, koaContext)

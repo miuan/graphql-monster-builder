@@ -105,7 +105,11 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
             } as SchemaModelMember)
         })
 
-    return models
+    return models.sort((m1, m2) => {
+        if (m1.modelName < m2.modelName) return -1
+        else if (m1.modelName > m2.modelName) return 1
+        else return 0
+    })
 }
 
 export const checkForErrorsInModels = (models: SchemaModel[]) => {

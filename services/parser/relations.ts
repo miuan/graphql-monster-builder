@@ -1,14 +1,15 @@
-import { SchemaModelRelationType, SchemaModel, SchemaModelMember } from '../common/types'
-import * as _ from 'lodash'
-import { isEnumMember } from 'typescript'
-import { firstToUpper } from '../common/utils'
+import { SchemaModel, SchemaModelMember, SchemaModelRelationLinkNames, SchemaModelRelationType } from '../common/types'
+import { firstToLower, firstToUpper, getOnlyOneRelatedMember } from '../common/utils'
 
 export const setupModelsRelations = (models: SchemaModel[]) => {
     for (const model of models) {
         for (const member of model.members) {
-            if (member.relation && !member.relation.relatedModel) {
-                if (member.relation.type == SchemaModelRelationType.ENTITY) processEntity(models, model, member)
-                else processRelation(models, model, member, member.relation.name)
+            if (member.relation) {
+                if (!member.relation.relatedModel) {
+                    if (member.relation.type === SchemaModelRelationType.RELATION) {
+                        processRelation(models, model, member, member.relation.name)
+                    } else processEntity(models, model, member)
+                }
             }
         }
     }
@@ -31,15 +32,11 @@ function processRelation(models: SchemaModel[], model: SchemaModel, member: Sche
     const foundRelations = searchRelatedModelAndMember(models, model.modelName, relationName)
     if (foundRelations.length < 2) {
         member.relation.error = `Unknow relation to '${relationName}'`
-        throw new Error(
-            `Line: ${member.row} Relation '${relationName}' doesn't have mate. Relation have to be a connection between two models`,
-        )
+        throw new Error(`Line: ${member.row} Relation '${relationName}' doesn't have mate. Relation have to be a connection between two models`)
     } else if (foundRelations.length > 2) {
         const lines = foundRelations.reduce((a, c) => (a += `, ${c.relatedMember.row}`), '').substr(2)
         member.relation.error = `To many relation to '${relationName}'`
-        throw new Error(
-            `Line: ${member.row} To many relation with name '${relationName}' on lines: ${lines} expecting only two mates`,
-        )
+        throw new Error(`Line: ${member.row} To many relation with name '${relationName}' on lines: ${lines} expecting only two mates`)
     }
 
     // we expectiong on index 0 is current `model` and `member`
@@ -56,6 +53,8 @@ function processRelation(models: SchemaModel[], model: SchemaModel, member: Sche
     // take modelName from each others
     setupRelation(member, relatedModel, relatedMember, model.modelName)
     setupRelation(relatedMember, model, member, relatedModel.modelName)
+
+    member.relation.linkNames = setupRelationLinkNames(member)
 }
 
 export function setupRelation(member, relatedModel, relatedMember, modelName) {
@@ -97,4 +96,29 @@ export function searchRelatedModelAndMember(models: SchemaModel[], currentModel:
 
 export const extendModelNameFromType = (memberType: string) => {
     return memberType.replace('[', '').replace(']', '').replace('!', '').replace('!', '')
+}
+
+export function setupRelationLinkNames(member: SchemaModelMember): SchemaModelRelationLinkNames {
+    const relation = member.relation
+    const isSystem = member.relation.name[0] === '_'
+
+    const relationName = isSystem ? relation.name.substr(1) : firstToUpper(relation.name)
+    const linkName = isSystem ? `add${relationName}` : `link${relationName}`
+    const unlinkName = isSystem ? `remove${relationName.replace(/To/, 'From')}` : `unlink${relationName.replace(/To/, 'From')}`
+
+    const res1 = firstToLower(relation.relatedMember.relation.relatedModel.modelName)
+    const res2 = firstToLower(relation.relatedModel.modelName)
+    const param1 = `${res1}Id`
+    const param2 = `${res2}Id`
+
+    return {
+        isSystem,
+        relationName,
+        linkName,
+        unlinkName,
+        res1,
+        res2,
+        param1,
+        param2,
+    } as SchemaModelRelationLinkNames
 }

@@ -1,11 +1,9 @@
-import { SchemaModel, SchemaModelRelationType, StructureBackend, SchemaModelMember, SchemaModelType } from '../../common/types'
-
-import { writeToFile, templateFileToText } from '../../common/files'
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
-import { relatedParamName1Id, relatedParamName2Id, relatedParamName1, relatedParamName2 } from './schema'
-
+import { templateFileToText } from '../../common/files'
+import { SchemaModel, SchemaModelMember, SchemaModelRelationType, SchemaModelType } from '../../common/types'
+import { firstToLower, getOnlyOneRelatedMember } from '../../common/utils'
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
+
 const log = logger.getLogger('service')
 
 const defaultMembers = ['createdAt', 'updatedAt', 'id']
@@ -13,48 +11,49 @@ const defaultMembers = ['createdAt', 'updatedAt', 'id']
 const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMember) => {
     const modelName = model.modelName
     const relation = member.relation
-    const relatedMember = getOnlyOneRelatedMember(member)
+    const linkNames = relation.linkNames
 
     const ret = {
         result: '',
         connect: '',
     }
 
-    if (!relatedMember) {
+    if (!linkNames) {
         return ret
     }
 
     const lower = firstToLower(modelName)
     const relationName = relation.name
-    const funcAddToName = `addTo${relationName}`
-    const funcRemoveFromName = `removeFrom${relationName}`
     const relatedModelName = member.relation.relatedModel.modelName
+    const relatedMemberName = member.relation.relatedMember.name
 
     ret.result = templateFileToText('service-add-remove.ts', {
         _LOWER_NAME_: lower,
         _RELATION_NAME_: relationName,
-        _RELATED_PARAM_NAME_1_: relatedParamName1Id(model, relatedMember),
-        _RELATED_PARAM_NAME_2_: relatedParamName2Id(member),
-        _RELATED_MEMBER_NAME_: relatedMember.name,
+        _RELATED_PARAM_NAME_1_: linkNames.param1,
+        _RELATED_PARAM_NAME_2_: linkNames.param2,
+        _PAYLOAD_PARAM_1: linkNames.res1,
+        _PAYLOAD_PARAM_2: linkNames.res2,
+        _FUNC_LINK_NAME_: linkNames.linkName,
+        _FUNC_UNLINK_NAME_: linkNames.unlinkName,
+        _RELATED_MEMBER_NAME_: relatedMemberName,
         _MEMBER_NAME_: member.name,
         _LOWER_RELATED_MODEL_NAME_: firstToLower(relatedModelName),
         _RELATED_MODEL_NAME_: relatedModelName,
-        _PAYLOAD_PARAM_1: relatedParamName1(model, relatedMember),
-        _PAYLOAD_PARAM_2: relatedParamName2(member),
     })
 
-    ret.connect += `${funcAddToName} : ${funcAddToName}(entry),\n${funcRemoveFromName} : ${funcRemoveFromName}(entry),`
+    ret.connect += `${linkNames.linkName} : ${linkNames.linkName}(entry),\n${linkNames.unlinkName} : ${linkNames.unlinkName}(entry),`
 
     return ret
 }
 
-const modelCreateAddRemoveLinks = (model: SchemaModel, membersWirhRelation: SchemaModelMember[]) => {
+const modelCreateAddRemoveLinks = (model: SchemaModel, membersWithRelation: SchemaModelMember[]) => {
     const ret = {
         result: '',
         connect: '',
     }
 
-    for (const member of membersWirhRelation) {
+    for (const member of membersWithRelation) {
         const { result, connect } = memberCreateAndRemoveLinks(model, member)
 
         ret.result += result
@@ -68,7 +67,7 @@ export const createService = (model: SchemaModel) => {
     const lower = firstToLower(modelName)
     const varName = lower + 'Model'
 
-    const membersWithRelation = model.members.filter((model) => model.relation && model.relation.type === SchemaModelRelationType.RELATION)
+    const membersWithRelation = model.members.filter((member) => member.relation?.type === SchemaModelRelationType.RELATION)
 
     const allIdsConversionsCreate = conversionsIdsToField(membersWithRelation, true)
     const allIdsConversionsUpdate = conversionsIdsToField(membersWithRelation, false)

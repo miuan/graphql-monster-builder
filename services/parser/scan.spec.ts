@@ -1,3 +1,5 @@
+import { SchemaModelMember } from '../common/types'
+import { setupRelationLinkNames } from './relations'
 import { getModelsFromSchema, extractMemberFromLine } from './scan'
 
 describe('scan', () => {
@@ -5,9 +7,9 @@ describe('scan', () => {
         const models = await getModelsFromSchema(``)
         expect(models.length).toEqual(3)
 
-        expect(models[0].modelName).toEqual('UserRole')
+        expect(models[0].modelName).toEqual('File')
         expect(models[1].modelName).toEqual('User')
-        expect(models[2].modelName).toEqual('File')
+        expect(models[2].modelName).toEqual('UserRole')
 
         const file = models.find((model) => model.modelName === 'File')
         expect(file).not.toBeNull()
@@ -204,36 +206,71 @@ describe('scan', () => {
                 }
             `)
             expect(models.length).toEqual(5)
-            expect(models[0].modelName).toEqual('Model1')
-            expect(models[0].members[2]).toHaveProperty('isRequired', false)
-            expect(models[0].members[2].relation.error).toEqual(`Line 4: Relation array field 'model2' with name 'Model1OnModel2' can't be required! Only required relations to ONE are supported`)
-            expect(models[1].modelName).toEqual('Model2')
+            expect(models[1].modelName).toEqual('Model1')
+            expect(models[1].members[2]).toHaveProperty('isRequired', false)
+            expect(models[1].members[2].relation.error).toEqual(`Line 4: Relation array field 'model2' with name 'Model1OnModel2' can't be required! Only required relations to ONE are supported`)
+            expect(models[2].modelName).toEqual('Model2')
         })
 
         it('relation all good', async () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String @isUnique
-                    model2: @relation("Model1OnModel2")[]
+                    model2: @relation("Model1ToModel2")[]
                 }
     
                 type Model2 @model {
                     name: String
-                    model1: @relation(name="Model1OnModel2")!
+                    model1: @relation(name="Model1ToModel2")!
                 }
             `)
             expect(models.length).toEqual(5)
-            expect(models[0].modelName).toEqual('Model1')
-            expect(models[0].members[2].relation.error).not.toBeDefined()
-            expect(models[0].members[2]).toHaveProperty('isArray', true)
-            expect(models[0].members[2]).toHaveProperty('isRequired', false)
-            expect(models[0].members[2].relation).toHaveProperty('relatedModel', models[1])
-            expect(models[0].members[2].relation).toHaveProperty('relatedMember', models[1].members[2])
-            expect(models[1].modelName).toEqual('Model2')
-            expect(models[1].members[2]).toHaveProperty('isArray', false)
-            expect(models[1].members[2]).toHaveProperty('isRequired', true)
-            expect(models[1].members[2].relation).toHaveProperty('relatedModel', models[0])
-            expect(models[1].members[2].relation).toHaveProperty('relatedMember', models[0].members[2])
+            expect(models[1].modelName).toEqual('Model1')
+            expect(models[1].members[2].relation.error).not.toBeDefined()
+            expect(models[1].members[2]).toHaveProperty('isArray', true)
+            expect(models[1].members[2]).toHaveProperty('isRequired', false)
+            expect(models[1].members[2]).toHaveProperty('relation')
+            const model1OnModel2 = models[1].members[2].relation
+
+            expect(model1OnModel2).toHaveProperty('relatedModel', models[2])
+            expect(model1OnModel2).toHaveProperty('relatedMember', models[2].members[2])
+
+            expect(model1OnModel2).toHaveProperty('linkNames.isSystem', false)
+            expect(model1OnModel2).toHaveProperty('linkNames.linkName', 'linkModel1ToModel2')
+            expect(model1OnModel2).toHaveProperty('linkNames.unlinkName', 'unlinkModel1FromModel2')
+            expect(model1OnModel2).toHaveProperty('linkNames.relationName', 'Model1ToModel2')
+            expect(model1OnModel2).toHaveProperty('linkNames.param1', 'model1Id')
+            expect(model1OnModel2).toHaveProperty('linkNames.param2', 'model2Id')
+            expect(model1OnModel2).toHaveProperty('linkNames.res1', 'model1')
+            expect(model1OnModel2).toHaveProperty('linkNames.res2', 'model2')
+
+            expect(models[2].modelName).toEqual('Model2')
+            expect(models[2].members[2]).toHaveProperty('isArray', false)
+            expect(models[2].members[2]).toHaveProperty('isRequired', true)
+            expect(models[2].members[2].relation).toHaveProperty('relatedModel', models[1])
+            expect(models[2].members[2].relation).toHaveProperty('relatedMember', models[1].members[2])
+            expect(models[2].members[2].relation).not.toHaveProperty('linkNames')
+
+            const modelUser = models[3]
+            const modelUserRole = models[4]
+            const userMemberRoles = models[3].members.find((m) => m.name === 'roles')
+            const userRolesMemberUsers = models[4].members.find((m) => m.name === 'users')
+            expect(userMemberRoles).toBeDefined()
+            expect(userMemberRoles).toHaveProperty('relation')
+            expect(userMemberRoles).toHaveProperty('relation.relatedModel', modelUserRole)
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.isSystem', true)
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.linkName', 'addRoleToUser')
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.unlinkName', 'removeRoleFromUser')
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.relationName', 'RoleToUser')
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.param1', 'userId')
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.param2', 'userRoleId')
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.res1', 'user')
+            expect(userMemberRoles.relation).toHaveProperty('linkNames.res2', 'userRole')
+
+            expect(userRolesMemberUsers).toBeDefined()
+            expect(userRolesMemberUsers).toHaveProperty('relation')
+            expect(userRolesMemberUsers).toHaveProperty('relation.relatedModel', modelUser)
+            expect(userRolesMemberUsers.relation).not.toHaveProperty('linkNames')
         })
 
         it('relation in entity', async () => {
@@ -266,13 +303,13 @@ describe('scan', () => {
                 }
             `)
             expect(models.length).toEqual(5)
-            expect(models[0].modelName).toEqual('Model1')
-            expect(models[0].members[2].relation.error).not.toBeDefined()
-            expect(models[0].members[2]).toHaveProperty('isArray', true)
-            expect(models[0].members[2]).toHaveProperty('isRequired', false)
-            expect(models[0].members[2].relation).toHaveProperty('relatedModel', models[1])
-            expect(models[0].members[2].relation).toHaveProperty('relatedMember', null)
-            expect(models[1].modelName).toEqual('Entity1')
+            expect(models[2].modelName).toEqual('Model1')
+            expect(models[2].members[2].relation.error).not.toBeDefined()
+            expect(models[2].members[2]).toHaveProperty('isArray', true)
+            expect(models[2].members[2]).toHaveProperty('isRequired', false)
+            expect(models[2].members[2].relation).toHaveProperty('relatedModel', models[0])
+            expect(models[2].members[2].relation).toHaveProperty('relatedMember', null)
+            expect(models[0].modelName).toEqual('Entity1')
         })
     })
 
@@ -454,6 +491,34 @@ describe('scan', () => {
             expect(() => extractMemberFromLine('defMember3: String @default(false)', 1)).toThrowError(
                 /modificator @default contain a boolean value, but member with name 'defMember3' is type 'String'/,
             )
+        })
+    })
+
+    describe('setupRelationLinkNames', () => {
+        it('_UserRoleToUser (system)', () => {
+            const linkNames = setupRelationLinkNames({
+                relation: { name: '_UserRoleToUser', relatedModel: { modelName: 'UserRole' }, relatedMember: { relation: { relatedModel: { modelName: 'User' } } } },
+            } as SchemaModelMember)
+            expect(linkNames).toHaveProperty('relationName', 'UserRoleToUser')
+            expect(linkNames).toHaveProperty('linkName', 'addUserRoleToUser')
+            expect(linkNames).toHaveProperty('unlinkName', 'removeUserRoleFromUser')
+            expect(linkNames).toHaveProperty('param1', 'userId')
+            expect(linkNames).toHaveProperty('param2', 'userRoleId')
+            expect(linkNames).toHaveProperty('res1', 'user')
+            expect(linkNames).toHaveProperty('res2', 'userRole')
+        })
+
+        it('Model1ToModel2 (normal)', () => {
+            const linkNames = setupRelationLinkNames({
+                relation: { name: 'Model1ToModel2', relatedModel: { modelName: 'Model2' }, relatedMember: { relation: { relatedModel: { modelName: 'Model1' } } } },
+            } as SchemaModelMember)
+            expect(linkNames).toHaveProperty('relationName', 'Model1ToModel2')
+            expect(linkNames).toHaveProperty('linkName', 'linkModel1ToModel2')
+            expect(linkNames).toHaveProperty('unlinkName', 'unlinkModel1FromModel2')
+            expect(linkNames).toHaveProperty('param1', 'model1Id')
+            expect(linkNames).toHaveProperty('param2', 'model2Id')
+            expect(linkNames).toHaveProperty('res1', 'model1')
+            expect(linkNames).toHaveProperty('res2', 'model2')
         })
     })
 })

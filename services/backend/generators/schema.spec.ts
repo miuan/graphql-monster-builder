@@ -1,5 +1,5 @@
 import { isExportDeclaration } from 'typescript'
-import { SchemaModel, SchemaModelMember } from '../../common/types'
+import { SchemaModel, SchemaModelMember, SchemaModelRelation } from '../../common/types'
 import { constructMemberWithType, generateInputParamsForMutationModel } from './schema'
 
 describe('schema', () => {
@@ -30,29 +30,36 @@ describe('schema', () => {
         })
     })
 
-    describe('generateInputParamsForMutationModel', ()=>{
-        it('standard', ()=>{
-            const genModel = generateInputParamsForMutationModel({modelName: 'model1', members: [
-                {name: 'reqMember1', type: 'String', isRequired: true},
-                {name: 'optMember2', type: 'String', isRequired: false} 
-            ]} as SchemaModel)
+    describe('generateInputParamsForMutationModel', () => {
+        it('standard', () => {
+            const genModel = generateInputParamsForMutationModel({
+                modelName: 'model1',
+                members: [
+                    { name: 'reqMember1', type: 'String', isRequired: true },
+                    { name: 'optMember2', type: 'String', isRequired: false },
+                ],
+            } as SchemaModel)
 
             expect(genModel).toEqual('reqMember1: String!, optMember2: String')
         })
 
-        it('ignoreRequire', ()=>{
-            const genModel = generateInputParamsForMutationModel({modelName: 'model1', members: [
-                {name: 'reqMember1', type: 'String', isRequired: true},
-                {name: 'optMember2', type: 'String', isRequired: false} 
-            ]} as SchemaModel, {ignoreRequired:true})
+        it('ignoreRequire', () => {
+            const genModel = generateInputParamsForMutationModel(
+                {
+                    modelName: 'model1',
+                    members: [
+                        { name: 'reqMember1', type: 'String', isRequired: true },
+                        { name: 'optMember2', type: 'String', isRequired: false },
+                    ],
+                } as SchemaModel,
+                { ignoreRequired: true },
+            )
 
             expect(genModel).toEqual('reqMember1: String, optMember2: String')
         })
 
-        it('not required if have default', ()=>{
-            const genModel = generateInputParamsForMutationModel({modelName: 'model1', members: [
-                {name: 'reqMember1', type: 'String', isRequired: true, default: 'defValue'}
-            ]} as SchemaModel)
+        it('not required if have default', () => {
+            const genModel = generateInputParamsForMutationModel({ modelName: 'model1', members: [{ name: 'reqMember1', type: 'String', isRequired: true, default: 'defValue' }] } as SchemaModel)
 
             expect(genModel).toEqual('reqMember1: String')
         })
@@ -74,5 +81,4 @@ describe('schema', () => {
             expect(inputParams).toEqual('id: ID!, member1: [String]')
         })
     })
-
 })

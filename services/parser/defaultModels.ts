@@ -1,4 +1,5 @@
 import { SchemaModel, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType, SchemaModelType } from '../common/types'
+import { setupRelationLinkNames } from './relations'
 
 const DEFAULT_ADMIN_ROLE: SchemaModelProtectionParam = {
     roles: ['admin'],
@@ -42,7 +43,7 @@ const USER_MEMBERS = [
         isArray: false,
         isRequired: false,
         isUnique: false,
-        isVirtual:false,
+        isVirtual: false,
         isReadonly: true,
         relation: null,
         row: -1,
@@ -128,7 +129,7 @@ const FILE_MEMBERS = [
         isVirtual: false,
         isReadonly: false,
         default: 'text/plain',
-        row: -1
+        row: -1,
     },
     {
         name: 'size',
@@ -208,7 +209,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         relation: {
             createFromAnotherModel: true,
             inputName: 'UserrolesUserRole',
-            name: '_RoleOnUser',
+            name: '_RoleToUser',
             relatedModel: modelUserRole,
             type: SchemaModelRelationType.RELATION,
             payloadNameForCreate: 'roles',
@@ -231,7 +232,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         relation: {
             createFromAnotherModel: false,
             inputName: 'UserRoleusersUser',
-            name: '_RoleOnUser',
+            name: '_RoleToUser',
             relatedModel: modelUser,
             relatedMember: memberRolesInUser,
             type: SchemaModelRelationType.RELATION,
@@ -241,6 +242,8 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
     }
     modelUserRole.members.push(memberUsersInUserRole)
     memberRolesInUser.relation.relatedMember = memberUsersInUserRole
+    memberRolesInUser.relation.linkNames = setupRelationLinkNames(memberRolesInUser)
+    // memberRolesInUser.relation.linkNames.param3 = 'role'
 
     const memberFilesInUser = {
         name: 'files',
@@ -287,4 +290,5 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
     }
     modelFile.members.push(memberUserInFile)
     memberFilesInUser.relation.relatedMember = memberUserInFile
+    // memberUserInFile.relation.linkNames = setupRelationLinkNames(memberUserInFile)
 }

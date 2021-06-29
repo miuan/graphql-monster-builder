@@ -1,19 +1,9 @@
-import {
-    SchemaModel,
-    SchemaModelRelationType,
-    StructureBackend,
-    SchemaModelMember,
-    SchemaModelProtection,
-    SchemaModelProtectionParam,
-    SchemaModelProtectionType,
-} from '../../common/types'
-
-import { writeToFile, templateFileToText, templateToText } from '../../common/files'
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
-import { relatedParamName1Id, relatedParamName1, relatedParamName2Id, relatedParamName2 } from './schema'
-
+import { templateFileToText, templateToText } from '../../common/files'
+import { SchemaModel, SchemaModelMember, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType } from '../../common/types'
+import { firstToLower, getOnlyOneRelatedMember } from '../../common/utils'
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
+
 const log = logger.getLogger('resolvers')
 
 const defaultMembers = ['createdAt', 'updatedAt', 'id']
@@ -21,43 +11,59 @@ const defaultMembers = ['createdAt', 'updatedAt', 'id']
 const memberCreateAndRemoveLinks = (model: SchemaModel, member: SchemaModelMember) => {
     const modelName = model.modelName
     const relation = member.relation
-    const relatedMember = getOnlyOneRelatedMember(member)
+    const linkNames = relation.linkNames
 
     const ret = {
         result: '',
         connect: '',
     }
 
-    if (!relatedMember) {
-        return ret
+    const lower = firstToLower(modelName)
+    const funcLinkName = linkNames.linkName
+    const funcUnlinkName = linkNames.unlinkName
+
+    let protection
+    let unlinkProtection = ''
+    if (relation.name === '_RoleToUser') {
+        const conditions = constructConditionsFromProtection([{ type: SchemaModelProtectionType.ROLE, roles: ['admin'] }])
+        protection = compileConditionsToIfStatement(conditions)
+        unlinkProtection = `
+            if(ctx.state?.user?.id == data.userId){
+                if(data.userRoleName === 'admin') {
+                    throw new Error('Unlinking yourself from admin')
+                } else {
+                    const role = await entry.models['userRole'].findById(data.userRoleId, 'name').lean()
+                    if(role.name === 'admin') {
+                        throw new Error('Unlinking yourself from admin')
+                    }
+                }
+            }
+        `
+    } else {
+        const conditions1 = constructConditionsFromProtection(model.protection.update, linkNames.param1, modelName)
+        const conditions2 = constructConditionsFromProtection(relation.relatedModel.protection.update, linkNames.param2, relation.relatedModel.modelName)
+        const conditions = [...conditions1, ...conditions2.filter((c2) => !conditions1.includes(c2))]
+        protection = compileConditionsToIfStatement(conditions)
     }
 
-    const lower = firstToLower(modelName)
-    const relationName = relation.name
-    const funcAddToName = `addTo${relationName}`
-    const funcRemoveFromName = `removeFrom${relationName}`
+    const params = linkNames.param3 ? `data.${linkNames.param1}, data.${linkNames.param2}, data.${linkNames.param3}` : `data.${linkNames.param1}, data.${linkNames.param2}`
 
     ret.result = templateFileToText('resolvers-add-remove.ts', {
         _LOWER_NAME_: lower,
-        _RELATION_NAME_: relationName,
-        _RELATED_PARAM_NAME_1_: relatedParamName1Id(model, relatedMember),
-        _RELATED_PARAM_NAME_2_: relatedParamName2Id(member),
-        _RELATED_MEMBER_NAME_: relatedMember.name,
-        _MEMBER_NAME_: member.name,
-        _RELATED_MODEL_NAME_: member.relation.relatedModel.modelName,
-        _PAYLOAD_PARAM_1: relatedParamName1(model, relatedMember),
-        _PAYLOAD_PARAM_2: relatedParamName2(member),
+        _FUNC_LINK_NAME_: funcLinkName,
+        _FUNC_UNLINK_NAME_: funcUnlinkName,
+        _PARAMS_: params,
+        _UNLINK_PROTECTION_: unlinkProtection,
+        _PROTECTION_: protection,
     })
 
-    ret.connect += `${funcAddToName} : ${funcAddToName}(entry, protections),\n${funcRemoveFromName} : ${funcRemoveFromName}(entry, protections),`
+    ret.connect += `${funcLinkName} : ${funcLinkName}(entry, protections),\n${funcUnlinkName} : ${funcUnlinkName}(entry, protections),`
 
     return ret
 }
 
 const modelCreateAddRemoveLinks = (model: SchemaModel) => {
-    const membersWithRelations = model.members.filter(
-        (member) => member.relation && member.relation.type === SchemaModelRelationType.RELATION,
-    )
+    const membersWithRelations = model.members.filter((member) => member.relation?.linkNames)
     const ret = {
         result: '',
         connect: '',
@@ -77,17 +83,17 @@ export const createResolver = (model: SchemaModel) => {
     const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1)
     const varName = lower + 'Service'
 
-    const protectionAll = generateProtection(modelName, model.protection.all)
-    const protectionOne = generateProtection(modelName, model.protection.one)
-    const protectionCreate = generateProtection(modelName, model.protection.create)
-    const protectionUpdate = generateProtection(modelName, model.protection.update)
-    const protectionRemove = generateProtection(modelName, model.protection.remove)
+    const protectionAll = compileConditionsToIfStatement(constructConditionsFromProtection(model.protection.all, modelName), modelName)
+    const protectionOne = compileConditionsToIfStatement(constructConditionsFromProtection(model.protection.one, modelName), modelName)
+    const protectionCreate = compileConditionsToIfStatement(constructConditionsFromProtection(model.protection.create, modelName), modelName)
+    const protectionUpdate = compileConditionsToIfStatement(constructConditionsFromProtection(model.protection.update, modelName), modelName)
+    const protectionRemove = compileConditionsToIfStatement(constructConditionsFromProtection(model.protection.remove, modelName), modelName)
 
-    const { result: serviceAddRemove, connect: serviceAddRemoveConnect } = modelCreateAddRemoveLinks(model)
+    const { result: _RESOLVERS_ADD_REMOVE_, connect: _RESOLVERS_ADD_REMOVE_CONNECT_ } = modelCreateAddRemoveLinks(model)
 
     const file = templateFileToText('resolvers.ts', {
-        _RESOLVERS_ADD_REMOVE_CONNECT_: serviceAddRemoveConnect,
-        _RESOLVERS_ADD_REMOVE_: serviceAddRemove,
+        _RESOLVERS_ADD_REMOVE_CONNECT_,
+        _RESOLVERS_ADD_REMOVE_,
     })
 
     const modelUpperName = modelName[0].toUpperCase() + modelName.substr(1)
@@ -107,22 +113,16 @@ export const createResolver = (model: SchemaModel) => {
     return result
 }
 
-export const generateProtection = (modelName: string, protection: SchemaModelProtectionParam[]) => {
-    let condition = ''
-    for (const protectionParam of protection) {
-        condition += '&& ! (' + generateProtectionFromParam(modelName, protectionParam) + ') '
-    }
+export const compileConditionsToIfStatement = (conditions: string[], modelName: string = undefined) => {
+    const condition = conditions.join('&&')
+    let result = `if(${condition}){
+        throw new Error('Unauthorized')
+      }`
 
-    let result = `
-      if(${condition.substr(3)}){
-        ctx.throw(401, 'Unauthorized');
-      }
-  `
-
-    if (modelName == 'User') {
+    if (modelName && modelName == 'User') {
         result += `
-    if((data.roles || data.rolesIds) && await protections.role(ctx, ['admin'])){
-      ctx.throw(401, 'Unauthorized user:roles operation');
+    if((data.roles || data.rolesIds) && !await protections.role(ctx, ['admin'])){
+        throw new Error('Unauthorized user:roles operation')
     }
   `
     }
@@ -130,7 +130,11 @@ export const generateProtection = (modelName: string, protection: SchemaModelPro
     return result
 }
 
-export const generateProtectionFromParam = (modelName: string, protection: SchemaModelProtectionParam) => {
+export const constructConditionsFromProtection = (protections: SchemaModelProtectionParam[], modelName: string = undefined, objectIdField = undefined) => {
+    return protections.map((protectionParam) => `!(${generateProtectionFromParam(protectionParam, modelName, objectIdField)})`)
+}
+
+export const generateProtectionFromParam = (protection: SchemaModelProtectionParam, modelName: string = undefined, objectIdField = undefined) => {
     let result = ''
 
     if (protection.type === SchemaModelProtectionType.PUBLIC) {
@@ -139,8 +143,8 @@ export const generateProtectionFromParam = (modelName: string, protection: Schem
         result += `await protections.user(ctx)`
     } else if (protection.type === SchemaModelProtectionType.OWNER) {
         // in model user is owner identified by ID
-        const param = modelName === 'User' ? 'id' : 'user'
-        result += `await protections.owner(ctx, data, '${param}')`
+        const param = modelName && modelName === 'User' ? 'id' : 'user'
+        result += objectIdField ? `await protections.owner(ctx, data, '${param}', '${objectIdField}')` : `await protections.owner(ctx, data, '${param}')`
     } else if (protection.type === SchemaModelProtectionType.ROLE) {
         const roles = `'` + protection.roles.join(`','`) + `'`
         result += `await protections.role(ctx, [${roles}])`

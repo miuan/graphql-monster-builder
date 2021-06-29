@@ -2,7 +2,7 @@ import { ifError } from 'assert'
 import { schemaMutations, notMutationFields, schemaFilterStringValue, schemaFilterNumberValue } from '../../common/constatns'
 
 import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelMember, SchemaModelType, MODELS_NOT_HAVE_CREATE } from '../../common/types'
-import { getOnlyOneRelatedMember } from '../../common/utils'
+import { firstToLower, firstToUpper, getOnlyOneRelatedMember } from '../../common/utils'
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
 const log = logger.getLogger('schema')
@@ -16,7 +16,7 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
         if (model.type == SchemaModelType.MODEL) {
             const name = model.modelName
             // tslint:disable-next-line:max-line-length
-            result += `  all${name}(filter: ${name}Filter): [${name}Model!]!\n
+            result += `  all${name}(filter: ${name}Filter): [${name}Model!]!
             ${name}(id: ID): ${name}Model\n
             `
         }
@@ -30,47 +30,19 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
 export const cleanApplayedRelations = () => {
     applayedRelations = []
 }
-export const relatedParamName1 = (model: SchemaModel, relatedMember: SchemaModelMember) => `${relatedMember.name}${model.modelName}`
-export const relatedParamName2 = (member: SchemaModelMember) => `${member.name}${member.relation.relatedModel.modelName}`
-export const relatedParamName1Id = (model: SchemaModel, relatedMember: SchemaModelMember) => `${relatedParamName1(model, relatedMember)}Id`
-export const relatedParamName2Id = (member: SchemaModelMember) => `${relatedParamName2(member)}Id`
 
 export const generateMutationAddingsAndRemovings = (model: SchemaModel) => {
     let result = ''
     for (const member of model.members) {
-        if (member.relation?.type === SchemaModelRelationType.RELATION && member.isArray) {
-            const relation = member.relation
-            const relationName = relation.name
+        if (member.relation?.linkNames) {
+            const linkNames = member.relation.linkNames
+            const params = linkNames.param3 ? `${linkNames.param1}: ID!, ${linkNames.param2}: ID, ${linkNames.param3}: String` : `${linkNames.param1}: ID!, ${linkNames.param2}: ID!`
 
-            const relatedMember = getOnlyOneRelatedMember(member)
-            if (!relatedMember) {
-                continue
-            }
-
-            log.debug('winner is:', model.modelName)
-
-            const relatedModel = relation.relatedModel
-            // const relatedMember = relatedModel.members.find(m => m.relation && m.relation.name === relationName);
-
-            const params = `${relatedParamName1Id(model, relatedMember)}: ID!, ${relatedParamName2Id(member)}: ID!`
-
-            result += `addTo${relationName}(${params}): AddTo${relation.payloadNameForAddOrDelete}\n`
-            result += `removeFrom${relationName}(${params}): RemoveFrom${relation.payloadNameForAddOrDelete}\n`
-            applayedRelations.push(relationName)
+            result += `${linkNames.linkName}(${params}): ${firstToUpper(linkNames.linkName)}Result\n`
+            result += `${linkNames.unlinkName}(${params}): ${firstToUpper(linkNames.linkName)}Result\n`
+            applayedRelations.push(linkNames.relationName)
         }
     }
-
-    return result
-}
-
-export const genereateSchemaPayloads = (models: SchemaModel[]) => {
-    let result = ''
-
-    for (const model of models) {
-        result += genereateSchemaModelPayloads(model)
-    }
-    // result += genereateSchemaModelPayloads(models[3]);
-    // result += genereateSchemaModelPayloads(models[4]);
 
     return result
 }
@@ -78,32 +50,22 @@ export const genereateSchemaPayloads = (models: SchemaModel[]) => {
 export const genereateSchemaModelPayloads = (model: SchemaModel) => {
     let result = ''
 
-    for (const member of model.members.filter((member) => member.relation?.type === SchemaModelRelationType.RELATION)) {
+    for (const member of model.members.filter((member) => member.relation?.linkNames)) {
         const relation = member.relation
-        if (relation && !relation.payloadNameForAddOrDelete) {
-            const relationName = relation.name
-            const payloadName = `${relationName}Payload`
-            const relatedMember = relation.relatedMember
+        const linkNames = relation.linkNames
+        const relatedMember = relation.relatedMember
 
-            const bodyMember1 = `${relatedParamName1(model, relatedMember)}: ${relatedMember.modelName}Model`
-            const bodyMember2 = `${relatedParamName2(member)}: ${member.modelName}Model`
+        const bodyMember1 = '' //`${linkNames.res1}: ${relatedMember.modelName}Model`
+        const bodyMember2 = '' //`${linkNames.res2}: ${member.modelName}Model`
 
-            relation.payloadNameForAddOrDelete = payloadName
-            relatedMember.relation.payloadNameForAddOrDelete = payloadName
-
-            result += `# on model ${model.modelName} - ${member.name}\n`
-            result += `type AddTo${payloadName} {
+        result += `# on model ${model.modelName} - ${member.name}\n`
+        result += `type ${firstToUpper(linkNames.linkName)}Result {
+  ${linkNames.param1}: ID!
+  ${linkNames.param2}: ID!
   ${bodyMember1}
   ${bodyMember2}
 }\n
 `
-
-            result += `type RemoveFrom${payloadName} {
-  ${bodyMember1}
-  ${bodyMember2}
-}
-`
-        }
     }
 
     return result
@@ -196,10 +158,10 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                 }
             } else {
                 // 1. required member have to be present for creation
-                // 2. ignoreRequired if you generate mutation for update, 
-                //    we expect the already created object have all required fields 
+                // 2. ignoreRequired if you generate mutation for update,
+                //    we expect the already created object have all required fields
                 //    so we need push user to include them all time he need update it
-                // 3. if member have default value, it is included in mongoose model schema 
+                // 3. if member have default value, it is included in mongoose model schema
                 //    and is not necessary to push user to include it even for creation
                 result += `, ${constructMemberWithType(name, member.type, member.isArray, member.isRequired && !ignoreRequired && !member.default)}`
             }
@@ -340,15 +302,15 @@ export const generateSchemaAsString = (models: SchemaModel[]): string => {
     let queriesAndMutations = ''
 
     for (const model of models) {
-        const notVirtualMembers = model.members.filter((member) => !member.isVirtual) 
+        const notVirtualMembers = model.members.filter((member) => !member.isVirtual)
         orders += generateSchemaOrder(model, notVirtualMembers)
         filters += generateSchameFilter(model, notVirtualMembers)
         generatedModels += generateSchemaModel(model)
+        queriesAndMutations += genereateSchemaModelPayloads(model)
     }
 
     queriesAndMutations += generateSchemaQueries(models)
     queriesAndMutations += generateSchemaInputs(models)
-    queriesAndMutations += genereateSchemaPayloads(models)
     queriesAndMutations += generateSchemaMutations(models)
 
     return `

@@ -165,12 +165,7 @@ describe('resolver', () => {
 
     function protectionExpectFilter(protectionMock, ctxMock, mockData) {
         expect(protectionMock.filter).toBeCalled()
-        expect(protectionMock.filter).toBeCalledWith(
-            ctxMock,
-            mockData,
-            [{ name: 'user', value: '{{userId}}' }],
-            ['Admin'],
-        )
+        expect(protectionMock.filter).toBeCalledWith(ctxMock, mockData, [{ name: 'user', value: '{{userId}}' }], ['Admin'])
     }
 
     describe.each([
@@ -201,34 +196,31 @@ describe('resolver', () => {
             testResolver = require(`../${TEST_DIR}/${name}.ts`)
         })
 
-        it.each([['All'], ['One'], ['Create'], ['Update'], ['Remove']])(
-            'not pass data for method %s because unauthorized',
-            async (method) => {
-                const error = new Error('Unauthorized error')
-                const lowerMethod = method.toLowerCase()
-                const ctxMock = createCtxMock(error)
-                const entry = createEntryMock('testResolver', method)
-                const protectionMock = createProtectionMock(false)
-                const dataMock = { data: 'simple data' }
+        it.each([['All'], ['One'], ['Create'], ['Update'], ['Remove']])('not pass data for method %s because unauthorized', async (method) => {
+            const error = new Error('Unauthorized error')
+            const lowerMethod = method.toLowerCase()
+            const ctxMock = createCtxMock(error)
+            const entry = createEntryMock('testResolver', method)
+            const protectionMock = createProtectionMock(false)
+            const dataMock = { data: 'simple data' }
 
-                const methodFn = testResolver[`testResolver${method}`](entry, protectionMock)
+            const methodFn = testResolver[`testResolver${method}`](entry, protectionMock)
 
-                let result
-                let exception
-                try {
-                    result = await methodFn(null, dataMock, ctxMock)
-                } catch (ex) {
-                    exception = ex
-                }
+            let result
+            let exception
+            try {
+                result = await methodFn(null, dataMock, ctxMock)
+            } catch (ex) {
+                exception = ex
+            }
 
-                expect(ctxMock['throw']).toBeCalled()
-                expect(ctxMock['throw']).toBeCalledWith(401, 'Unauthorized')
-                expect(exception).toEqual(error)
-                expect(result).not.toBeDefined()
+            expect(ctxMock['throw']).toBeCalled()
+            expect(ctxMock['throw']).toBeCalledWith(401, 'Unauthorized')
+            expect(exception).toEqual(error)
+            expect(result).not.toBeDefined()
 
-                proctectionExpect(protectionMock, ctxMock, dataMock)
-            },
-        )
+            proctectionExpect(protectionMock, ctxMock, dataMock)
+        })
 
         it.each([['All'], ['One'], ['Create'], ['Update'], ['Remove']])('pass data for method: %s', async (method) => {
             const error = new Error('Unauthorized error')

@@ -324,7 +324,7 @@ export const generateProtections = (entry, modelName) => {
                 return true
             }
         },
-        owner: async (ctx, data, ownerField = 'user') => {
+        owner: async (ctx, data, ownerField = 'user', idField = 'id') => {
             if (ctx && ctx.state && ctx.state.user) {
                 // NOTE: in edit, if `fd` contain also other fields, what they are edited
                 //       then `await entry.models[modelName].findOne(fd)` not find anything
@@ -338,7 +338,7 @@ export const generateProtections = (entry, modelName) => {
                 // }
                 // const u = await entry.models[modelName].findOne(fd, ownerField)
 
-                const u = await entry.models[modelName].findById(data.id || data._id, ownerField)
+                const u = await entry.models[modelName].findById(data[idField] || data._id, ownerField).lean()
                 return u && u[ownerField] == ctx.state.user.id
             } else {
                 return false
@@ -349,7 +349,7 @@ export const generateProtections = (entry, modelName) => {
                 const ctxUser = ctx.state.user
                 const userRoleModel = entry.models['userRole']
 
-                const userRole = await userRoleModel.findOne({ name: roles[0], users: ctxUser.id })
+                const userRole = await userRoleModel.findOne({ name: roles[0], users: ctxUser.id }).lean()
 
                 return userRole != null
             }

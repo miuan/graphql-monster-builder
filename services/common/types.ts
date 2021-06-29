@@ -29,6 +29,19 @@ export type SchemaModelRelation = {
     payloadNameForId: string
     payloadNameForAddOrDelete: string
     error: string
+    linkNames?: SchemaModelRelationLinkNames
+}
+
+export type SchemaModelRelationLinkNames = {
+    isSystem: boolean
+    relationName: string
+    linkName: string
+    unlinkName: string
+    res1: string
+    res2: string
+    param1: string
+    param2: string
+    param3?: string
 }
 
 export type SchemaModelMember = {

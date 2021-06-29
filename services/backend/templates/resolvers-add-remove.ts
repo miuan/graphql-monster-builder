@@ -1,33 +1,35 @@
-export const addTo_RELATION_NAME_ = (entry, protections) => {
+export const _FUNC_LINK_NAME_ = (entry, protections) => {
     return async (root, data, ctx) => {
       
-      _PROTECT_ALL_;
-      if (entry.hooks && entry.hooks.resolvers['before_LOWER_NAME_AddTo_RELATION_NAME_']) {
-       await entry.hooks.resolvers['before_LOWER_NAME_AddTo_RELATION_NAME_'](entry, { root, data, ctx });
+      _PROTECTION_
+      if (entry.hooks && entry.hooks.resolvers['before_FUNC_LINK_NAME_']) {
+       await entry.hooks.resolvers['before_FUNC_LINK_NAME_'](entry, { root, data, ctx });
       }
   
-      let model = await entry.services['_LOWER_NAME_'].addTo_RELATION_NAME_(data._RELATED_PARAM_NAME_1_, data._RELATED_PARAM_NAME_2_);
+      let model = await entry.services['_LOWER_NAME_']._FUNC_LINK_NAME_(_PARAMS_);
   
-      if (entry.hooks && entry.hooks.resolvers['after_LOWER_NAME_AddTo_RELATION_NAME_']) {
-        model = await entry.hooks.resolvers['after_LOWER_NAME_AddTo_RELATION_NAME_'](entry, { model, root, data, ctx });
+      if (entry.hooks && entry.hooks.resolvers['after_FUNC_LINK_NAME_']) {
+        model = await entry.hooks.resolvers['after_FUNC_LINK_NAME_'](entry, { model, root, data, ctx });
       }
   
       return model;
     };
   };
 
-  export const removeFrom_RELATION_NAME_ = (entry, protections) => {
+  export const _FUNC_UNLINK_NAME_ = (entry, protections) => {
     return async (root, data, ctx) => {
       
-      _PROTECT_ALL_;
-      if (entry.hooks && entry.hooks.resolvers['before_LOWER_NAME_RemoveFrom_RELATION_NAME_']) {
-       await entry.hooks.resolvers['before_LOWER_NAME_RemoveFrom_RELATION_NAME_'](entry, { root, data, ctx });
+      _PROTECTION_
+      _UNLINK_PROTECTION_
+      
+      if (entry.hooks && entry.hooks.resolvers['before_FUNC_UNLINK_NAME_']) {
+       await entry.hooks.resolvers['before_FUNC_UNLINK_NAME_'](entry, { root, data, ctx });
       }
   
-      let model = await entry.services['_LOWER_NAME_'].removeFrom_RELATION_NAME_(data._RELATED_PARAM_NAME_1_, data._RELATED_PARAM_NAME_2_);
+      let model = await entry.services['_LOWER_NAME_']._FUNC_UNLINK_NAME_(_PARAMS_);
   
-      if (entry.hooks && entry.hooks.resolvers['after_LOWER_NAME_RemoveFrom_RELATION_NAME_']) {
-        model = await entry.hooks.resolvers['after_LOWER_NAME_RemoveFrom_RELATION_NAME_'](entry, { model, root, data, ctx });
+      if (entry.hooks && entry.hooks.resolvers['after_FUNC_UNLINK_NAME_']) {
+        model = await entry.hooks.resolvers['after_FUNC_UNLINK_NAME_'](entry, { model, root, data, ctx });
       }
   
       return model;
