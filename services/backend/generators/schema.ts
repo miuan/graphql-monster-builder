@@ -55,8 +55,10 @@ export const genereateSchemaModelPayloads = (model: SchemaModel) => {
         const linkNames = relation.linkNames
         const relatedMember = relation.relatedMember
 
-        const bodyMember1 = '' //`${linkNames.res1}: ${relatedMember.modelName}Model`
-        const bodyMember2 = '' //`${linkNames.res2}: ${member.modelName}Model`
+        const bodyMember1 = `${linkNames.res1}: ${relatedMember.modelName}Model`
+        const bodyMember2 = `${linkNames.res2}: ${member.modelName}Model`
+        const bodyModified1 = `${linkNames.res1}ModifiedCount: Int`
+        const bodyModified2 = `${linkNames.res2}ModifiedCount: Int`
 
         result += `# on model ${model.modelName} - ${member.name}\n`
         result += `type ${firstToUpper(linkNames.linkName)}Result {
@@ -64,6 +66,8 @@ export const genereateSchemaModelPayloads = (model: SchemaModel) => {
   ${linkNames.param2}: ID!
   ${bodyMember1}
   ${bodyMember2}
+  ${bodyModified1}
+  ${bodyModified2}
 }\n
 `
     }

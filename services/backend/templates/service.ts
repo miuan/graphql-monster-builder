@@ -8,8 +8,11 @@ export const _LOWER_NAME_All = (entry) => {
         }
 
         const filter = extras.filterGen(data.filter)
-        console.log('\nfilterGen(filter)\n', filter)
-        let models = await _LOWER_NAME_Model.find(filter)
+        let models = await _LOWER_NAME_Model.find(filter).lean()
+        models = models.map((m)=>{
+            m.id = m._id 
+            return m
+        })
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_All']) {
             models = await entry.hooks.services['after_MODEL_NAME_All'](entry, { models, ...data })
@@ -23,7 +26,8 @@ export const _LOWER_NAME_One = (entry) => {
         if (entry.hooks && entry.hooks.services['before_MODEL_NAME_One']) {
             await entry.hooks.services['before_MODEL_NAME_One'](entry, { id })
         }
-        let model = await _LOWER_NAME_Model.findById(id)
+        let model = await _LOWER_NAME_Model.findById(id).lean()
+        model.id = id
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_One']) {
             model = await entry.hooks.services['after_MODEL_NAME_One'](entry, { id, model })

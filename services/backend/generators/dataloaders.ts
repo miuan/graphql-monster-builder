@@ -1,18 +1,18 @@
-import { writeToFile } from '../../common/files';
-import { StructureBackend, SchemaModel } from '../../common/types';
+import { writeToFile } from '../../common/files'
+import { StructureBackend, SchemaModel } from '../../common/types'
 
 import logger from '../../log'
-import { BackendDirectory } from '../backendDirectory';
+import { BackendDirectory } from '../backendDirectory'
 const log = logger.getLogger('dataloaders')
 
 export const generateDataloaders = async (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
-  log.info('generate Dataloaders for all models')
-  const body = generateDataloadersWorker(models);
-  backendDirectory.genWrite( `dataloaders`, body);
-};
+    log.info('generate Dataloaders for all models')
+    const body = generateDataloadersWorker(models)
+    backendDirectory.genWrite(`dataloaders`, body)
+}
 
-export const generateDataloadersWorker = (models: SchemaModel[]):string => {
-  let body = `
+export const generateDataloadersWorker = (models: SchemaModel[]): string => {
+    let body = `
   import * as DataLoader from 'dataloader';
  
   interface IServiceDataloader {
@@ -102,29 +102,32 @@ export const generateDataloadersWorker = (models: SchemaModel[]):string => {
   
   const batchFind = async (service: IServiceDataloader, keys) => {
     // tslint:disable-next-line:ter-arrow-parens
-    return await processBatches(keys, async (batchKeys) => {
-      return await service.find({_id: {$in: keys}});
+    return processBatches(keys, async (batchKeys) => {
+      const data = await service.find({_id: {$in: keys}})
+      return data.map(d=>{
+        d.id = d._id
+        return d
+      })
     });
   };
   
   
   export const generateDataloaders = (entry) => {
 
-`;
+`
 
-
-  for (const model of models) {
-    const modelName = model.modelName;
-    const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1);
-    body += `
+    for (const model of models) {
+        const modelName = model.modelName
+        const lower = modelName.charAt(0).toLowerCase() + modelName.slice(1)
+        body += `
 
     entry.dataloaders['${lower}'] = async (ctx, ${lower}Ids, loadMany) => {
       return await dataloaderByName('${lower}', entry.models['${lower}'], ctx, ${lower}Ids, loadMany);
     };
-    `;
-  }
+    `
+    }
 
-  body += '}\n';
+    body += '}\n'
 
-  return body;
-};
+    return body
+}

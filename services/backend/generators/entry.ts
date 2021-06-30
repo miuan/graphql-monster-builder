@@ -1,6 +1,6 @@
 import { StructureBackend, SchemaModel, SchemaModelRelationType, SchemaModelType, MODELS_NOT_HAVE_CREATE } from '../../common/types'
 import { writeToFile, templateToText, templateFileToText } from '../../common/files'
-import { getOnlyOneRelatedMember, firstToLower } from '../../common/utils'
+import { getOnlyOneRelatedMember, firstToLower, firstToUpper } from '../../common/utils'
 import { BackendDirectory } from '../backendDirectory'
 import { model } from 'mongoose'
 
@@ -126,6 +126,7 @@ export const createQueryResolvers = (modules) => {}
 
 export const generateDataloadersForResolver = (model: SchemaModel) => {
     let body = `,${model.modelName}Model: {`
+    let linkAndUnlink = ''
 
     // SchemaModelRelationType.ENTITY is actualy part of object
     // have a dataloader mean it will try to use dataloade but we already have the data
@@ -136,16 +137,33 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
         const many = member.isArray
         body += `
     ${memberName}: async (${lower}Model, data, koaContext) => {
-      return await entry.dataloaders['${lower}'](koaContext, ${lower}Model.${memberName},${many})
+      return entry.dataloaders['${lower}'](koaContext, ${lower}Model.${memberName},${many})
     },`
+
+        if (member.relation?.linkNames) {
+            const linkNames = member.relation?.linkNames
+            const meLower = firstToLower(model.modelName)
+            const meMany = member.relation.relatedMember.isArray
+            linkAndUnlink += `,${firstToUpper(linkNames.linkName)}Result:{
+                ${linkNames.res1}: async (${meLower}Model, data, koaContext) => {
+                    return  entry.dataloaders['${meLower}'](koaContext, ${meLower}Model.${linkNames.param1},${meMany})
+                  },
+                ${linkNames.res2}: async (${lower}Model, data, koaContext) => {
+                    return  entry.dataloaders['${lower}'](koaContext, ${lower}Model.${linkNames.param2},${many})
+                  }
+            }
+    `
+        }
     }
     if (model.modelName == 'File') {
         body += `
     data: async (fileModel, data, koaContext) => {
-      return await entry.storage.loadDataFromFile(fileModel, data, koaContext)
+      return entry.storage.loadDataFromFile(fileModel, data, koaContext)
     },`
     }
-    body += `
-}`
+    body += `    
+}
+${linkAndUnlink}
+`
     return body
 }

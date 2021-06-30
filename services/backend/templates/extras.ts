@@ -317,6 +317,7 @@ export const generateParentLogin = (entry) => async (ctx) => {
 }
 
 export const generateProtections = (entry, modelName) => {
+    const userRoleModel = entry.models['userRole']
     return {
         public: () => true,
         user: (ctx) => {
@@ -325,7 +326,7 @@ export const generateProtections = (entry, modelName) => {
             }
         },
         owner: async (ctx, data, ownerField = 'user', idField = 'id') => {
-            if (ctx && ctx.state && ctx.state.user) {
+            if (ctx?.state?.user?.id) {
                 // NOTE: in edit, if `fd` contain also other fields, what they are edited
                 //       then `await entry.models[modelName].findOne(fd)` not find anything
                 //       because data are not corespond with what is in DB
@@ -338,20 +339,19 @@ export const generateProtections = (entry, modelName) => {
                 // }
                 // const u = await entry.models[modelName].findOne(fd, ownerField)
 
-                const u = await entry.models[modelName].findById(data[idField] || data._id, ownerField).lean()
-                return u && u[ownerField] == ctx.state.user.id
+                const modelData = await entry.models[modelName].findById(data[idField] || data._id, ownerField).lean()
+                const isOwner = modelData && modelData[ownerField] == ctx.state.user.id
+                if (!isOwner) {
+                    return userRoleModel.exists({ name: 'admin', users: ctx.state.user.id })
+                }
+                return isOwner
             } else {
                 return false
             }
         },
         role: async (ctx, roles: string[]) => {
-            if (ctx && ctx.state && ctx.state.user) {
-                const ctxUser = ctx.state.user
-                const userRoleModel = entry.models['userRole']
-
-                const userRole = await userRoleModel.findOne({ name: roles[0], users: ctxUser.id }).lean()
-
-                return userRole != null
+            if (ctx?.state?.user?.id) {
+                return userRoleModel.exists({ name: roles[0], users: ctx.state.user.id })
             }
         },
         filter: async (ctx, data, filters: any[], roles: string[]) => {
