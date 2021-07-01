@@ -7,8 +7,28 @@ import { Strategy as AnonymousStrategy } from 'passport-anonymous'
 import { genPasswordAndTokens } from '../gen/extras'
 import * as Router from 'koa-router'
 
+class TokenExpiredError extends Error {
+    tokenExpired: boolean
+
+    constructor() {
+        super('Token expired')
+        this.name = 'TokenExpiredError'
+        this.tokenExpired = true
+    }
+}
+
+class UnauthorizedError extends Error {
+    unauthorized: boolean
+
+    constructor() {
+        super('Unauthorized')
+        this.name = 'Unauthorized'
+        this.unauthorized = true
+    }
+}
+
 export const passportSetupAll = (app, userModel, config) => {
-    passportSetupJwt(app)
+    passportSetupJwt(app, userModel)
 
     const authRouter = new Router({ prefix: '/auth' })
 
@@ -20,7 +40,7 @@ export const passportSetupAll = (app, userModel, config) => {
     return publicPassportConfig
 }
 
-export const passportSetupJwt = (app) => {
+export const passportSetupJwt = (app, userModel) => {
     // const authRouter = new Router({ prefix: '/auth' })
     passport.serializeUser<any, any>((req, user, done) => {
         done(undefined, user)
@@ -36,13 +56,18 @@ export const passportSetupJwt = (app) => {
         new JwtStrategy(
             {
                 jwtFromRequest: ExtractJwt.fromExtractors([
-                    ExtractJwt.fromAuthHeaderAsBearerToken(),
-                    ExtractJwt.fromUrlQueryParameter('token'),
+                    ExtractJwt.fromAuthHeaderAsBearerToken(), 
+                    ExtractJwt.fromUrlQueryParameter('token')
                 ]),
-                secretOrKey: process.env.JWT_TOKEN_SECRET || 'protectql_test_secret',
+                secretOrKey: process.env.JWT_TOKEN_SECRET || 'graphql_monster_test_secret',
+                ignoreExpiration: true,
             },
-            (jwt_payload, done) => {
-                console.log('jwt_payload', jwt_payload)
+            async (jwt_payload, done) => {
+                if (Date.now() >= jwt_payload.exp * 1000) {
+                    return done(new TokenExpiredError())
+                } else if (!(await userModel.exists({_id: jwt_payload.id}))){
+                    return done(new UnauthorizedError())
+                }
                 done(null, jwt_payload)
             },
         ),

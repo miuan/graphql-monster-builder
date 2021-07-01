@@ -53,7 +53,12 @@ app.use(async (ctx, next) => {
     try {
         await next()
     } catch (error) {
-        if (!error.status) {
+        if (error.tokenExpired) {
+            ctx.body = {
+                data: {},
+                errors: [error],
+            }
+        } else if (!error.status) {
             console.warn(`es: ${error.message}`, error.status, error)
             ctx.status = 500
             ctx.body = {

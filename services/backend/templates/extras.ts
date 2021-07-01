@@ -26,7 +26,7 @@ export const generateTokenJWT = (tokenizeData, opts?): string => {
         }
     }
 
-    const tokenJWT = jwt.sign(tokenizeData, process.env.JWT_TOKEN_SECRET || 'protectql_test_secret', options)
+    const tokenJWT = jwt.sign(tokenizeData, process.env.JWT_TOKEN_SECRET || 'graphql_monster_test_secret', options)
     return tokenJWT
 }
 
@@ -74,9 +74,8 @@ export const generateRegister =
     async (root, { email, password }, ctx) => {
         const userModel = await entry.models['user']
 
-        const existing = await userModel.findOne({ email }, { email: 1 })
-        if (existing) {
-            throw `User with email: ${existing.email} already exist`
+        if (await userModel.exists({ email })) {
+            throw `User with email: ${email} already exist`
         }
 
         const __verifyToken = await createVerifyToken(userModel)
@@ -232,11 +231,9 @@ export const generateForgottenPassword =
 
         // check existence of verify token
         let __resetPasswordToken
-        let existingUserWithResetPasswordToken = null
         do {
             __resetPasswordToken = crypto.randomBytes(RESET_PASSWORD_TOKEN_SIZE).toString('hex')
-            existingUserWithResetPasswordToken = await userModel.findOne({ __forgottenPasswordToken: __resetPasswordToken })
-        } while (existingUserWithResetPasswordToken)
+        } while (await userModel.exists({ __forgottenPasswordToken: __resetPasswordToken }))
 
         user.__resetPasswordToken = __resetPasswordToken
 
@@ -292,11 +289,9 @@ export const generateForgottenPasswordReset =
 const createVerifyToken = async (userModel) => {
     // check existence of verify token
     let __verifyToken
-    let existingUserWithVerifyToken = null
     do {
         __verifyToken = crypto.randomBytes(64).toString('hex')
-        existingUserWithVerifyToken = await userModel.findOne({ __verifyToken })
-    } while (existingUserWithVerifyToken)
+    } while (await userModel.exists({ __verifyToken }))
 
     return __verifyToken
 }
@@ -327,18 +322,6 @@ export const generateProtections = (entry, modelName) => {
         },
         owner: async (ctx, data, ownerField = 'user', idField = 'id') => {
             if (ctx?.state?.user?.id) {
-                // NOTE: in edit, if `fd` contain also other fields, what they are edited
-                //       then `await entry.models[modelName].findOne(fd)` not find anything
-                //       because data are not corespond with what is in DB
-                // const fd = {
-                //   ...data
-                // }
-                // if(fd.id) {
-                //   fd._id = fd.id
-                //   delete fd.id
-                // }
-                // const u = await entry.models[modelName].findOne(fd, ownerField)
-
                 const modelData = await entry.models[modelName].findById(data[idField] || data._id, ownerField).lean()
                 const isOwner = modelData && modelData[ownerField] == ctx.state.user.id
                 if (!isOwner) {
