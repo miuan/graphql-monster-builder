@@ -317,14 +317,14 @@ export const generateBaseProtection = (): SchemaModelProtection => {
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {
     const match = row.match(
-        / *(?<name>\w+) *: *(?:(?<type>@(?<relationType>\w+) *\(((?<relationParamName>\w+) *[:|=])? *"(?<relationParamValue>\w+)" *\)|\w+)) *(?<isArray>\[\])? *(?<isRequired>\!)?(?<options>.*)?/,
+        / *(?<name>\w+) *: *(?<isArray>\[)? *(?:(?<type>@(?<relationType>\w+) *\(((?<relationParamName>\w+) *[:|=])? *"(?<relationParamValue>\w+)" *\)|\w+)) *(?<isArrayClosed>\])? *(?<isRequired>\!)?(?<options>.*)?/,
     )
 
     if (!match) {
         throw new Error(`Line ${lineNumber}: The member '${row}' is not in good shape. Should be something like 'memberName: String`)
     }
 
-    const { name, type, relationType, relationParamName, relationParamValue, isArray, isRequired, options } = match.groups
+    const { name, type, relationType, relationParamName, relationParamValue, isArray, isArrayClosed, isRequired, options } = match.groups
 
     // empty line we can skip
     if (match.length < 2) {
@@ -338,6 +338,10 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
 
     if (!/^[_A-Za-z]/.test(name)) {
         throw `Line ${lineNumber}: The member name '${name}' should start with regular character '[A-Za-z]'`
+    }
+
+    if (!!isArray && !isArrayClosed) {
+        throw `Line ${lineNumber}: The member name '${name}' have not closed array`
     }
 
     const member: SchemaModelMember = {

@@ -18,11 +18,11 @@ describe('integration', () => {
                     opt: String
                     optInt: Int
                     optFloat: Float
-                    arrName: String[]
-                    arrInt: Int[]
-                    arrFloat: Float[]
+                    arrName: [String]
+                    arrInt: [Int]
+                    arrFloat: [Float]
                     optDateTime: DateTime
-                    model2: @relation(name: "Model1OnModel2")[]
+                    model2: [@relation(name: "Model1OnModel2")]
                 }
 
                 type Model2 @model {

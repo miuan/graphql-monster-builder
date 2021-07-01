@@ -54,7 +54,7 @@ const createEntryMock = (resolverName: string, method: string) => {
     return entry
 }
 
-describe('resolver', () => {
+describe.skip('resolver', () => {
     const testDirFullPath = `${SERVICE_BACKEND}${TEST_DIR}`
 
     let existsSyncMock

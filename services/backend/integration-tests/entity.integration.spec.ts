@@ -63,11 +63,11 @@ describe('entity integration', () => {
                     opt: String
                     optInt: Int
                     optFloat: Float
-                    arrName: String[]
-                    arrInt: Int[]
-                    arrFloat: Float[]
+                    arrName: [String]
+                    arrInt: [Int]
+                    arrFloat: [Float]
                     optDateTime: DateTime
-                    entity: Entity1[]
+                    entity: [Entity1]
                 }
 
                 type Entity1 @entity {
@@ -175,16 +175,9 @@ describe('entity integration', () => {
         expect(createModel1Response).toHaveProperty('data.createModel1.opt', 'Model1/opt/allzauub')
         expect(createModel1Response).toHaveProperty('data.createModel1.optInt', 521167)
         expect(createModel1Response).toHaveProperty('data.createModel1.optFloat', 617953.2791989135)
-        expect(createModel1Response).toHaveProperty('data.createModel1.arrName', [
-            'Model1/arrName/e9a6l28',
-            'Model1/arrName/3ux94bkk',
-            'Model1/arrName/p3po6mke',
-        ])
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrName', ['Model1/arrName/e9a6l28', 'Model1/arrName/3ux94bkk', 'Model1/arrName/p3po6mke'])
         expect(createModel1Response).toHaveProperty('data.createModel1.arrInt', [950283, 522416, 826893])
-        expect(createModel1Response).toHaveProperty(
-            'data.createModel1.arrFloat',
-            [570636.4829223385, 507513.37424710894, 37220.60960374929],
-        )
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrFloat', [570636.4829223385, 507513.37424710894, 37220.60960374929])
         expect(createModel1Response).toHaveProperty('data.createModel1.optDateTime', '2021-01-03T23:46:55.883Z')
         expect(createModel1Response.data.createModel1.entity).toEqual(
             expect.arrayContaining([
@@ -244,20 +237,11 @@ describe('entity integration', () => {
         expect(oneModel1Response).toHaveProperty('data.Model1.name', createModel1Response.data.createModel1.name)
         expect(oneModel1Response).toHaveProperty('data.Model1.opt', createModel1Response.data.createModel1.opt)
         expect(oneModel1Response).toHaveProperty('data.Model1.optInt', createModel1Response.data.createModel1.optInt)
-        expect(oneModel1Response).toHaveProperty(
-            'data.Model1.optFloat',
-            createModel1Response.data.createModel1.optFloat,
-        )
+        expect(oneModel1Response).toHaveProperty('data.Model1.optFloat', createModel1Response.data.createModel1.optFloat)
         expect(oneModel1Response).toHaveProperty('data.Model1.arrName', createModel1Response.data.createModel1.arrName)
         expect(oneModel1Response).toHaveProperty('data.Model1.arrInt', createModel1Response.data.createModel1.arrInt)
-        expect(oneModel1Response).toHaveProperty(
-            'data.Model1.arrFloat',
-            createModel1Response.data.createModel1.arrFloat,
-        )
-        expect(oneModel1Response).toHaveProperty(
-            'data.Model1.optDateTime',
-            createModel1Response.data.createModel1.optDateTime,
-        )
+        expect(oneModel1Response).toHaveProperty('data.Model1.arrFloat', createModel1Response.data.createModel1.arrFloat)
+        expect(oneModel1Response).toHaveProperty('data.Model1.optDateTime', createModel1Response.data.createModel1.optDateTime)
         expect(oneModel1Response.data.Model1.entity).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -324,16 +308,9 @@ describe('entity integration', () => {
         expect(updateModel1Response).toHaveProperty('data.updateModel1.opt', 'Model1/opt/iyy46ulc')
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optInt', 564003)
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optFloat', 710838.0456158707)
-        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', [
-            'Model1/arrName/18cic326',
-            'Model1/arrName/uoib8f8k',
-            'Model1/arrName/4vsdxon',
-        ])
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrName', ['Model1/arrName/18cic326', 'Model1/arrName/uoib8f8k', 'Model1/arrName/4vsdxon'])
         expect(updateModel1Response).toHaveProperty('data.updateModel1.arrInt', [969299, 459931, 920080])
-        expect(updateModel1Response).toHaveProperty(
-            'data.updateModel1.arrFloat',
-            [919167.4541117561, 816683.5093124962, 811748.9766200358],
-        )
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.arrFloat', [919167.4541117561, 816683.5093124962, 811748.9766200358])
         expect(updateModel1Response).toHaveProperty('data.updateModel1.optDateTime', '2020-08-31T22:21:58.155Z')
         expect(updateModel1Response.data.updateModel1.entity).toEqual(
             expect.arrayContaining([

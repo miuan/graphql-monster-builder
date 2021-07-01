@@ -133,7 +133,7 @@ describe('scan', () => {
             expect(() =>
                 getModelsFromSchema(`
                 type Model1 @model {
-                    model2:  @relation(name: "RelationName1")[]
+                    model2:  [@relation(name: "RelationName1")]
                 }
     
                 type Model2 @model {
@@ -148,7 +148,7 @@ describe('scan', () => {
                 getModelsFromSchema(`
                 type Model1 @model {
                     name: String
-                    model2: @relation(name: "RelationName1")[]
+                    model2: [@relation(name: "RelationName1")]
                 }
     
                 type Model2 @model {
@@ -164,7 +164,7 @@ describe('scan', () => {
                 getModelsFromSchema(`
                 type Model1 @model {
                     name: String
-                    model2: @relation(name: "RelationName1")[]
+                    model2: [@relation(name: "RelationName1")]
                     model1: @relation(name="RelationName1")
                 }
     
@@ -181,7 +181,7 @@ describe('scan', () => {
                 getModelsFromSchema(`
                 type Model1 @model {
                     name: String
-                    model2: @relation(name: "RelationName1")[]
+                    model2: [@relation(name: "RelationName1")]
                     model1: @relation(name="RelationName1")
                 }
     
@@ -197,7 +197,7 @@ describe('scan', () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String
-                    model2: @relation(name="Model1OnModel2")[]!
+                    model2: [@relation(name="Model1OnModel2")]!
                 }
     
                 type Model2 @model {
@@ -216,7 +216,7 @@ describe('scan', () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String @isUnique
-                    model2: @relation("Model1ToModel2")[]
+                    model2: [@relation("Model1ToModel2")]
                 }
     
                 type Model2 @model {
@@ -278,7 +278,7 @@ describe('scan', () => {
                 getModelsFromSchema(`
                 type Model1 @model {
                     name: String
-                    model2: @relation(name: "RelationName1")[]
+                    model2: [@relation(name: "RelationName1")]
                 }
     
                 type Entity1 @entity {
@@ -295,7 +295,7 @@ describe('scan', () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String @isUnique
-                    entity1: Entity1[]
+                    entity1: [Entity1]
                 }
     
                 type Entity1 @entity {
@@ -326,7 +326,7 @@ describe('scan', () => {
         })
 
         it('required array', () => {
-            const member = extractMemberFromLine('name2: String[]!', 1)
+            const member = extractMemberFromLine('name2: [String]!', 1)
             expect(member).toHaveProperty('name', 'name2')
             expect(member).toHaveProperty('type', 'String')
             expect(member).toHaveProperty('modelName', 'String')
@@ -337,7 +337,7 @@ describe('scan', () => {
         })
 
         it('not required array', () => {
-            const member = extractMemberFromLine('name3: Int[]', 1)
+            const member = extractMemberFromLine('name3: [Int]', 1)
             expect(member).toHaveProperty('name', 'name3')
             expect(member).toHaveProperty('type', 'Int')
             expect(member).toHaveProperty('modelName', 'Int')
@@ -372,7 +372,7 @@ describe('scan', () => {
             expect(member).toHaveProperty('relation.type', 'RELATION')
         })
         it('relation name:', () => {
-            const member = extractMemberFromLine('rel3: @relation(name:"relationName3")[]', 1)
+            const member = extractMemberFromLine('rel3: [@relation(name:"relationName3")]', 1)
             expect(member).toHaveProperty('name', 'rel3')
             expect(member).toHaveProperty('type', '@relation(name:"relationName3")')
             expect(member).toHaveProperty('modelName', null)
@@ -397,7 +397,7 @@ describe('scan', () => {
         })
 
         it('array string virtual', () => {
-            const member = extractMemberFromLine('name1: String[] @isVirtual', 10)
+            const member = extractMemberFromLine('name1: [String] @isVirtual', 10)
             expect(member).toHaveProperty('name', 'name1')
             expect(member).toHaveProperty('type', 'String')
             expect(member).toHaveProperty('modelName', 'String')
@@ -420,7 +420,7 @@ describe('scan', () => {
         })
 
         it('default text array', () => {
-            expect(() => extractMemberFromLine('defMember2: String[] @default("def member value")', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
+            expect(() => extractMemberFromLine('defMember2: [String] @default("def member value")', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
         })
 
         it('default text into Int', () => {
@@ -452,7 +452,7 @@ describe('scan', () => {
         })
 
         it('default number 123 array', () => {
-            expect(() => extractMemberFromLine('defMember2: Int[] @default(123)', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
+            expect(() => extractMemberFromLine('defMember2: [Int] @default(123)', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
         })
 
         it('default text into Int', () => {
@@ -484,7 +484,7 @@ describe('scan', () => {
         })
 
         it('default boolean array', () => {
-            expect(() => extractMemberFromLine('defMember2: Boolean[] @default(false)', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
+            expect(() => extractMemberFromLine('defMember2: [Boolean] @default(false)', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
         })
 
         it('default boolean false into Int', () => {

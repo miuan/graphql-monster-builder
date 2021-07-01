@@ -16,18 +16,18 @@ describe('add-remove integration', () => {
                     opt: String
                     optInt: Int
                     optFloat: Float
-                    arrName: String[]
-                    arrInt: Int[]
-                    arrFloat: Float[]
+                    arrName: [String]
+                    arrInt: [Int]
+                    arrFloat: [Float]
                     optDateTime: DateTime
-                    model2: @relation(name: "Model1ToModel2")[]
+                    model2: [@relation(name: "Model1ToModel2")]
                 }
 
                 type Model2 @model {
                     name: String!
                     opt: String
                     optFloat: Float
-                    model1: @relation(name: "Model1ToModel2")[]
+                    model1: [@relation(name: "Model1ToModel2")]
                 }
             `,
             3004,
