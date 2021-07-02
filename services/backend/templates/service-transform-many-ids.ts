@@ -1,7 +1,5 @@
  // templates/service-transform-many-ids.ts
  // case where data._MEMBER_NAME_ have many ids or many objects
-  let _LINKDED_IDS_ = [];
-
   if (data._PAYLOAD_NAME_FOR_CREATE_) {
     const idsOfCreated = []
     for(const createdFrom of data._PAYLOAD_NAME_FOR_CREATE_){

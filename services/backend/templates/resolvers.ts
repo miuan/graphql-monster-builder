@@ -49,7 +49,9 @@ export const _MODEL_LOWER_NAME_Create = (entry, protections) => {
       data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx });
     }
 
-    let createdModel = await entry.services['_MODEL_LOWER_NAME_'].create(data, ctx.userId);
+    const userId = ctx.state?.user?.id
+    _AUTOMATIC_USER_FROM_CTX_
+    let createdModel = await entry.services['_MODEL_LOWER_NAME_'].create(data, userId);
 
     if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Create']) {
       createdModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx, createdModel });

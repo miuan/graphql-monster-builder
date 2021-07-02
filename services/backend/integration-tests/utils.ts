@@ -196,7 +196,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
         let dropCollectionPromises = []
         await new Promise((resolve1) => {
             mongoose.connection.db.listCollections().toArray((err, collectionNames) => {
-                const myCollections = collectionNames.filter((collectionName) => collectionName.name.startsWith(name))
+                const myCollections = collectionNames.filter((collectionName) => collectionName.name.startsWith(name.toLowerCase()))
                 dropCollectionPromises = myCollections.map(
                     (collectionName) =>
                         new Promise((resolve, reject) => {
@@ -274,4 +274,21 @@ export function loadGraphQL(fileName) {
 
     const ql = file //gql(file);
     return ql
+}
+
+export function jsonWithoutCircularStructure(circularJSON) {
+    const replacerFunc = () => {
+        const listOfObject = []
+        return (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+                if (listOfObject.includes(value)) {
+                    return
+                }
+                listOfObject.push(value)
+            }
+            return value
+        }
+    }
+
+    return JSON.parse(JSON.stringify(circularJSON, replacerFunc()))
 }

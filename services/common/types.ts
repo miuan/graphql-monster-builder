@@ -117,3 +117,5 @@ export type StructureFrontend = Structure & {
 
 export const MODEL_TYPES = ['type', 'model', 'entity']
 export const MODELS_NOT_HAVE_CREATE = ['User']
+
+export const SYSTEM_MODELS = ['User', 'UserRole', 'File']

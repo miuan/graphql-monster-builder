@@ -70,7 +70,7 @@ describe('integration', () => {
             expect(res).toHaveProperty('errors')
         })
 
-        it.only('admin login', async () => {
+        it('admin login', async () => {
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
 
             const res = await server.mutate({

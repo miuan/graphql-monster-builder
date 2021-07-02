@@ -1,5 +1,5 @@
 import { templateFileToText, templateToText } from '../../common/files'
-import { SchemaModel, SchemaModelMember, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType } from '../../common/types'
+import { SchemaModel, SchemaModelMember, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType, SYSTEM_MODELS } from '../../common/types'
 import { firstToLower, getOnlyOneRelatedMember } from '../../common/utils'
 import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
@@ -91,6 +91,12 @@ export const createResolver = (model: SchemaModel) => {
 
     const { result: _RESOLVERS_ADD_REMOVE_, connect: _RESOLVERS_ADD_REMOVE_CONNECT_ } = modelCreateAddRemoveLinks(model)
 
+    const automaticUserFromCtx = !SYSTEM_MODELS.includes(modelName)
+        ? `if(!data.userId && userId){
+        data.userId = userId
+      }`
+        : ''
+
     const file = templateFileToText('resolvers.ts', {
         _RESOLVERS_ADD_REMOVE_CONNECT_,
         _RESOLVERS_ADD_REMOVE_,
@@ -107,6 +113,7 @@ export const createResolver = (model: SchemaModel) => {
         _PROTECT_CREATE_: protectionCreate,
         _PROTECT_UPDATE_: protectionUpdate,
         _PROTECT_REMOVE_: protectionRemove,
+        _AUTOMATIC_USER_FROM_CTX_: automaticUserFromCtx,
     })
 
     result += ''

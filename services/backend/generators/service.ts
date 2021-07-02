@@ -246,7 +246,9 @@ export const conversionsIdsToField = (membersWithRelation: SchemaModelMember[], 
             swithcOfLInkedIds = '// backward relation is already setup, so no need any update aditional\n\t\t// '
         }
 
-        const transformIds = templateFileToText(isMeMany ? 'service-transform-many-ids.ts' : 'service-transform-one-id.ts', {
+        let transformIds
+        let objectCreate = ''
+        const transformConfig = {
             _LOWER_NAME_: lower,
             _LINKDED_IDS_: varLinkedIds,
             _CONNECTED_MEMBER_NAME_: relatedConnecteMember.relation.payloadNameForId,
@@ -256,17 +258,21 @@ export const conversionsIdsToField = (membersWithRelation: SchemaModelMember[], 
             _SWITCH_OF_ADD_TO_LINKED_IDS_: swithcOfLInkedIds,
             _PAYLOAD_NAME_FOR_ID_: member.relation.payloadNameForId,
             _PAYLOAD_NAME_FOR_CREATE_: member.relation.payloadNameForCreate,
-        })
+        }
 
         if (isMeMany) {
-            result += `
-        ${transformIds}
-      `
+            transformIds = templateFileToText('service-transform-many-ids.ts', transformConfig)
         } else {
-            result += `
-        ${transformIds}
-      `
+            transformIds = templateFileToText('service-transform-one-id.ts', transformConfig)
+            objectCreate = member.relation.payloadNameForCreate ? templateFileToText('service-create-one-object.t.ts', transformConfig) : ''
         }
+
+        result += `
+            const ${varLinkedIds} = []
+            ${objectCreate}
+            ${transformIds}
+            
+      `
     }
 
     return result

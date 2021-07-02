@@ -8,17 +8,19 @@ import {
     SchemaModelProtectionParam,
     SchemaModelType,
     MODEL_TYPES,
+    SYSTEM_MODELS,
 } from '../common/types'
 import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
 import { setupModelsRelations } from './relations'
-import { addDefaultModelsAndMembers } from './defaultModels'
+import { addDefaultModelsAndMembers, connectedModelNameInUser, connectModelToUser, generateDefaultProtection } from './defaults'
+import { firstToUpper } from '../common/utils'
 
 export const getModelsFromSchema = (schema): SchemaModel[] => {
     const rows = schema.split('\n').map((r) => r.trim())
 
     let currentModel: SchemaModel = null
-    let currentProtection: SchemaModelProtection = generateBaseProtection()
+    let currentProtection: SchemaModelProtection = generateDefaultProtection()
     const models: SchemaModel[] = [] as SchemaModel[]
 
     let lineNumber = 1
@@ -55,7 +57,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
             currentModel.end = lineNumber
             models.push(currentModel)
             currentModel.protection = currentProtection
-            currentProtection = generateBaseProtection()
+            currentProtection = generateDefaultProtection()
             currentModel = null
         } else if (currentModel && currentRow) {
             // ** ADD MEMBERS TO CURRENT MODEL **
@@ -73,7 +75,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
 
     setupModelsRelations(models)
     checkForErrorsInModels(models)
-    addDefaultModelsAndMembers(models)
+    const { modelUser } = addDefaultModelsAndMembers(models)
 
     const modelsWithOnlyRelations = models.filter((model) => model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION))
     // in generate create and update method is not counting there is anything to create or updated
@@ -103,6 +105,8 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 relation: null,
                 row: -1,
             } as SchemaModelMember)
+
+            if (!SYSTEM_MODELS.includes(model.modelName)) connectModelToUser(modelUser, model)
         })
 
     return models.sort((m1, m2) => {
@@ -113,7 +117,9 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
 }
 
 export const checkForErrorsInModels = (models: SchemaModel[]) => {
+    const reservedInRegularModel = ['id', 'user']
     const reservedInUser = ['email', 'password', 'verified', 'roles', 'files']
+    const reservedInUserVirtual = models.filter((m) => !SYSTEM_MODELS.includes(m.modelName)).map((m) => connectedModelNameInUser(m))
     const reservedInFile = ['name', 'publicToken', 'user', 'size', 'type', 'data']
     const modelsList = []
 
@@ -129,11 +135,17 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
         if (model.modelName == 'UserRole') throw `Line ${model.start}: Model with name '${model.modelName}' have reserved name and will be add automaticaly`
 
         for (const member of model.members) {
-            if (model.modelName == 'User' && reservedInUser.indexOf(member.name) != -1)
-                throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInUser} reserved and will be add automaticaly`
-            else if (model.modelName == 'File' && reservedInFile.indexOf(member.name) != -1)
-                throw `Line: ${model.start} Model: ${model.modelName} are these fields names ${reservedInFile} reserved and will be add automaticaly`
-            else if (member.name == 'id') throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`id\` that is reserved and will be add automaticaly`
+            if (model.modelName == 'User') {
+                if (reservedInUser.indexOf(member.name) != -1)
+                    throw `Line: ${model.start} Model: ${model.modelName} have these fields names ${reservedInUser} as reserved and will be added automaticaly`
+                if (reservedInUserVirtual.indexOf(member.name) != -1) {
+                    const match = member.name.match(/_(?<modelName>\w+)/)
+                    throw `Line: ${model.start} Field name: ${member.name} is reserved as automatic generated connection UserModel with ${firstToUpper(match?.groups?.modelName)}Model`
+                }
+            } else if (model.modelName == 'File' && reservedInFile.indexOf(member.name) != -1)
+                throw `Line: ${model.start} Model: \`${model.modelName}\` are these fields names ${reservedInFile} reserved and will be add automaticaly`
+            else if (reservedInRegularModel.indexOf(member.name) != -1)
+                throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`${member.name}\` that is reserved and will be add automaticaly`
 
             if (memberList.includes(member.name)) {
                 const previous = model.members.find((m) => m.name == member.name)
@@ -163,7 +175,7 @@ export const scanProtectionLine = (line: string, protection: SchemaModelProtecti
 }
 
 export const scanProtectionUnit = (unit: string, protection: SchemaModelProtection, row: number) => {
-    const regexp = new RegExp('@[a-z]*\\(')
+    const regexp = new RegExp('@[a-z]+\\(')
     const matched = unit.match(regexp)
 
     if (!matched || matched.length !== 1) {
@@ -263,56 +275,6 @@ export const updateType = (param: SchemaModelProtectionParam, typeName: string, 
 
     param.type = type
     param.typeName = typeName
-}
-
-export const generateBaseProtection = (): SchemaModelProtection => {
-    return {
-        all: [
-            {
-                type: SchemaModelProtectionType.ROLE,
-                roles: ['admin'],
-                filter: [],
-                whitelist: [],
-                blacklist: [],
-            },
-        ],
-        one: [
-            {
-                type: SchemaModelProtectionType.ROLE,
-                roles: ['admin'],
-                filter: [],
-                whitelist: [],
-                blacklist: [],
-            },
-        ],
-        create: [
-            {
-                type: SchemaModelProtectionType.ROLE,
-                roles: ['admin'],
-                filter: [],
-                whitelist: [],
-                blacklist: [],
-            },
-        ],
-        update: [
-            {
-                type: SchemaModelProtectionType.ROLE,
-                roles: ['admin'],
-                filter: [],
-                whitelist: [],
-                blacklist: [],
-            },
-        ],
-        remove: [
-            {
-                type: SchemaModelProtectionType.ROLE,
-                roles: ['admin'],
-                filter: [],
-                whitelist: [],
-                blacklist: [],
-            },
-        ],
-    } as SchemaModelProtection
 }
 
 export const extractMemberFromLine = (row: string, lineNumber: number): SchemaModelMember => {

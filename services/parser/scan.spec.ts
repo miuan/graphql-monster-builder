@@ -1,3 +1,4 @@
+import { jsonWithoutCircularStructure } from '../backend/integration-tests/utils'
 import { SchemaModelMember } from '../common/types'
 import { setupRelationLinkNames } from './relations'
 import { getModelsFromSchema, extractMemberFromLine } from './scan'
@@ -52,17 +53,112 @@ describe('scan', () => {
         expect(fileData).toHaveProperty('isVirtual', true)
         expect(fileData).toHaveProperty('isReadonly', false)
         expect(fileData).toHaveProperty('isRequired', true)
+
+        const user = models.find((model) => model.modelName === 'User')
+        expect(user).not.toBeNull()
+
+        const userEmail = user.members.find((member) => member.name === 'email')
+        expect(userEmail).not.toBeUndefined()
+        expect(userEmail).toHaveProperty('type', 'String')
+        expect(userEmail).toHaveProperty('isArray', false)
+        expect(userEmail).toHaveProperty('isVirtual', false)
+        expect(userEmail).toHaveProperty('isReadonly', true)
+        expect(userEmail).toHaveProperty('isRequired', true)
+
+        const userVerified = user.members.find((member) => member.name === 'verified')
+        expect(userVerified).not.toBeUndefined()
+        expect(userVerified).toHaveProperty('type', 'Boolean')
+        expect(userVerified).toHaveProperty('isArray', false)
+        expect(userVerified).toHaveProperty('isVirtual', false)
+        expect(userVerified).toHaveProperty('isReadonly', true)
+        expect(userVerified).toHaveProperty('isRequired', false)
+
+        const userPassword = user.members.find((member) => member.name === 'password')
+        expect(userPassword).not.toBeUndefined()
+        expect(userPassword).toHaveProperty('type', 'String')
+        expect(userPassword).toHaveProperty('isArray', false)
+        expect(userPassword).toHaveProperty('isVirtual', false)
+        expect(userPassword).toHaveProperty('isReadonly', true)
+        expect(userPassword).toHaveProperty('isRequired', true)
+
+        const userFiles = user.members.find((member) => member.name === 'files')
+        expect(userFiles).not.toBeUndefined()
+        expect(userFiles).toHaveProperty('type', '[File]')
+        expect(userFiles).toHaveProperty('isArray', true)
+        expect(userFiles).toHaveProperty('isVirtual', false)
+        expect(userFiles).toHaveProperty('isReadonly', false)
+        expect(userFiles).toHaveProperty('isRequired', false)
     })
 
     describe('model and entities', () => {
+        it('model have reserved member with name id', async () => {
+            expect(() =>
+                getModelsFromSchema(`
+                type Model1 @model {
+                    id: ID,
+                    name: String! @isUnique
+                }
+        `),
+            ).toThrowError(/have member with name `id` that is reserved/)
+        })
+
+        it('model have reserved member with name user', async () => {
+            expect(() =>
+                getModelsFromSchema(`
+                type Model1 @model {
+                    user: String,
+                    name: String! @isUnique
+                }
+        `),
+            ).toThrowError(/have member with name `user` that is reserved/)
+        })
+
+        it('user model have reserved members with connected models myModel1s', async () => {
+            expect(() =>
+                getModelsFromSchema(`
+                type Model1 @model {
+                    name: String! @isUnique
+                }
+
+                type User @model {
+                    _model1: String
+                }
+        `),
+            ).toThrowError(/Field name: _model1 is reserved as automatic generated connection UserModel with Model1Model/)
+
+            expect(() =>
+                getModelsFromSchema(`
+                type Model2 @model {
+                    name: String! @isUnique
+                }
+
+                type User @model {
+                    _model1: String
+                }
+        `),
+            ).not.toThrowError(/Field name: _model1 is reserved as automatic generated connection UserModel with Model1Model/)
+        })
+
+        it.each(['email', 'password', 'verified', 'files'])('user model have reserved member name %s', async (member) => {
+            expect(() =>
+                getModelsFromSchema(`
+                type User @model {
+                    ${member}: String
+                }
+        `),
+            ).toThrowError(/User have these fields names/)
+        })
+
         it('type Model1 @model {...', async () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {
                     name: String! @isUnique
                 }
             `)
+
+            // const models = jsonWithoutCircularStructure(modelsRaw)
             expect(models.length).toEqual(4)
-            const model1 = models.find((m) => m.modelName == 'Model1')
+            const model1 = models.find((m) => m?.modelName == 'Model1')
             expect(model1).toHaveProperty('modelName', 'Model1')
             expect(model1).toHaveProperty('type', 'MODEL')
             expect(model1.members[0]).toHaveProperty('isArray', false)
@@ -71,6 +167,35 @@ describe('scan', () => {
 
             // automaticaly added ID
             expect(model1.members).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'id', isUnique: true, type: 'ID' })]))
+
+            // circular ...
+            // expect(model1.members).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'user', isUnique: true, type: 'User' })]))
+            const userRelation = model1.members.find((m) => m?.name == 'user')
+            expect(userRelation).toHaveProperty('type', 'User')
+            expect(userRelation).toHaveProperty('isArray', false)
+            expect(userRelation).toHaveProperty('isUnique', false)
+            expect(userRelation).toHaveProperty('isRequired', false)
+            expect(userRelation).toHaveProperty('relation.name', '_Model1OnUser')
+            expect(userRelation).toHaveProperty('relation.payloadNameForId', 'userId')
+
+            const userModel = models.find((m) => m?.modelName == 'User')
+            expect(userModel).toHaveProperty('modelName', 'User')
+            expect(userModel).toHaveProperty('type', 'MODEL')
+            const userModel1Relation = userModel.members.find((m) => m?.name == '_model1')
+            expect(userModel1Relation).toHaveProperty('type', '[Model1]')
+            expect(userModel1Relation).toHaveProperty('isArray', true)
+            expect(userModel1Relation).toHaveProperty('isUnique', false)
+            expect(userModel1Relation).toHaveProperty('isRequired', false)
+            expect(userModel1Relation).toHaveProperty('relation.name', '_Model1OnUser')
+
+            const userFile = userModel.members.find((m) => m?.name == '_file')
+            expect(userFile).toBeUndefined()
+
+            const userUser = userModel.members.find((m) => m?.name == '_user')
+            expect(userUser).toBeUndefined()
+
+            const userRole = userModel.members.find((m) => m?.name == '_userRole')
+            expect(userRole).toBeUndefined()
         })
 
         it('type Model1 @entity {...', async () => {

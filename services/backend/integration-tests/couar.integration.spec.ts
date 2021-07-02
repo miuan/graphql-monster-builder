@@ -1,61 +1,13 @@
 import * as request from 'supertest'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
-export async function createModel1(server, token, data, relations = {}) {
-    if (relations['model2'] && Array.isArray(relations['model2'])) {
-        const modelmodel2 = server.entry.models['model2']
-        const modelmodel2Data = await Promise.all(relations['model2'].map((m) => modelmodel2.create(m)))
-        data.model2Ids = modelmodel2Data.map((d) => d.id)
-    }
-
-    const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
-        createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
-        name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
-        }
-    }`
-
-    const createModel1Response = await server.mutate(
-        {
-            mutation: createModel1Mutation,
-            variables: data,
-        },
-        token,
-    )
-
-    return createModel1Response
-}
-
-export async function createModel2(server, token, data, relations = {}) {
-    if (relations['model1']) {
-        const modelmodel1 = server.entry.models['model1']
-        const modelmodel1Data = await modelmodel1.create(relations['model1'])
-        data.model1Id = modelmodel1Data.id
-    }
-
-    const createModel2Mutation = `mutation CreateModel2($name: String!,$opt: String,$optFloat: Float,$model1: InModel2MemberModel1AsModel1,$model1Id: ID){
-        createModel2(name: $name,opt: $opt,optFloat: $optFloat,model1: $model1, model1Id: $model1Id) {
-        name,opt,optFloat,model1{name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{id},id},id
-        }
-    }`
-
-    const createModel2Response = await server.mutate(
-        {
-            mutation: createModel2Mutation,
-            variables: data,
-        },
-        token,
-    )
-
-    return createModel2Response
-}
-
 describe('couad integration', () => {
     let server
     let res
 
     beforeAll(async () => {
         server = await generateAndRunServerFromSchema(
-            'couad',
+            'couar',
             `
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
@@ -133,7 +85,7 @@ describe('couad integration', () => {
 
         const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
         createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
-           name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+           name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id}
         }
     }`
 
@@ -222,6 +174,8 @@ describe('couad integration', () => {
         expect(createModel1Response).toHaveProperty('data.createModel1.model2.1.id')
         expect(createModel1Response).toHaveProperty('data.createModel1.model2.2.id')
         expect(createModel1Response).toHaveProperty('data.createModel1.id')
+
+        expect(createModel1Response.data.createModel1).toHaveProperty('user.id', res.data.login_v1.user.id)
     })
 
     it('one Model1', async () => {
@@ -752,3 +706,51 @@ describe('couad integration', () => {
         expect(model1Check1).not.toBeNull()
     })
 })
+
+export async function createModel1(server, token, data, relations = {}) {
+    if (relations['model2'] && Array.isArray(relations['model2'])) {
+        const modelmodel2 = server.entry.models['model2']
+        const modelmodel2Data = await Promise.all(relations['model2'].map((m) => modelmodel2.create(m)))
+        data.model2Ids = modelmodel2Data.map((d) => d.id)
+    }
+
+    const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+        createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+        name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+        }
+    }`
+
+    const createModel1Response = await server.mutate(
+        {
+            mutation: createModel1Mutation,
+            variables: data,
+        },
+        token,
+    )
+
+    return createModel1Response
+}
+
+export async function createModel2(server, token, data, relations = {}) {
+    if (relations['model1']) {
+        const modelmodel1 = server.entry.models['model1']
+        const modelmodel1Data = await modelmodel1.create(relations['model1'])
+        data.model1Id = modelmodel1Data.id
+    }
+
+    const createModel2Mutation = `mutation CreateModel2($name: String!,$opt: String,$optFloat: Float,$model1: InModel2MemberModel1AsModel1,$model1Id: ID){
+        createModel2(name: $name,opt: $opt,optFloat: $optFloat,model1: $model1, model1Id: $model1Id) {
+        name,opt,optFloat,model1{name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{id},id},id
+        }
+    }`
+
+    const createModel2Response = await server.mutate(
+        {
+            mutation: createModel2Mutation,
+            variables: data,
+        },
+        token,
+    )
+
+    return createModel2Response
+}

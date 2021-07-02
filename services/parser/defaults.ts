@@ -1,4 +1,5 @@
-import { SchemaModel, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType, SchemaModelType } from '../common/types'
+import { SchemaModel, SchemaModelProtection, SchemaModelProtectionParam, SchemaModelProtectionType, SchemaModelRelationType, SchemaModelType } from '../common/types'
+import { firstToLower } from '../common/utils'
 import { setupRelationLinkNames } from './relations'
 
 const DEFAULT_ADMIN_ROLE: SchemaModelProtectionParam = {
@@ -245,10 +246,26 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
     memberRolesInUser.relation.linkNames = setupRelationLinkNames(memberRolesInUser)
     // memberRolesInUser.relation.linkNames.param3 = 'role'
 
-    const memberFilesInUser = {
-        name: 'files',
-        type: '[File]',
-        modelName: 'File',
+    // memberUserInFile.relation.linkNames = setupRelationLinkNames(memberUserInFile)
+    connectModelToUser(modelUser, modelFile, 'files')
+
+    return { modelUser }
+}
+
+export const connectedModelNameInUser = (connectingModel) => {
+    //const lastSymbol = connectingModel.modelName[connectingModel.modelName.length - 1]
+    return `_${firstToLower(connectingModel.modelName)}`
+}
+
+export const connectModelToUser = (modelUser, connectingModel, memberName = undefined) => {
+    const userMemberName = memberName ? memberName : connectedModelNameInUser(connectingModel)
+    const connectingModelName = connectingModel.modelName
+    const relationName = `_${connectingModelName}OnUser`
+
+    const memberConnectInUser = {
+        name: userMemberName,
+        type: `[${connectingModelName}]`,
+        modelName: connectingModelName,
         isArray: true,
         isRequired: false,
         isUnique: false,
@@ -256,39 +273,88 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isReadonly: false,
         row: -1,
         relation: {
-            createFromAnotherModel: true,
-            inputName: 'FileOnUserPayload',
-            name: '_FileOnUser',
-            relatedModel: modelFile,
+            createFromAnotherModel: false,
+            inputName: `${connectingModelName}OnUserPayload`,
+            name: relationName,
+            relatedModel: connectingModel,
             type: SchemaModelRelationType.RELATION,
-            payloadNameForCreate: 'files',
-            payloadNameForId: 'fileIds',
+            // payloadNameForCreate: 'files',
+            // payloadNameForId: 'fileIds',
         } as any,
     }
-    // file relation to User
-    modelUser.members.push(memberFilesInUser)
-    const memberUserInFile = {
+    modelUser.members.push(memberConnectInUser)
+
+    const memberUserInConnectedModel = {
         name: 'user',
         type: 'User',
         modelName: 'User',
         isArray: false,
-        isRequired: true,
+        isRequired: false,
         isUnique: false,
         isVirtual: false,
         isReadonly: false,
         row: -1,
         relation: {
             createFromAnotherModel: false,
-            inputName: 'UserOnFilePayload',
-            name: '_FileOnUser',
+            inputName: `UserOn${connectingModelName}Payload`,
+            name: relationName,
             relatedModel: modelUser,
-            relatedMember: memberFilesInUser,
+            relatedMember: memberConnectInUser,
             type: SchemaModelRelationType.RELATION,
-            payloadNameForCreate: 'user',
+            // payloadNameForCreate: 'user',
             payloadNameForId: 'userId',
         } as any,
     }
-    modelFile.members.push(memberUserInFile)
-    memberFilesInUser.relation.relatedMember = memberUserInFile
-    // memberUserInFile.relation.linkNames = setupRelationLinkNames(memberUserInFile)
+    connectingModel.members.push(memberUserInConnectedModel)
+    memberConnectInUser.relation.relatedMember = memberConnectInUser
+}
+
+export const generateDefaultProtection = (): SchemaModelProtection => {
+    return {
+        all: [
+            {
+                type: SchemaModelProtectionType.ROLE,
+                roles: ['admin'],
+                filter: [],
+                whitelist: [],
+                blacklist: [],
+            },
+        ],
+        one: [
+            {
+                type: SchemaModelProtectionType.ROLE,
+                roles: ['admin'],
+                filter: [],
+                whitelist: [],
+                blacklist: [],
+            },
+        ],
+        create: [
+            {
+                type: SchemaModelProtectionType.ROLE,
+                roles: ['admin'],
+                filter: [],
+                whitelist: [],
+                blacklist: [],
+            },
+        ],
+        update: [
+            {
+                type: SchemaModelProtectionType.ROLE,
+                roles: ['admin'],
+                filter: [],
+                whitelist: [],
+                blacklist: [],
+            },
+        ],
+        remove: [
+            {
+                type: SchemaModelProtectionType.ROLE,
+                roles: ['admin'],
+                filter: [],
+                whitelist: [],
+                blacklist: [],
+            },
+        ],
+    } as SchemaModelProtection
 }
