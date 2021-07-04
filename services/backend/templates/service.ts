@@ -8,7 +8,15 @@ export const _LOWER_NAME_All = (entry) => {
         }
 
         const filter = extras.filterGen(data.filter)
-        let models = await _LOWER_NAME_Model.find(filter).lean()
+        let findPromise = _LOWER_NAME_Model.find(filter)
+        if(data.skip) findPromise = findPromise.skip(data.skip)
+        if(data.limit) findPromise = findPromise.limit(data.limit)
+        if(data.orderBy){
+            const {groups: {field, type}} = data.orderBy.match(/(?<field>\w+)_(?<type>(asc|desc))/)
+            findPromise = findPromise.sort([[field, type]])
+        }
+
+        let models = await findPromise.lean()
         models = models.map((m)=>{
             m.id = m._id 
             return m

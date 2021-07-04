@@ -60,7 +60,7 @@ describe('integration', () => {
             const res = await server.mutate({
                 mutation: loginQL,
                 variables: {
-                    email: 'admin1',
+                    email: 'admin@admin.test',
                     pass: '123',
                 },
             })
@@ -76,8 +76,8 @@ describe('integration', () => {
             const res = await server.mutate({
                 mutation: loginQL,
                 variables: {
-                    email: 'admin1',
-                    pass: 'admin1',
+                    email: 'admin@admin.test',
+                    pass: 'admin@admin.test',
                 },
             })
 
@@ -85,7 +85,7 @@ describe('integration', () => {
             expect(res.data.login_v1.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
             expect(res).toHaveProperty('data.login_v1.refreshToken')
             expect(res).toHaveProperty('data.login_v1.user.id')
-            expect(res).toHaveProperty('data.login_v1.user.email', 'admin1')
+            expect(res).toHaveProperty('data.login_v1.user.email', 'admin@admin.test')
             expect(res).toHaveProperty('data.login_v1.user.roles', [{ name: 'admin' }])
             expect(res).not.toHaveProperty('errors')
 
@@ -307,6 +307,22 @@ describe('integration', () => {
             expect(res2).toHaveProperty('data.login_v1.user.email', 'createdUser@createdUser33yhlzcf.com')
             expect(res2).toHaveProperty('data.login_v1.user.roles', [])
             expect(res2).not.toHaveProperty('errors')
+        })
+
+        it('should not register a email in wrong format', async () => {
+            const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register.gql')
+            const res = await server.mutate({
+                mutation: registerQL,
+                variables: {
+                    email: 'createdUser.com',
+                    pass: 'user1',
+                },
+            })
+
+            expect(res).toHaveProperty('errors')
+            expect(res).not.toHaveProperty('data.register_v1.token')
+            expect(res).not.toHaveProperty('data.register_v1.refreshToken')
+            expect(res).not.toHaveProperty('data.register_v1.user.id')
         })
 
         it('forgotten password request', async () => {

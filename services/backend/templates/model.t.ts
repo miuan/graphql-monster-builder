@@ -12,7 +12,7 @@ export const __SCHEMA_NAME__: Schema = new Schema({
   versionKey: false,
 });
 
-
+__CONSTRUCTED_INDEXIES__
 // __SCHEMA_NAME__.pre('find', function() {
 //   (<any>this)._startTime = Date.now();
 // });

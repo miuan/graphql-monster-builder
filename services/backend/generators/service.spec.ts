@@ -82,7 +82,7 @@ describe.skip('service', () => {
         ])('themIsArray:%s %s', (themIsArray, required) => {
             let serviceWithRelation
             beforeAll(() => {
-                serviceWithRelation = createServiceWithRelation(false, themIsArray, required)
+                serviceWithRelation = createServiceWithRelation(themIsArray, required)
             })
 
             beforeEach(() => {
@@ -209,7 +209,7 @@ describe.skip('service', () => {
         ])('%s %s', (themIsArray, required) => {
             let serviceWithRelation
             beforeAll(() => {
-                serviceWithRelation = createServiceWithRelation(false, themIsArray, required)
+                serviceWithRelation = createServiceWithRelation(themIsArray, required)
             })
 
             beforeEach(() => {

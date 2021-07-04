@@ -38,8 +38,8 @@ describe('add-remove integration', () => {
         loginRes = await server.mutate({
             mutation: loginQL,
             variables: {
-                email: 'admin1',
-                pass: 'admin1',
+                email: 'admin@admin.test',
+                pass: 'admin@admin.test',
             },
         })
 
@@ -47,7 +47,7 @@ describe('add-remove integration', () => {
         expect(loginRes).toHaveProperty('data.login_v1.token')
         expect(loginRes).toHaveProperty('data.login_v1.refreshToken')
         expect(loginRes).toHaveProperty('data.login_v1.user.id')
-        expect(loginRes).toHaveProperty('data.login_v1.user.email', 'admin1')
+        expect(loginRes).toHaveProperty('data.login_v1.user.email', 'admin@admin.test')
         expect(loginRes).toHaveProperty('data.login_v1.user.roles', [{ name: 'admin' }])
 
         const registerMutation = loadGraphQL('./services/backend/integration-tests/graphql/login/register.gql')

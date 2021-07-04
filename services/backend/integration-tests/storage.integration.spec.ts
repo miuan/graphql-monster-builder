@@ -23,15 +23,15 @@ describe('storage integration', () => {
         res = await server.mutate({
             mutation: loginQL,
             variables: {
-                email: 'admin1',
-                pass: 'admin1',
+                email: 'admin@admin.test',
+                pass: 'admin@admin.test',
             },
         })
 
         expect(res).toHaveProperty('data.login_v1.token')
         expect(res).toHaveProperty('data.login_v1.refreshToken')
         expect(res).toHaveProperty('data.login_v1.user.id')
-        expect(res).toHaveProperty('data.login_v1.user.email', 'admin1')
+        expect(res).toHaveProperty('data.login_v1.user.email', 'admin@admin.test')
         expect(res).toHaveProperty('data.login_v1.user.roles', [{ name: 'admin' }])
         expect(res).not.toHaveProperty('errors')
     })

@@ -16,7 +16,7 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
         if (model.type == SchemaModelType.MODEL) {
             const name = model.modelName
             // tslint:disable-next-line:max-line-length
-            result += `  all${name}(filter: ${name}Filter): [${name}Model!]!
+            result += `  all${name}(filter: ${name}Filter, orderBy: ${name}OrderBy, limit: Int, skip: Int): [${name}Model!]!
             ${name}(id: ID): ${name}Model\n
             `
         }
@@ -195,8 +195,8 @@ export const generateSchemaOrder = (model: SchemaModel, notVirtualMembers: Schem
     let result = `enum ${model.modelName}OrderBy {\n`
 
     for (const member of notVirtualMembers) {
-        result += `  ${member.name}_ASC\n`
-        result += `  ${member.name}_DESC\n`
+        result += `  ${member.name}_asc\n`
+        result += `  ${member.name}_desc\n`
     }
 
     result += '}\n\n'

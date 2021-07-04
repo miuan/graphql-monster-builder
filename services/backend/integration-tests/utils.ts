@@ -243,8 +243,8 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
     fs.writeFileSync(
         path.join(envPath, '.env'),
         `PORT=${port}
-ADMIN_EMAIL=admin1
-ADMIN_PASSWORD=${bcrypt.hashSync('admin1', 1)}
+ADMIN_EMAIL=admin@admin.test
+ADMIN_PASSWORD=${bcrypt.hashSync('admin@admin.test', 1)}
     `,
     )
 }

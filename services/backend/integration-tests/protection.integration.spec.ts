@@ -1,5 +1,5 @@
 import * as request from 'supertest'
-import { firstToLower } from '../../common/utils'
+import { firstToLower, firstToUpper } from '../../common/utils'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
 console.log = jest.fn()
@@ -8,7 +8,6 @@ console.warn = jest.fn()
 console.info = jest.fn()
 let serverPort = 1
 
-function a() {}
 // @all(filter:"user_every.id={{userId}}")
 describe('protection integration', () => {
     describe.each([
@@ -16,11 +15,12 @@ describe('protection integration', () => {
         ['user', { admin: true, user: true, public: false }, '@create("user")', '@update("owner")', '@remove("owner")', '@one("owner")', '@all("user")'],
         ['public', { admin: true, user: true, public: true }, '@create("public")', '@update("public")', '@remove("public")', '@one("public")', '@all("public")'],
     ])('protectedTo:%s', (protectedTo, allowedFor, createProtection, updateProtection, removeProtection, oneProtection, allProtection) => {
-        let admin, user, server, keyName, model1, user2
+        let admin, user, server, keyName, emailName, model1, user2
 
         beforeAll(async () => {
             const port = 3010 + serverPort++
-            keyName = `Model1${protectedTo}COUAR`
+            keyName = `Model1${firstToUpper(protectedTo)}Couar`
+            emailName = `model1.${protectedTo}.couar`
             const schema = `
             ${createProtection}
             ${updateProtection}
@@ -32,7 +32,7 @@ describe('protection integration', () => {
                 name: String!
             }
         `
-            server = await generateAndRunServerFromSchema(`protection-${protectedTo}-COUAR`, schema, port)
+            server = await generateAndRunServerFromSchema(`protection_${protectedTo}_couar`, schema, port)
             model1 = server.entry.models[firstToLower(keyName)]
 
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
@@ -40,8 +40,8 @@ describe('protection integration', () => {
             const adminRes = await server.mutate({
                 mutation: loginQL,
                 variables: {
-                    email: 'admin1',
-                    pass: 'admin1',
+                    email: 'admin@admin.test',
+                    pass: 'admin@admin.test',
                 },
             })
 
@@ -49,7 +49,7 @@ describe('protection integration', () => {
             expect(adminRes).toHaveProperty('data.login_v1.token')
             expect(adminRes).toHaveProperty('data.login_v1.refreshToken')
             expect(adminRes).toHaveProperty('data.login_v1.user.id')
-            expect(adminRes).toHaveProperty('data.login_v1.user.email', 'admin1')
+            expect(adminRes).toHaveProperty('data.login_v1.user.email', 'admin@admin.test')
             expect(adminRes).toHaveProperty('data.login_v1.user.roles', [{ name: 'admin' }])
 
             const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register.gql')
@@ -57,8 +57,8 @@ describe('protection integration', () => {
             const userRes = await server.mutate({
                 mutation: registerQL,
                 variables: {
-                    email: keyName,
-                    pass: keyName,
+                    email: `${emailName}@graphql.mo`,
+                    pass: `${emailName}@graphql.mo`,
                 },
             })
 
@@ -66,14 +66,14 @@ describe('protection integration', () => {
             expect(userRes).toHaveProperty('data.register_v1.token')
             expect(userRes).toHaveProperty('data.register_v1.refreshToken')
             expect(userRes).toHaveProperty('data.register_v1.user.id')
-            expect(userRes).toHaveProperty('data.register_v1.user.email', keyName)
+            expect(userRes).toHaveProperty('data.register_v1.user.email', `${emailName}@graphql.mo`)
             expect(userRes).toHaveProperty('data.register_v1.user.roles', [])
 
             const userRe2 = await server.mutate({
                 mutation: registerQL,
                 variables: {
-                    email: keyName + '2',
-                    pass: keyName + '2',
+                    email: `${emailName}.2@graphql.mo`,
+                    pass: `${emailName}.2@graphql.mo`,
                 },
             })
 
@@ -81,7 +81,7 @@ describe('protection integration', () => {
             expect(userRe2).toHaveProperty('data.register_v1.token')
             expect(userRe2).toHaveProperty('data.register_v1.refreshToken')
             expect(userRe2).toHaveProperty('data.register_v1.user.id')
-            expect(userRe2).toHaveProperty('data.register_v1.user.email', keyName + '2')
+            expect(userRe2).toHaveProperty('data.register_v1.user.email', `${emailName}.2@graphql.mo`)
             expect(userRe2).toHaveProperty('data.register_v1.user.roles', [])
 
             admin = adminRes.data.login_v1
@@ -372,11 +372,12 @@ describe('protection integration', () => {
     })
 
     describe('special cases', () => {
-        let admin, user, server, keyName, model1, user2
+        let admin, user, server, keyName, model1, user2, emailName
         const protectedTo = 'Filter'
         beforeAll(async () => {
             const port = 3030 + serverPort++
-            keyName = `Model1${protectedTo}COUAR`
+            keyName = `Model1${firstToUpper(protectedTo)}Couar`
+            emailName = `model1.${protectedTo}.couar`
             const schema = `
             @all(filter:"user_every.id={{userId}}")
             type ${keyName} @model {
@@ -391,8 +392,8 @@ describe('protection integration', () => {
             const adminRes = await server.mutate({
                 mutation: loginQL,
                 variables: {
-                    email: 'admin1',
-                    pass: 'admin1',
+                    email: 'admin@admin.test',
+                    pass: 'admin@admin.test',
                 },
             })
 
@@ -400,7 +401,7 @@ describe('protection integration', () => {
             expect(adminRes).toHaveProperty('data.login_v1.token')
             expect(adminRes).toHaveProperty('data.login_v1.refreshToken')
             expect(adminRes).toHaveProperty('data.login_v1.user.id')
-            expect(adminRes).toHaveProperty('data.login_v1.user.email', 'admin1')
+            expect(adminRes).toHaveProperty('data.login_v1.user.email', 'admin@admin.test')
             expect(adminRes).toHaveProperty('data.login_v1.user.roles', [{ name: 'admin' }])
 
             const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register.gql')
@@ -408,8 +409,8 @@ describe('protection integration', () => {
             const userRes = await server.mutate({
                 mutation: registerQL,
                 variables: {
-                    email: keyName,
-                    pass: keyName,
+                    email: `${emailName}@graphql.mo`,
+                    pass: `${emailName}@graphql.mo`,
                 },
             })
 
@@ -417,14 +418,14 @@ describe('protection integration', () => {
             expect(userRes).toHaveProperty('data.register_v1.token')
             expect(userRes).toHaveProperty('data.register_v1.refreshToken')
             expect(userRes).toHaveProperty('data.register_v1.user.id')
-            expect(userRes).toHaveProperty('data.register_v1.user.email', keyName)
+            expect(userRes).toHaveProperty('data.register_v1.user.email', `${emailName}@graphql.mo`)
             expect(userRes).toHaveProperty('data.register_v1.user.roles', [])
 
             const userRe2 = await server.mutate({
                 mutation: registerQL,
                 variables: {
-                    email: keyName + '2',
-                    pass: keyName + '2',
+                    email: `${emailName}.2@graphql.mo`,
+                    pass: `${emailName}.2@graphql.mo`,
                 },
             })
 
@@ -432,7 +433,7 @@ describe('protection integration', () => {
             expect(userRe2).toHaveProperty('data.register_v1.token')
             expect(userRe2).toHaveProperty('data.register_v1.refreshToken')
             expect(userRe2).toHaveProperty('data.register_v1.user.id')
-            expect(userRe2).toHaveProperty('data.register_v1.user.email', keyName + '2')
+            expect(userRe2).toHaveProperty('data.register_v1.user.email', `${emailName}.2@graphql.mo`)
             expect(userRe2).toHaveProperty('data.register_v1.user.roles', [])
 
             admin = adminRes.data.login_v1

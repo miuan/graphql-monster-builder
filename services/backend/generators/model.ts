@@ -14,7 +14,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
     const schemaName = `${lower}Schema`
 
     let constructedMembers = ''
-    let constructedIndexies = ''
+    let constructedIndexiesAndValidators = ''
     const forConstructingImports = []
 
     for (const member of notVirtualMembers) {
@@ -23,11 +23,16 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
         }
 
         if (member.isUnique && Array.isArray(member.isUnique)) {
-            constructedIndexies += `${schemaName}.index({ ${member.name}: 1`
+            constructedIndexiesAndValidators += `${schemaName}.index({ ${member.name}: 1`
             for (const c of member.isUnique as string[]) {
-                constructedIndexies += `,${c}: 1`
+                constructedIndexiesAndValidators += `,${c}: 1`
             }
-            constructedIndexies += `}, { unique: true });`
+            constructedIndexiesAndValidators += `}, { unique: true });`
+        }
+
+        if (member.regExp) {
+            const escapedRegExp = member.regExp.replace(/\//g, '\\/')
+            constructedIndexiesAndValidators += `${schemaName}.path('${member.name}').validate((${member.name}) => /${escapedRegExp}/.test(${member.name}), 'The ${member.name} is it in wrong format. RegExp(/${escapedRegExp}/')`
         }
 
         if (member.relation && member.relation.type === SchemaModelRelationType.ENTITY && !forConstructingImports.includes(member.modelName)) {
@@ -44,7 +49,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
         constructedMembers += `__parent_access_token: { type: Schema.Types.String},\n`
 
         // https://docs.mongodb.com/manual/core/index-partial/#examples
-        constructedIndexies += `
+        constructedIndexiesAndValidators += `
   ${schemaName}.index(
     { __resetPasswordToken: 1 },
     { unique: true, partialFilterExpression: { __resetPasswordToken: { $exists: true } } }
@@ -53,6 +58,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
     { __verifyToken: 1 },
     { unique: true, partialFilterExpression: { __verifyToken: { $exists: true } } }
   )
+  ${schemaName}.path('email').validate((email) => /^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$/.test(email), 'The e-mail is not in correct format.')
 `
     }
 
@@ -77,7 +83,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
         __MODEL_NAME__: modelName,
         __SCHEMA_NAME__: schemaName,
         __CONSTRUCTED_MEMBERS__: constructedMembers,
-        __CONSTRUCTED_INDEXIES__: constructedIndexies,
+        __CONSTRUCTED_INDEXIES__: constructedIndexiesAndValidators,
         __CONSTRUCTED_IMPORTS__: constructedImports,
         __EXPORT_MODEL__: modelExport,
     })

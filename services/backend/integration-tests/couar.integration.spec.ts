@@ -12,6 +12,7 @@ describe('couad integration', () => {
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
                     name: String!
+                    optReg: String @regExp("Model1/(\\w+)")
                     opt: String
                     optInt: Int
                     optFloat: Float
@@ -37,15 +38,15 @@ describe('couad integration', () => {
         res = await server.mutate({
             mutation: loginQL,
             variables: {
-                email: 'admin1',
-                pass: 'admin1',
+                email: 'admin@admin.test',
+                pass: 'admin@admin.test',
             },
         })
 
         expect(res).toHaveProperty('data.login_v1.token')
         expect(res).toHaveProperty('data.login_v1.refreshToken')
         expect(res).toHaveProperty('data.login_v1.user.id')
-        expect(res).toHaveProperty('data.login_v1.user.email', 'admin1')
+        expect(res).toHaveProperty('data.login_v1.user.email', 'admin@admin.test')
         expect(res).toHaveProperty('data.login_v1.user.roles', [{ name: 'admin' }])
         expect(res).not.toHaveProperty('errors')
     })
@@ -54,7 +55,7 @@ describe('couad integration', () => {
         await disconnectFromServer(server)
     })
 
-    it('create Model1', async () => {
+    it('should create Model1', async () => {
         const token = res.data.login_v1.token
 
         const modelModel2 = server.entry.models['model2']
@@ -83,9 +84,9 @@ describe('couad integration', () => {
             }),
         ])
 
-        const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
-        createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
-           name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id}
+        const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optReg: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+        createModel1(name: $name,opt: $opt,optReg: $optReg,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+           name,opt,optReg,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id},createdAt, updatedAt
         }
     }`
 
@@ -95,6 +96,7 @@ describe('couad integration', () => {
                 variables: {
                     name: 'Model1/name/xie76tc',
                     opt: 'Model1/opt/allzauub',
+                    optReg: 'Model1/optReg/allzauub',
                     optInt: 521167,
                     optFloat: 617953.2791989135,
                     arrName: ['Model1/arrName/e9a6l28', 'Model1/arrName/3ux94bkk', 'Model1/arrName/p3po6mke'],
@@ -124,6 +126,9 @@ describe('couad integration', () => {
             token,
         )
         expect(createModel1Response).not.toHaveProperty('errors')
+        expect(createModel1Response).toHaveProperty('data.createModel1.id')
+        expect(createModel1Response).toHaveProperty('data.createModel1.createdAt')
+        expect(createModel1Response).toHaveProperty('data.createModel1.updatedAt')
         expect(createModel1Response).toHaveProperty('data.createModel1.name', 'Model1/name/xie76tc')
         expect(createModel1Response).toHaveProperty('data.createModel1.opt', 'Model1/opt/allzauub')
         expect(createModel1Response).toHaveProperty('data.createModel1.optInt', 521167)
@@ -176,6 +181,32 @@ describe('couad integration', () => {
         expect(createModel1Response).toHaveProperty('data.createModel1.id')
 
         expect(createModel1Response.data.createModel1).toHaveProperty('user.id', res.data.login_v1.user.id)
+    })
+
+    it('should not create Model1 because optReg is in wrong format', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optReg: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+        createModel1(name: $name,opt: $opt,optReg: $optReg,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+           name,opt,optReg,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id}
+        }
+    }`
+
+        const createModel1Response = await server.mutate(
+            {
+                mutation: createModel1Mutation,
+                variables: {
+                    name: 'Model1/name/xie76tc',
+                    opt: 'Model1/opt/allzauub',
+                    optReg: '<wrong>/optReg/allzauub',
+                    optInt: 521167,
+                    optFloat: 617953.2791989135,
+                },
+            },
+            token,
+        )
+        expect(createModel1Response).toHaveProperty('errors')
+        expect(createModel1Response.errors[0].message).toMatch(/optReg/)
     })
 
     it('one Model1', async () => {
@@ -704,6 +735,110 @@ describe('couad integration', () => {
 
         const model1Check1 = await server.entry.models['model1'].findById(createModel2Response.data.createModel2.model1.id)
         expect(model1Check1).not.toBeNull()
+    })
+
+    describe('all', () => {
+        const allModel1Query = `query allModel1($filter: Model1Filter, $skip: Int, $limit: Int, $orderBy: Model1OrderBy) {
+            allModel1(filter: $filter, orderBy: $orderBy, limit: $limit, skip: $skip) {
+                name,opt
+            }
+        }`
+
+        const queryAllWithFilter = async (filter, orderBy = undefined, limit = undefined, skip = undefined) =>
+            server.query(
+                {
+                    query: allModel1Query,
+                    variables: {
+                        filter,
+                        orderBy,
+                        skip,
+                        limit,
+                    },
+                },
+                res.data.login_v1.token,
+            )
+
+        beforeAll(async () => {
+            const token = res.data.login_v1.token
+
+            const createModel1Response = await Promise.all([
+                createModel1(server, token, { name: 'Model1/name/filter/a', optInt: 1 }),
+                createModel1(server, token, { name: 'Model1/name/filter/b', optInt: 2 }),
+                createModel1(server, token, { name: 'Model1/name/filter/c', optInt: 3 }),
+                createModel1(server, token, { name: 'Model1/name/filter/d', optInt: 4 }),
+            ])
+        })
+
+        it("should return 4 with filter name_contains: 'filter'", async () => {
+            const allModel1Response = await queryAllWithFilter({
+                name_contains: 'filter',
+            })
+
+            expect(allModel1Response).not.toHaveProperty('errors')
+            expect(allModel1Response.data.allModel1).toHaveLength(4)
+            expect(allModel1Response.data.allModel1).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ name: 'Model1/name/filter/a' }),
+                    expect.objectContaining({ name: 'Model1/name/filter/b' }),
+                    expect.objectContaining({ name: 'Model1/name/filter/c' }),
+                    expect.objectContaining({ name: 'Model1/name/filter/d' }),
+                ]),
+            )
+        })
+
+        it("should return b,c with filter name_contains: 'filter' and with total 2 and skip 1 and sort by name ", async () => {
+            const allModel1Response = await queryAllWithFilter(
+                {
+                    name_contains: 'filter',
+                },
+                'name_desc',
+                2,
+                1,
+            )
+
+            expect(allModel1Response).not.toHaveProperty('errors')
+            expect(allModel1Response.data.allModel1).toHaveLength(2)
+            expect(allModel1Response.data.allModel1).toEqual(
+                expect.arrayContaining([expect.objectContaining({ name: 'Model1/name/filter/b' }), expect.objectContaining({ name: 'Model1/name/filter/c' })]),
+            )
+        })
+
+        it("should return 1 with filter { name_contains: 'filter' }, { optInt_gt: 3 }", async () => {
+            const allModel1Response = await queryAllWithFilter({
+                AND: [{ name_contains: 'filter' }, { optInt_gt: 3 }],
+            })
+
+            expect(allModel1Response).not.toHaveProperty('errors')
+            expect(allModel1Response.data.allModel1).toHaveLength(1)
+        })
+
+        it("should return 3 with filter AND: [{ name_contains: 'filter' }, { name_not_contains: 'c' }]", async () => {
+            const allModel1Response = await queryAllWithFilter({
+                AND: [{ name_contains: 'filter' }, { name_not_contains: '/c' }],
+            })
+
+            expect(allModel1Response).not.toHaveProperty('errors')
+            expect(allModel1Response.data.allModel1).toHaveLength(3)
+            expect(allModel1Response.data.allModel1).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ name: 'Model1/name/filter/a' }),
+                    expect.objectContaining({ name: 'Model1/name/filter/b' }),
+                    expect.objectContaining({ name: 'Model1/name/filter/d' }),
+                ]),
+            )
+        })
+
+        it("should return 2 with filter OR: [{ name_contains: '/b' }, { name_contains: '/c' }]", async () => {
+            const allModel1Response = await queryAllWithFilter({
+                OR: [{ name_contains: '/b' }, { name_contains: '/c' }],
+            })
+
+            expect(allModel1Response).not.toHaveProperty('errors')
+            expect(allModel1Response.data.allModel1).toHaveLength(2)
+            expect(allModel1Response.data.allModel1).toEqual(
+                expect.arrayContaining([expect.objectContaining({ name: 'Model1/name/filter/b' }), expect.objectContaining({ name: 'Model1/name/filter/c' })]),
+            )
+        })
     })
 })
 

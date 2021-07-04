@@ -106,6 +106,32 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 row: -1,
             } as SchemaModelMember)
 
+            model.members.unshift({
+                name: 'createdAt',
+                type: 'DateTime',
+                modelName: 'DateTime',
+                isArray: false,
+                isRequired: false,
+                isUnique: false,
+                isVirtual: false,
+                isReadonly: true,
+                relation: null,
+                row: -1,
+            } as SchemaModelMember)
+
+            model.members.unshift({
+                name: 'updatedAt',
+                type: 'DateTime',
+                modelName: 'DateTime',
+                isArray: false,
+                isRequired: false,
+                isUnique: false,
+                isVirtual: false,
+                isReadonly: true,
+                relation: null,
+                row: -1,
+            } as SchemaModelMember)
+
             if (!SYSTEM_MODELS.includes(model.modelName)) connectModelToUser(modelUser, model)
         })
 
@@ -117,7 +143,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
 }
 
 export const checkForErrorsInModels = (models: SchemaModel[]) => {
-    const reservedInRegularModel = ['id', 'user']
+    const reservedInRegularModel = ['id', 'user', 'createdAt', 'updatedAt']
     const reservedInUser = ['email', 'password', 'verified', 'roles', 'files']
     const reservedInUserVirtual = models.filter((m) => !SYSTEM_MODELS.includes(m.modelName)).map((m) => connectedModelNameInUser(m))
     const reservedInFile = ['name', 'publicToken', 'user', 'size', 'type', 'data']
