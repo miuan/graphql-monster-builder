@@ -71,17 +71,19 @@ export const generateLogin = (entry) => async (root, data, ctx) => {
 
 export const generateRegister =
     (entry) =>
-    async (root, { email, password }, ctx) => {
+    async (root, data, ctx) => {
+        const {password, email} = data
         const userModel = await entry.models['user']
 
         if (await userModel.exists({ email })) {
             throw `User with email: ${email} already exist`
         }
 
+        delete data.password
         const __verifyToken = await createVerifyToken(userModel)
         const __password = await generateHash(password)
         const user = {
-            email,
+           ...data,
             __password,
             password: '******',
             verified: false,

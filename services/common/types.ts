@@ -49,6 +49,7 @@ export type SchemaModelMember = {
     type: string
     modelName: string
     isRequired: boolean
+    isRegisterRequired?: boolean
     isUnique: boolean | string[]
     relation: SchemaModelRelation
     isArray: boolean
@@ -58,6 +59,7 @@ export type SchemaModelMember = {
     default?: number | string | boolean
     regExp?: string
     placeholder?: string
+    isSystem?: boolean
 }
 
 export enum SchemaModelProtectionType {

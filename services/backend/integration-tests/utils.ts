@@ -262,10 +262,22 @@ export async function disconnectFromServer(server: any) {
 export function loadGraphQL(fileName) {
     let file = fs.readFileSync(fileName).toString()
     if (file.startsWith('#import "')) {
+        let fragment = '',
+            fragment2 = ''
         const match = file.match(/#import "(.*?)"/)
-        const fragmenName = path.join(path.dirname(fileName), match[1])
-        const fragment = fs.readFileSync(fragmenName).toString()
+        if (match?.length > 0) {
+            const fragmenName = path.join(path.dirname(fileName), match[1])
+            fragment = fs.readFileSync(fragmenName).toString()
+
+            const match2 = fragment.match(/#import "(.*?)"/)
+            if (match2?.length > 0) {
+                const fragmenName2 = path.join(path.dirname(fileName), match2[1])
+                fragment2 = fs.readFileSync(fragmenName2).toString()
+            }
+        }
+
         file = `
+            ${fragment2}
             ${fragment}
 
             ${file}

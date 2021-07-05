@@ -77,6 +77,16 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
     checkForErrorsInModels(models)
     const { modelUser } = addDefaultModelsAndMembers(models)
 
+    // check members in user if any required
+    // because required fields not allow create a regular admin
+    // we introduce special type registerRequired only required
+    // not in register not in rest of system
+    modelUser.members = modelUser.members.map((um) => {
+        if (!um.isSystem && um.isRequired) {
+            return { ...um, isRequired: false, isRegisterRequired: true }
+        } else return um
+    })
+
     const modelsWithOnlyRelations = models.filter((model) => model.members.every((member) => member.relation?.type === SchemaModelRelationType.RELATION))
     // in generate create and update method is not counting there is anything to create or updated
     if (modelsWithOnlyRelations?.length) {
@@ -103,6 +113,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 isVirtual: false,
                 isReadonly: true,
                 relation: null,
+                isSystem: true,
                 row: -1,
             } as SchemaModelMember)
 
@@ -116,6 +127,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 isVirtual: false,
                 isReadonly: true,
                 relation: null,
+                isSystem: true,
                 row: -1,
             } as SchemaModelMember)
 
@@ -129,6 +141,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
                 isVirtual: false,
                 isReadonly: true,
                 relation: null,
+                isSystem: true,
                 row: -1,
             } as SchemaModelMember)
 

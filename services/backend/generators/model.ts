@@ -32,7 +32,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
 
         if (member.regExp) {
             const escapedRegExp = member.regExp.replace(/\//g, '\\/')
-            constructedIndexiesAndValidators += `${schemaName}.path('${member.name}').validate((${member.name}) => /${escapedRegExp}/.test(${member.name}), 'The ${member.name} is it in wrong format. RegExp(/${escapedRegExp}/')`
+            constructedIndexiesAndValidators += `${schemaName}.path('${member.name}').validate((${member.name}) => /${escapedRegExp}/.test(${member.name}), 'The ${member.name} is it in wrong format. It should match RegExp(/${escapedRegExp}/')\n`
         }
 
         if (member.relation && member.relation.type === SchemaModelRelationType.ENTITY && !forConstructingImports.includes(member.modelName)) {

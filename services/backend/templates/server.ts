@@ -195,6 +195,7 @@ export async function updateAdminUser(rawPassword = true) {
     // TODO: add all roles what is in schema
     const adminRole = await createRole(entry, 'admin')
     const adminUser = await createUser(entry, admin_email, admin_pass_raw, [adminRole._id])
+    return [adminUser, adminRole]
 }
 
 export const connectionPromise = new Promise((resolve, reject) => {

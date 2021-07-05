@@ -112,7 +112,7 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
     }
 
     result += `   login_v1(email: String!, password: String!): UserToken\n`
-    result += `   register_v1(email: String!, password: String!): UserToken\n`
+    result += `   register_v1(${generateRegisterAdditionalParams(models.find((m) => m.modelName === 'User'))}): UserToken\n`
     result += `   logout_v1(userId: ID!): LogoutStatus\n`
     result += `   refreshToken_v1(userId: ID!, token: String!, refreshToken: String!): UserToken\n`
     result += `   changePassword_v1(userId: ID!, oldPassword: String!, newPassword: String!): UserToken\n`
@@ -125,6 +125,14 @@ export const generateSchemaMutations = (models: SchemaModel[]) => {
     result += '}\n\n'
 
     return result
+}
+
+export const generateRegisterAdditionalParams = (model: SchemaModel) => {
+    const exceptins = ['email', 'password']
+    const notSystemMembers = model.members.filter((m) => !m.isSystem || exceptins.includes(m.name))
+    const params = notSystemMembers.map((m) => `${m.name}: ${m.type}${m.isRegisterRequired ? '!' : ''}`).join(', ')
+
+    return params
 }
 
 export const generateInputParamsForMutationModel = (model: SchemaModel, options: any = null) => {

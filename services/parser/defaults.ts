@@ -22,6 +22,7 @@ const USER_MEMBERS = [
         isVirtual: false,
         isReadonly: true,
         relation: null,
+        isSystem: true,
         row: -1,
     },
     {
@@ -35,6 +36,7 @@ const USER_MEMBERS = [
         isReadonly: true,
         relation: null,
         default: '*****',
+        isSystem: true,
         row: -1,
     },
     {
@@ -47,6 +49,7 @@ const USER_MEMBERS = [
         isVirtual: false,
         isReadonly: true,
         relation: null,
+        isSystem: true,
         row: -1,
     },
 ]
@@ -86,6 +89,7 @@ const USERROLE_MODEL = {
             isArray: false,
             isVirtual: false,
             isReadonly: false,
+            isSystem: true,
             row: -1,
         },
     ],
@@ -105,6 +109,7 @@ const FILE_MEMBERS = [
         isArray: false,
         isVirtual: false,
         isReadonly: false,
+        isSystem: true,
         row: -1,
     },
     {
@@ -117,6 +122,7 @@ const FILE_MEMBERS = [
         isReadonly: true,
         isRequired: true,
         relation: null,
+        isSystem: true,
         row: -1,
     },
     {
@@ -130,6 +136,7 @@ const FILE_MEMBERS = [
         isVirtual: false,
         isReadonly: false,
         default: 'text/plain',
+        isSystem: true,
         row: -1,
     },
     {
@@ -142,6 +149,7 @@ const FILE_MEMBERS = [
         isArray: false,
         isVirtual: false,
         isReadonly: true,
+        isSystem: true,
         row: -1,
     },
     {
@@ -154,6 +162,7 @@ const FILE_MEMBERS = [
         isArray: false,
         isVirtual: true,
         isReadonly: false,
+        isSystem: true,
         row: -1,
     },
 ]
@@ -206,6 +215,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isUnique: false,
         isVirtual: false,
         isReadonly: false,
+        isSystem: true,
         row: -1,
         relation: {
             createFromAnotherModel: true,
@@ -229,6 +239,7 @@ export const addDefaultModelsAndMembers = (models: SchemaModel[]) => {
         isUnique: false,
         isVirtual: false,
         isReadonly: false,
+        isSystem: true,
         row: -1,
         relation: {
             createFromAnotherModel: false,
@@ -271,6 +282,7 @@ export const connectModelToUser = (modelUser, connectingModel, memberName = unde
         isUnique: false,
         isVirtual: false,
         isReadonly: false,
+        isSystem: true,
         row: -1,
         relation: {
             createFromAnotherModel: false,
@@ -293,6 +305,7 @@ export const connectModelToUser = (modelUser, connectingModel, memberName = unde
         isUnique: false,
         isVirtual: false,
         isReadonly: false,
+        isSystem: true,
         row: -1,
         relation: {
             createFromAnotherModel: false,

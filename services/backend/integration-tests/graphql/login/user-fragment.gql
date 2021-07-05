@@ -1,0 +1,8 @@
+fragment loginRegisterUserFragment on UserModel {
+    id
+    email
+    verified
+    roles {
+        name
+    }
+}
