@@ -494,7 +494,7 @@ describe('integration', () => {
             })
 
             expect(res).toHaveProperty('errors')
-            expect(res.errors[0].message).toMatch(/The firstname is it in wrong format./)
+            expect(res.errors[0].message).toMatch(/The firstname should match RegExp/)
             expect(res).not.toHaveProperty('data.register_v1.token')
             expect(res).not.toHaveProperty('data.register_v1.refreshToken')
             expect(res).not.toHaveProperty('data.register_v1.user.id')

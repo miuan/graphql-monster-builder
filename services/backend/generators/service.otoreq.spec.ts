@@ -5,7 +5,7 @@ describe.skip('service otoreq', () => {
         describe('required ONE_TO_ONE', () => {
             let serviceWithRelation
             beforeAll(() => {
-                serviceWithRelation = createServiceWithRelation(false, true, 'required')
+                serviceWithRelation = createServiceWithRelation(true, 'required')
             })
 
             beforeEach(() => {
