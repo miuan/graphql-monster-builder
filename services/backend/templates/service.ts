@@ -88,7 +88,7 @@ export const _LOWER_NAME_Update = (entry) => {
         _DISCONNECT_RELATIONS_
         _ALL_IDS_CONVERSIONS_UPDATE_
         _EXTRA_ACTION_BEFORE_UPDATE_
-        let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true })
+        let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true, runValidators: true})
 
         // connect all relations
         _CONNECT_RELATION_UPDATE_

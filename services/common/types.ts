@@ -121,3 +121,4 @@ export const MODEL_TYPES = ['type', 'model', 'entity']
 export const MODELS_NOT_HAVE_CREATE = ['User']
 
 export const SYSTEM_MODELS = ['User', 'UserRole', 'File']
+export const SYSTEM_TYPES = ['ID', 'Boolean', 'String', 'Int', 'Float', 'DateTime']

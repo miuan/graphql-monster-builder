@@ -9,6 +9,7 @@ import {
     SchemaModelType,
     MODEL_TYPES,
     SYSTEM_MODELS,
+    SYSTEM_TYPES,
 } from '../common/types'
 import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
@@ -35,6 +36,10 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
 
             if (!/^[A-Z]/.test(modelName)) {
                 throw `Line ${lineNumber}: The model name '${modelName}' should start with capital leter '[A-Z]'`
+            }
+
+            if (SYSTEM_TYPES.includes(modelName)) {
+                throw `Line ${lineNumber}: The model name '${modelName}' what colides with system scalar type '${modelName}'`
             }
 
             if (!MODEL_TYPES.includes(modelType)) {
@@ -368,7 +373,7 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         // the actual model name will setup from related model
         // in method relations.ts/setupModelsRelations
         member.modelName = null
-    } else if (!['ID', 'Boolean', 'String', 'Int', 'Float', 'DateTime'].includes(type)) {
+    } else if (!SYSTEM_TYPES.includes(type)) {
         member.relation = {
             name: `_${type}_ENTITY`,
             type: SchemaModelRelationType.ENTITY,
@@ -386,9 +391,9 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         }
     }
 
-    // if (!member.relation && !['ID', 'Boolean', 'String', 'Int', 'Float', 'DateTime'].includes(member.modelName)) {
-    //     throw new Error(`Line ${lineNumber}: Unknown type ${member.modelName}`)
-    // }
+    if (member.regExp && member.modelName !== 'String') {
+        throw new Error(`Line ${lineNumber}: RegExp validation can't be combined with another type than 'String', ${member.name} have type: ${member.modelName}`)
+    }
 
     return member
 }

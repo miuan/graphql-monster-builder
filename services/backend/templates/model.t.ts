@@ -43,4 +43,12 @@ __CONSTRUCTED_INDEXIES__
 //   }
 // })
 
+// __SCHEMA_NAME__.post('save', (error, doc, next) => {
+//   if (error.name === 'ValidationError') {
+//     next(new Error('email must be unique'));
+//   } else {
+//     next(error);
+//   }
+//   })
+
 __EXPORT_MODEL__

@@ -12,7 +12,8 @@ describe('couad integration', () => {
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
                     name: String!
-                    optReg: String @regExp("Model1/(\\w+)")
+                    optReg: String @regExp("^Model1\/[\\w]{5}$")
+                    optRegArr: [String] @regExp("^Model1\/[\\w]{3,7}$")
                     opt: String
                     optInt: Int
                     optFloat: Float
@@ -96,7 +97,6 @@ describe('couad integration', () => {
                 variables: {
                     name: 'Model1/name/xie76tc',
                     opt: 'Model1/opt/allzauub',
-                    optReg: 'Model1/optReg/allzauub',
                     optInt: 521167,
                     optFloat: 617953.2791989135,
                     arrName: ['Model1/arrName/e9a6l28', 'Model1/arrName/3ux94bkk', 'Model1/arrName/p3po6mke'],
@@ -183,6 +183,33 @@ describe('couad integration', () => {
         expect(createModel1Response.data.createModel1).toHaveProperty('user.id', res.data.login_v1.user.id)
     })
 
+    it('should not create Model1 because one item of optRegArr is in wrong format', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optReg: String,$optRegArr: [String], $optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+        createModel1(name: $name,opt: $opt,optReg: $optReg,optRegArr: $optRegArr, optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+           name,opt,optReg,optRegArr,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id}
+        }
+    }`
+
+        const createModel1Response = await server.mutate(
+            {
+                mutation: createModel1Mutation,
+                variables: {
+                    name: 'Model1/name/xie76tc',
+                    optReg: 'Model1/allza',
+                    optRegArr: ['Model1/stri', 'Model1/string'],
+                    optInt: 521167,
+                    optFloat: 617953.2791989135,
+                },
+            },
+            token,
+        )
+        expect(createModel1Response).not.toHaveProperty('errors')
+        expect(createModel1Response).toHaveProperty('data.createModel1.optReg', 'Model1/allza')
+        expect(createModel1Response).toHaveProperty('data.createModel1.optRegArr', ['Model1/stri', 'Model1/string'])
+    })
+
     it('should not create Model1 because optReg is in wrong format', async () => {
         const token = res.data.login_v1.token
 
@@ -207,6 +234,32 @@ describe('couad integration', () => {
         )
         expect(createModel1Response).toHaveProperty('errors')
         expect(createModel1Response.errors[0].message).toMatch(/optReg/)
+    })
+
+    it('should not create Model1 because one item of optRegArr is in wrong format', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optReg: String,$optRegArr: [String], $optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+        createModel1(name: $name,opt: $opt,optReg: $optReg,optRegArr: $optRegArr, optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+           name,opt,optReg,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id}
+        }
+    }`
+
+        const createModel1Response = await server.mutate(
+            {
+                mutation: createModel1Mutation,
+                variables: {
+                    name: 'Model1/name/xie76tc',
+                    opt: 'Model1/opt/allzauub',
+                    optRegArr: ['Model1/stri', 'Model1/stringtolong'],
+                    optInt: 521167,
+                    optFloat: 617953.2791989135,
+                },
+            },
+            token,
+        )
+        expect(createModel1Response).toHaveProperty('errors')
+        expect(createModel1Response.errors[0].message).toMatch(/optRegArr/)
     })
 
     it('one Model1', async () => {
@@ -506,6 +559,101 @@ describe('couad integration', () => {
         expect(updateModel1Response).toHaveProperty('data.updateModel1.model2.1.id')
         expect(updateModel1Response).not.toHaveProperty('data.updateModel1.model2.2.id')
         expect(updateModel1Response).toHaveProperty('data.updateModel1.id', createModel1Response.data.createModel1.id)
+    })
+
+    it('should update Model1 even with regExp fields', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Data = {
+            name: 'Model1/name/9xdozt5',
+        }
+
+        const createModel1Response = await createModel1(server, token, createModel1Data)
+
+        const updateModel1Mutation = `mutation UpdateModel1($name: String,$optReg: String,$optRegArr: [String],$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!],$id: ID!){
+    updateModel1(name: $name,optReg: $optReg,optRegArr: $optRegArr,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids,id: $id) {
+       name,optReg,optRegArr,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
+
+        const updateModel1Response = await server.mutate(
+            {
+                mutation: updateModel1Mutation,
+                variables: {
+                    opt: 'Model1/opt/iyy46ulc',
+                    optReg: 'Model1/allz2',
+                    optRegArr: ['Model1/stri2', 'Model1/strin2'],
+                    id: createModel1Response.data.createModel1.id,
+                },
+            },
+            token,
+        )
+
+        expect(updateModel1Response).not.toHaveProperty('errors')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optReg', 'Model1/allz2')
+        expect(updateModel1Response).toHaveProperty('data.updateModel1.optRegArr', ['Model1/stri2', 'Model1/strin2'])
+    })
+
+    it('should not update Model1 because optReg is in wrong format', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Data = {
+            name: 'Model1/name/0xdozt6',
+        }
+
+        const createModel1Response = await createModel1(server, token, createModel1Data)
+
+        const updateModel1Mutation = `mutation UpdateModel1($name: String,$optReg: String,$optRegArr: [String],$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!],$id: ID!){
+    updateModel1(name: $name,optReg: $optReg,optRegArr: $optRegArr,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids,id: $id) {
+       name,optReg,optRegArr,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
+
+        const updateModel1Response = await server.mutate(
+            {
+                mutation: updateModel1Mutation,
+                variables: {
+                    opt: 'Model1/opt/iyy46ulc',
+                    optReg: '<wrong>/optReg/allzauub',
+                    id: createModel1Response.data.createModel1.id,
+                },
+            },
+            token,
+        )
+
+        expect(updateModel1Response).toHaveProperty('errors')
+        expect(updateModel1Response.errors[0].message).toMatch(/optReg/)
+    })
+
+    it('should not update Model1 because one of optRegArr is in wrong format', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Data = {
+            name: 'Model1/name/0xdozt6',
+        }
+
+        const createModel1Response = await createModel1(server, token, createModel1Data)
+
+        const updateModel1Mutation = `mutation UpdateModel1($name: String,$optReg: String,$optRegArr: [String],$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!],$id: ID!){
+    updateModel1(name: $name,optReg: $optReg,optRegArr: $optRegArr,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids,id: $id) {
+       name,optReg,optRegArr,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+    }
+}`
+
+        const updateModel1Response = await server.mutate(
+            {
+                mutation: updateModel1Mutation,
+                variables: {
+                    opt: 'Model1/opt/iyy46ulc',
+                    optRegArr: ['Model1/stri2', '<wrong>/strin2'],
+                    id: createModel1Response.data.createModel1.id,
+                },
+            },
+            token,
+        )
+
+        expect(updateModel1Response).toHaveProperty('errors')
+        expect(updateModel1Response.errors[0].message).toMatch(/optRegArr/)
     })
 
     it('all Model1', async () => {

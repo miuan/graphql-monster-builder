@@ -1,5 +1,5 @@
 import { jsonWithoutCircularStructure } from '../backend/integration-tests/utils'
-import { SchemaModelMember } from '../common/types'
+import { SchemaModelMember, SYSTEM_MODELS, SYSTEM_TYPES } from '../common/types'
 import { setupRelationLinkNames } from './relations'
 import { getModelsFromSchema, extractMemberFromLine } from './scan'
 
@@ -21,6 +21,7 @@ describe('scan', () => {
         expect(fileName).toHaveProperty('isVirtual', false)
         expect(fileName).toHaveProperty('isReadonly', false)
         expect(fileName).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const fileType = file.members.find((member) => member.name === 'type')
         expect(fileType).not.toBeUndefined()
@@ -28,6 +29,7 @@ describe('scan', () => {
         expect(fileType).toHaveProperty('isVirtual', false)
         expect(fileType).toHaveProperty('isReadonly', false)
         expect(fileType).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
         expect(fileType).toHaveProperty('default', 'text/plain')
 
         const fileSize = file.members.find((member) => member.name === 'size')
@@ -36,6 +38,7 @@ describe('scan', () => {
         expect(fileSize).toHaveProperty('isVirtual', false)
         expect(fileSize).toHaveProperty('isReadonly', true)
         expect(fileSize).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const filePublicKey = file.members.find((member) => member.name === 'publicKey')
         expect(filePublicKey).not.toBeUndefined()
@@ -44,6 +47,7 @@ describe('scan', () => {
         expect(filePublicKey).toHaveProperty('isUnique', true)
         expect(filePublicKey).toHaveProperty('isReadonly', true)
         expect(filePublicKey).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const fileDatas = file.members.filter((member) => member.name === 'data')
         expect(fileDatas).toHaveLength(1)
@@ -53,6 +57,7 @@ describe('scan', () => {
         expect(fileData).toHaveProperty('isVirtual', true)
         expect(fileData).toHaveProperty('isReadonly', false)
         expect(fileData).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const user = models.find((model) => model.modelName === 'User')
         expect(user).not.toBeNull()
@@ -64,6 +69,7 @@ describe('scan', () => {
         expect(userEmail).toHaveProperty('isVirtual', false)
         expect(userEmail).toHaveProperty('isReadonly', true)
         expect(userEmail).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const userVerified = user.members.find((member) => member.name === 'verified')
         expect(userVerified).not.toBeUndefined()
@@ -72,6 +78,7 @@ describe('scan', () => {
         expect(userVerified).toHaveProperty('isVirtual', false)
         expect(userVerified).toHaveProperty('isReadonly', true)
         expect(userVerified).toHaveProperty('isRequired', false)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const userPassword = user.members.find((member) => member.name === 'password')
         expect(userPassword).not.toBeUndefined()
@@ -80,6 +87,7 @@ describe('scan', () => {
         expect(userPassword).toHaveProperty('isVirtual', false)
         expect(userPassword).toHaveProperty('isReadonly', true)
         expect(userPassword).toHaveProperty('isRequired', true)
+        expect(fileName).toHaveProperty('isSystem', true)
 
         const userFiles = user.members.find((member) => member.name === 'files')
         expect(userFiles).not.toBeUndefined()
@@ -88,9 +96,21 @@ describe('scan', () => {
         expect(userFiles).toHaveProperty('isVirtual', false)
         expect(userFiles).toHaveProperty('isReadonly', false)
         expect(userFiles).toHaveProperty('isRequired', false)
+        expect(fileName).toHaveProperty('isSystem', true)
     })
 
     describe('model and entities', () => {
+        it.each(SYSTEM_TYPES)('should fail with model name %s', async (type) => {
+            const regExp = new RegExp(`The model name '${type}' what colides with system scalar type '${type}'`)
+            expect(() =>
+                getModelsFromSchema(`
+                type ${type} @model {
+                    name: String! @isUnique
+                }
+        `),
+            ).toThrowError(regExp)
+        })
+
         it('model have reserved member with name id', async () => {
             expect(() =>
                 getModelsFromSchema(`
@@ -161,11 +181,14 @@ describe('scan', () => {
             const model1 = models.find((m) => m?.modelName == 'Model1')
             expect(model1).toHaveProperty('modelName', 'Model1')
             expect(model1).toHaveProperty('type', 'MODEL')
-            expect(model1.members[0]).toHaveProperty('isArray', false)
-            expect(model1.members[0]).toHaveProperty('isVirtual', false)
-            expect(model1.members[0]).toHaveProperty('isRequired', true)
+            const model1FieldNanme = model1.members.find((m) => m?.name == 'name')
+            expect(model1FieldNanme).toHaveProperty('isArray', false)
+            expect(model1FieldNanme).toHaveProperty('isVirtual', false)
+            expect(model1FieldNanme).toHaveProperty('isRequired', true)
 
-            // automaticaly added ID
+            // automaticaly added fields
+            expect(model1.members).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'createdAt', isUnique: false, type: 'DateTime' })]))
+            expect(model1.members).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'updatedAt', isUnique: false, type: 'DateTime' })]))
             expect(model1.members).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'id', isUnique: true, type: 'ID' })]))
 
             // circular ...
@@ -226,9 +249,10 @@ describe('scan', () => {
             const model1 = models.find((m) => m.modelName == 'Model1')
             expect(model1).toHaveProperty('modelName', 'Model1')
             expect(model1).toHaveProperty('type', 'MODEL')
-            expect(model1.members[0]).toHaveProperty('isArray', false)
-            expect(model1.members[0]).toHaveProperty('isVirtual', false)
-            expect(model1.members[0]).toHaveProperty('isRequired', true)
+            const model1FieldName = models[1].members.find((m) => m?.name == 'name')
+            expect(model1FieldName).toHaveProperty('isArray', false)
+            expect(model1FieldName).toHaveProperty('isVirtual', false)
+            expect(model1FieldName).toHaveProperty('isRequired', true)
 
             // automaticaly added ID
             expect(model1.members).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'id', isUnique: true, type: 'ID' })]))
@@ -332,9 +356,10 @@ describe('scan', () => {
             `)
             expect(models.length).toEqual(5)
             expect(models[1].modelName).toEqual('Model1')
-            expect(models[1].members[2]).toHaveProperty('isRequired', false)
-            expect(models[1].members[2].relation.error).toEqual(`Line 4: Relation array field 'model2' with name 'Model1OnModel2' can't be required! Only required relations to ONE are supported`)
-            expect(models[2].modelName).toEqual('Model2')
+            const model1FieldModel2 = models[1].members.find((m) => m?.name == 'model2')
+            expect(model1FieldModel2).toHaveProperty('isRequired', false)
+            expect(model1FieldModel2.relation.error).toEqual(`Line 4: Relation array field 'model2' with name 'Model1OnModel2' can't be required! Only required relations to ONE are supported`)
+            expect(model1FieldModel2.modelName).toEqual('Model2')
         })
 
         it('relation all good', async () => {
@@ -351,14 +376,16 @@ describe('scan', () => {
             `)
             expect(models.length).toEqual(5)
             expect(models[1].modelName).toEqual('Model1')
-            expect(models[1].members[2].relation.error).not.toBeDefined()
-            expect(models[1].members[2]).toHaveProperty('isArray', true)
-            expect(models[1].members[2]).toHaveProperty('isRequired', false)
-            expect(models[1].members[2]).toHaveProperty('relation')
-            const model1OnModel2 = models[1].members[2].relation
+            const model1FieldModel2 = models[1].members.find((m) => m?.name == 'model2')
+            expect(model1FieldModel2.relation.error).not.toBeDefined()
+            expect(model1FieldModel2).toHaveProperty('isArray', true)
+            expect(model1FieldModel2).toHaveProperty('isRequired', false)
+            expect(model1FieldModel2).toHaveProperty('relation')
+            const model1OnModel2 = model1FieldModel2.relation
+            const model2FieldModel1 = models[2].members.find((m) => m?.name == 'model1')
 
             expect(model1OnModel2).toHaveProperty('relatedModel', models[2])
-            expect(model1OnModel2).toHaveProperty('relatedMember', models[2].members[2])
+            expect(model1OnModel2).toHaveProperty('relatedMember', model2FieldModel1)
 
             expect(model1OnModel2).toHaveProperty('linkNames.isSystem', false)
             expect(model1OnModel2).toHaveProperty('linkNames.linkName', 'linkModel1ToModel2')
@@ -370,11 +397,12 @@ describe('scan', () => {
             expect(model1OnModel2).toHaveProperty('linkNames.res2', 'model2')
 
             expect(models[2].modelName).toEqual('Model2')
-            expect(models[2].members[2]).toHaveProperty('isArray', false)
-            expect(models[2].members[2]).toHaveProperty('isRequired', true)
-            expect(models[2].members[2].relation).toHaveProperty('relatedModel', models[1])
-            expect(models[2].members[2].relation).toHaveProperty('relatedMember', models[1].members[2])
-            expect(models[2].members[2].relation).not.toHaveProperty('linkNames')
+
+            expect(model2FieldModel1).toHaveProperty('isArray', false)
+            expect(model2FieldModel1).toHaveProperty('isRequired', true)
+            expect(model2FieldModel1.relation).toHaveProperty('relatedModel', models[1])
+            expect(model2FieldModel1.relation).toHaveProperty('relatedMember', model1FieldModel2)
+            expect(model2FieldModel1.relation).not.toHaveProperty('linkNames')
 
             const modelUser = models[3]
             const modelUserRole = models[4]
@@ -429,11 +457,13 @@ describe('scan', () => {
             `)
             expect(models.length).toEqual(5)
             expect(models[2].modelName).toEqual('Model1')
-            expect(models[2].members[2].relation.error).not.toBeDefined()
-            expect(models[2].members[2]).toHaveProperty('isArray', true)
-            expect(models[2].members[2]).toHaveProperty('isRequired', false)
-            expect(models[2].members[2].relation).toHaveProperty('relatedModel', models[0])
-            expect(models[2].members[2].relation).toHaveProperty('relatedMember', null)
+
+            const model1FieldEntity1 = models[2].members.find((m) => m?.name == 'entity1')
+            expect(model1FieldEntity1.relation.error).not.toBeDefined()
+            expect(model1FieldEntity1).toHaveProperty('isArray', true)
+            expect(model1FieldEntity1).toHaveProperty('isRequired', false)
+            expect(model1FieldEntity1.relation).toHaveProperty('relatedModel', models[0])
+            expect(model1FieldEntity1.relation).toHaveProperty('relatedMember', null)
             expect(models[0].modelName).toEqual('Entity1')
         })
     })
@@ -616,6 +646,22 @@ describe('scan', () => {
             expect(() => extractMemberFromLine('defMember3: String @default(false)', 1)).toThrowError(
                 /modificator @default contain a boolean value, but member with name 'defMember3' is type 'String'/,
             )
+        })
+
+        it('should have regexp', () => {
+            const member = extractMemberFromLine('name: String! @regExp("[A-Za-z]{3,2}")', 10)
+            expect(member).toHaveProperty('name', 'name')
+            expect(member).toHaveProperty('type', 'String')
+            expect(member).toHaveProperty('modelName', 'String')
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isRequired', true)
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('regExp', '[A-Za-z]{3,2}')
+        })
+
+        it('should not have regexp because is not a string', () => {
+            expect(() => extractMemberFromLine('name: Int @regExp("[A-Za-z]{3,2}")', 1)).toThrowError(/RegExp validation can't be combined with another type than 'String'/)
         })
     })
 
