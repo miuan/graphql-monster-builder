@@ -65,7 +65,7 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
     { __verifyToken: 1 },
     { unique: true, partialFilterExpression: { __verifyToken: { $exists: true } } }
   )
-  ${schemaName}.path('email').validate((email) => /^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4})?$/.test(email), 'The e-mail is not in correct format.')
+  ${schemaName}.path('email').validate((email) => /^([\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,64})?$/.test(email), 'The e-mail is not in correct format.')
 `
     }
 

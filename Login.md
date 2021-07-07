@@ -11,6 +11,16 @@
 
 In project list, is a button Admin Playground from where you can do all operations with admin role. For example list of all users
 
+### Project with Admin Playground button
+
+![alt admin playground button](/documentation/admin-playground-button.png)
+
+### Admin Playground
+
+![alt admin playground](/documentation/admin-playground.png)
+
+### All user query
+
 ```
 {allUser{id, email, roles{id, name}}}
 ```
