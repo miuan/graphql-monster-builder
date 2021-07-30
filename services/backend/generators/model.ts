@@ -132,7 +132,17 @@ function constructMember(member: SchemaModelMember, structure: StructureBackend)
     }
 
     if (member.isRequired) {
-        constructedMember += `, required: true`
+        if (member.type === 'String') {
+            // Mongoose required string can't be a empty
+            // but GraphQL required string can be a empty
+            // so make required conditional https://stackoverflow.com/questions/44320745/in-mongoose-how-do-i-require-a-string-field-to-not-be-null-or-undefined-permitt
+            constructedMember += `, required: function () { 
+                // Mongoose required string can't be a empty
+                // but GraphQL required string can be a empty
+                // so make required conditional https://stackoverflow.com/questions/44320745/in-mongoose-how-do-i-require-a-string-field-to-not-be-null-or-undefined-permitt
+                return !(typeof this?.${member.name} === 'string') 
+            }`
+        } else constructedMember += `, required: true`
     }
 
     if (member.isUnique === true) {

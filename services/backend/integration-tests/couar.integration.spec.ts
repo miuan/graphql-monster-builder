@@ -183,6 +183,47 @@ describe('couad integration', () => {
         expect(createModel1Response.data.createModel1).toHaveProperty('user.id', res.data.login_v1.user.id)
     })
 
+    it('should create Model1 even is name empty', async () => {
+        const token = res.data.login_v1.token
+
+        const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optReg: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+        createModel1(name: $name,opt: $opt,optReg: $optReg,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+           name,opt,optReg,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id,user{id},createdAt, updatedAt
+        }
+    }`
+
+        const createModel1Response = await server.mutate(
+            {
+                mutation: createModel1Mutation,
+                variables: {
+                    name: '',
+                    opt: 'Model1/opt/allzauub',
+                    optInt: 521167,
+                    optFloat: 617953.2791989135,
+                    arrName: ['Model1/arrName/e9a6l28', 'Model1/arrName/3ux94bkk', 'Model1/arrName/p3po6mke'],
+                    arrInt: [950283, 522416, 826893],
+                    arrFloat: [570636.4829223385, 507513.37424710894, 37220.60960374929],
+                    optDateTime: '2021-01-03T23:46:55.883Z',
+                },
+            },
+            token,
+        )
+        expect(createModel1Response).not.toHaveProperty('errors')
+        expect(createModel1Response).toHaveProperty('data.createModel1.id')
+        expect(createModel1Response).toHaveProperty('data.createModel1.createdAt')
+        expect(createModel1Response).toHaveProperty('data.createModel1.updatedAt')
+        expect(createModel1Response).toHaveProperty('data.createModel1.name', '')
+        expect(createModel1Response).toHaveProperty('data.createModel1.opt', 'Model1/opt/allzauub')
+        expect(createModel1Response).toHaveProperty('data.createModel1.optInt', 521167)
+        expect(createModel1Response).toHaveProperty('data.createModel1.optFloat', 617953.2791989135)
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrName', ['Model1/arrName/e9a6l28', 'Model1/arrName/3ux94bkk', 'Model1/arrName/p3po6mke'])
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrInt', [950283, 522416, 826893])
+        expect(createModel1Response).toHaveProperty('data.createModel1.arrFloat', [570636.4829223385, 507513.37424710894, 37220.60960374929])
+        expect(createModel1Response).toHaveProperty('data.createModel1.optDateTime', '2021-01-03T23:46:55.883Z')
+
+        expect(createModel1Response.data.createModel1).toHaveProperty('user.id', res.data.login_v1.user.id)
+    })
+
     it('should not create Model1 because one item of optRegArr is in wrong format', async () => {
         const token = res.data.login_v1.token
 
