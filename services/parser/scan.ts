@@ -162,7 +162,7 @@ export const getModelsFromSchema = (schema): SchemaModel[] => {
 
 export const checkForErrorsInModels = (models: SchemaModel[]) => {
     const reservedInRegularModel = ['id', 'user', 'createdAt', 'updatedAt']
-    const reservedInUser = ['email', 'password', 'verified', 'roles', 'files']
+    const reservedInUser = ['email', 'password', 'verified', 'roles', 'files', 'createdAt', 'updatedAt']
     const reservedInUserVirtual = models.filter((m) => !SYSTEM_MODELS.includes(m.modelName)).map((m) => connectedModelNameInUser(m))
     const reservedInFile = ['name', 'publicToken', 'user', 'size', 'type', 'data']
     const modelsList = []
@@ -176,20 +176,19 @@ export const checkForErrorsInModels = (models: SchemaModel[]) => {
             throw new Error(`Line ${model.start}: Model name '${model.modelName}' is already use in Line ${previous.start}. Inside schema have to be every model named uniquely`)
         }
 
-        if (model.modelName == 'UserRole') throw `Line ${model.start}: Model with name '${model.modelName}' have reserved name and will be add automaticaly`
+        if (model.modelName == 'UserRole') throw `Line ${model.start}: Model with name '${model.modelName}' have reserved name and will be add automatically`
 
         for (const member of model.members) {
             if (model.modelName == 'User') {
-                if (reservedInUser.indexOf(member.name) != -1)
-                    throw `Line: ${model.start} Model: ${model.modelName} have these fields names ${reservedInUser} as reserved and will be added automaticaly`
-                if (reservedInUserVirtual.indexOf(member.name) != -1) {
+                if (reservedInUser.includes(member.name)) throw `Line: ${model.start} Model: ${model.modelName} have these fields names ${reservedInUser} as reserved and will be added automatically`
+                if (reservedInUserVirtual.includes(member.name)) {
                     const match = member.name.match(/_(?<modelName>\w+)/)
                     throw `Line: ${model.start} Field name: ${member.name} is reserved as automatic generated connection UserModel with ${firstToUpper(match?.groups?.modelName)}Model`
                 }
             } else if (model.modelName == 'File' && reservedInFile.indexOf(member.name) != -1)
-                throw `Line: ${model.start} Model: \`${model.modelName}\` are these fields names ${reservedInFile} reserved and will be add automaticaly`
+                throw `Line: ${model.start} Model: \`${model.modelName}\` are these fields names ${reservedInFile} reserved and will be add automatically`
             else if (reservedInRegularModel.indexOf(member.name) != -1)
-                throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`${member.name}\` that is reserved and will be add automaticaly`
+                throw `Line ${member.row}: Model with name '${model.modelName}' have member with name \`${member.name}\` that is reserved and will be add automatically`
 
             if (memberList.includes(member.name)) {
                 const previous = model.members.find((m) => m.name == member.name)

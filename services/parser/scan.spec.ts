@@ -111,6 +111,16 @@ describe('scan', () => {
             ).toThrowError(regExp)
         })
 
+        it.each(['email', 'password', 'verified', 'roles', 'files', 'createdAt', 'updatedAt'])('should fail, because user model have fiels name "%s" reserved', async (fieldName) => {
+            expect(() =>
+                getModelsFromSchema(`
+                type User @model {
+                    ${fieldName}: DateTime
+                }
+        `),
+            ).toThrowError(/as reserved and will be added automatically/)
+        })
+
         it('model have reserved member with name id', async () => {
             expect(() =>
                 getModelsFromSchema(`
