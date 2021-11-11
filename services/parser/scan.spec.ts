@@ -281,6 +281,26 @@ describe('scan', () => {
             expect(model1.members[0]).toHaveProperty('isArray', false)
             expect(model1.members[0]).toHaveProperty('isVirtual', false)
             expect(model1.members[0]).toHaveProperty('isRequired', true)
+            expect(model1.members[0]).toHaveProperty('isHidden', false)
+
+            // NOT automaticaly added ID
+            expect(model1.members).toEqual(expect.not.arrayContaining([expect.objectContaining({ name: 'id', isUnique: true, type: 'ID' })]))
+        })
+
+        it('entity Model1 have hidden member because is prefixed with _', async () => {
+            const models = await getModelsFromSchema(`
+            entity Model1 {
+                    _name: String! @isUnique
+                }
+            `)
+            expect(models.length).toEqual(4)
+            const model1 = models.find((m) => m.modelName == 'Model1')
+            expect(model1).toHaveProperty('modelName', 'Model1')
+            expect(model1).toHaveProperty('type', 'ENTITY')
+            expect(model1.members[0]).toHaveProperty('isArray', false)
+            expect(model1.members[0]).toHaveProperty('isVirtual', false)
+            expect(model1.members[0]).toHaveProperty('isRequired', true)
+            expect(model1.members[0]).toHaveProperty('isHidden', true)
 
             // NOT automaticaly added ID
             expect(model1.members).toEqual(expect.not.arrayContaining([expect.objectContaining({ name: 'id', isUnique: true, type: 'ID' })]))
@@ -479,8 +499,8 @@ describe('scan', () => {
     })
 
     describe('extractMemberFromLine', () => {
-        it('required unique', () => {
-            const member = extractMemberFromLine('name1: String! @isUnique', 10)
+        it.each(['@unique', '@isUnique'])('required because mark as %s', (required) => {
+            const member = extractMemberFromLine(`name1: String! ${required}`, 10)
             expect(member).toHaveProperty('name', 'name1')
             expect(member).toHaveProperty('type', 'String')
             expect(member).toHaveProperty('modelName', 'String')
@@ -672,6 +692,18 @@ describe('scan', () => {
 
         it('should not have regexp because is not a string', () => {
             expect(() => extractMemberFromLine('name: Int @regExp("[A-Za-z]{3,2}")', 1)).toThrowError(/RegExp validation can't be combined with another type than 'String'/)
+        })
+
+        it.each(['@hidden', '@isHidden'])('hidden because mark as %s', (required) => {
+            const member = extractMemberFromLine(`name1: String! ${required}`, 10)
+            expect(member).toHaveProperty('name', 'name1')
+            expect(member).toHaveProperty('type', 'String')
+            expect(member).toHaveProperty('modelName', 'String')
+            expect(member).toHaveProperty('isUnique', false)
+            expect(member).toHaveProperty('isRequired', true)
+            expect(member).toHaveProperty('isArray', false)
+            expect(member).toHaveProperty('isVirtual', false)
+            expect(member).toHaveProperty('isHidden', true)
         })
     })
 

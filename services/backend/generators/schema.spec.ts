@@ -1,6 +1,6 @@
 import { isExportDeclaration } from 'typescript'
 import { SchemaModel, SchemaModelMember, SchemaModelRelation } from '../../common/types'
-import { constructMemberWithType, generateInputParamsForMutationModel } from './schema'
+import { constructMemberWithType, generateInputParamsForMutationModel, generateSchemaModel } from './schema'
 
 describe('schema', () => {
     describe('constructParam', () => {
@@ -79,6 +79,17 @@ describe('schema', () => {
             )
 
             expect(inputParams).toEqual('id: ID!, member1: [String]')
+        })
+    })
+
+    describe('generateSchemaModel', () => {
+        it('no hidden', () => {
+            const testmodel = generateSchemaModel({
+                modelName: 'testModel',
+                members: [{ name: 'visible', type: 'String' } as SchemaModelMember, { name: 'hidden', isHidden: true, type: 'String' } as SchemaModelMember],
+            } as SchemaModel)
+            expect(testmodel).toContain(`visible: String`)
+            expect(testmodel).not.toContain(`hidden: String`)
         })
     })
 })

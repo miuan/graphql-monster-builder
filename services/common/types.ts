@@ -60,6 +60,7 @@ export type SchemaModelMember = {
     regExp?: string
     placeholder?: string
     isSystem?: boolean
+    isHidden?: boolean
 }
 
 export enum SchemaModelProtectionType {

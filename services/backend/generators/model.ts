@@ -124,7 +124,7 @@ export const generateMongoModelToFile = (backendDirectory: BackendDirectory, mod
 //     }
 // }
 
-function constructMember(member: SchemaModelMember, structure: StructureBackend) {
+export function constructMember(member: SchemaModelMember, structure: StructureBackend) {
     let constructedMember = `type: ` + (member.isArray ? `[${transformTypeToMongoType(structure, member)}]` : transformTypeToMongoType(structure, member))
 
     if (member.relation && member.relation.type == SchemaModelRelationType.RELATION) {
@@ -149,8 +149,9 @@ function constructMember(member: SchemaModelMember, structure: StructureBackend)
         constructedMember += `, unique: true`
     }
 
-    if (member.default) {
-        constructedMember += `, default: '${member.default}'`
+    if (member.default !== undefined) {
+        const isString = typeof member.default === 'string'
+        constructedMember += `, default: ` + (isString ? `'${member.default}'` : member.default)
     }
     return `{${constructedMember}}`
 }

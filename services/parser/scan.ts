@@ -357,6 +357,7 @@ export const extractMemberFromLine = (row: string, lineNumber: number): SchemaMo
         isRequired: !!isRequired,
         isUnique: false,
         isVirtual: false,
+        isHidden: name.startsWith('_'),
     } as SchemaModelMember
 
     if (relationType) {

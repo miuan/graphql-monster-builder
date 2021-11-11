@@ -257,7 +257,7 @@ export const generateSchameFilter = (model: SchemaModel, notVirtualMembers: Sche
 export const generateSchemaModel = (model: SchemaModel) => {
     let result = ``
 
-    for (const member of model.members) {
+    for (const member of model.members.filter((m) => !m.isHidden)) {
         let constructedMember
         if (member.relation) {
             constructedMember = constructMemberWithType(member.name, `${member.relation.relatedModel.modelName}Model`, member.isArray, member.isRequired, true)
@@ -314,9 +314,9 @@ export const generateSchemaAsString = (models: SchemaModel[]): string => {
     let queriesAndMutations = ''
 
     for (const model of models) {
-        const notVirtualMembers = model.members.filter((member) => !member.isVirtual)
-        orders += generateSchemaOrder(model, notVirtualMembers)
-        filters += generateSchameFilter(model, notVirtualMembers)
+        const notHiddenMembers = model.members.filter((member) => !member.isHidden)
+        orders += generateSchemaOrder(model, notHiddenMembers)
+        filters += generateSchameFilter(model, notHiddenMembers)
         generatedModels += generateSchemaModel(model)
         queriesAndMutations += genereateSchemaModelPayloads(model)
     }

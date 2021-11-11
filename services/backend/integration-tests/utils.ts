@@ -245,6 +245,7 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
         `PORT=${port}
 ADMIN_EMAIL=admin@admin.test
 ADMIN_PASSWORD=${bcrypt.hashSync('admin@admin.test', 1)}
+DB_NAME=graphql_moster_integration
     `,
     )
 }

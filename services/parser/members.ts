@@ -1,7 +1,7 @@
 import { SchemaModel, SchemaModelMember, SchemaModelRelation, SchemaModelRelationType } from '../common/types'
 
 export const extractMemberFromLineParams = (member: SchemaModelMember, params) => {
-    if (params === '@isUnique') {
+    if (params === '@unique' || params === '@isUnique') {
         member.isUnique = true
     }
 
@@ -29,7 +29,7 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
         if (splited[9]) {
             member.isUnique.push(splited[9])
         }
-    } else if (params === '@isReadonly') {
+    } else if (params === '@readonly' || params === '@isReadonly') {
         member.isReadonly = true
     } else if (params.startsWith('@relation(name:')) {
         const name = params.split('"')[1]
@@ -89,12 +89,14 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
         const matched = params.match(regexp)
 
         if (!matched) {
-            throw new Error(`Line: ${member.row}: modificator @regExp must have a text value in double-qutes like @regExp("regExp-value")`)
+            throw new Error(`Line: ${member.row}: modificator @regExp must have a text vsalue in double-qutes like @regExp("regExp-value")`)
         }
 
         member.regExp = matched[0]
-    } else if (params === '@isVirtual') {
+    } else if (params === '@virtual' || params === '@isVirtual') {
         member.isVirtual = true
+    } else if (params === '@hidden' || params === '@isHidden') {
+        member.isHidden = true
     } else {
         throw new Error(`Line: ${member.row}: unknown param '${params}'`)
     }
