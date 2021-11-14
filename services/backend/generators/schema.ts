@@ -168,7 +168,7 @@ export const generateInputParamsForMutationModel = (model: SchemaModel, options:
                 if (member.relation.createFromAnotherModel) {
                     result += `, ${constructMemberWithType(member.relation.payloadNameForCreate, member.relation.inputName, member.isArray)}`
                 }
-            } else {
+            } else if (!member.isHidden) {
                 // 1. required member have to be present for creation
                 // 2. ignoreRequired if you generate mutation for update,
                 //    we expect the already created object have all required fields

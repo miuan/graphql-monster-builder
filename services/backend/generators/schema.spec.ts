@@ -63,6 +63,18 @@ describe('schema', () => {
 
             expect(genModel).toEqual('reqMember1: String')
         })
+
+        it('not hidden member', () => {
+            const genModel = generateInputParamsForMutationModel({
+                modelName: 'model1',
+                members: [
+                    { name: 'hiddenMember', type: 'String', isHidden: true, default: 'defValue' },
+                    { name: 'notHiddenMember', type: 'String', default: 'defValue' },
+                ],
+            } as SchemaModel)
+
+            expect(genModel).toEqual('notHiddenMember: String')
+        })
     })
 
     describe('generateInputParamsForMutationModel', () => {

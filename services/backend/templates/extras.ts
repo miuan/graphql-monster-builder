@@ -69,41 +69,39 @@ export const generateLogin = (entry) => async (root, data, ctx) => {
     throw 'Email or password is not correct'
 }
 
-export const generateRegister =
-    (entry) =>
-    async (root, data, ctx) => {
-        const {password, email} = data
-        const userModel = await entry.models['user']
+export const generateRegister = (entry) => async (root, data, ctx) => {
+    const { password, email } = data
+    const userModel = await entry.models['user']
 
-        if (await userModel.exists({ email })) {
-            throw `User with email: ${email} already exist`
-        }
-
-        delete data.password
-        const __verifyToken = await createVerifyToken(userModel)
-        const __password = await generateHash(password)
-        const user = {
-           ...data,
-            __password,
-            password: '******',
-            verified: false,
-            __verifyToken,
-        } as any
-
-        const createdUser = await userModel.create(user)
-        // user have to be in DB to have his ID for generate token
-        genPasswordAndTokens(createdUser)
-        // save the tokens into model
-        createdUser.save()
-
-        if (entry['email']) entry['email'].sendVerifyEmail(createdUser)
-
-        return {
-            token: createdUser.__token,
-            refreshToken: createdUser.__refreshToken,
-            user: createdUser,
-        }
+    if (await userModel.exists({ email })) {
+        throw `User with email: ${email} already exist`
     }
+
+    delete data.password
+    const __verifyToken = await createVerifyToken(userModel)
+    const __password = await generateHash(password)
+    const user = {
+        ...data,
+        __password,
+        password: '******',
+        verified: false,
+        __verifyToken,
+    } as any
+
+    const createdUser = await userModel.create(user)
+    // user have to be in DB to have his ID for generate token
+    genPasswordAndTokens(createdUser)
+    // save the tokens into model
+    createdUser.save()
+
+    if (entry['email']) entry['email'].sendVerifyEmail(createdUser)
+
+    return {
+        token: createdUser.__token,
+        refreshToken: createdUser.__refreshToken,
+        user: createdUser,
+    }
+}
 
 export const generateRefreshToken =
     (entry) =>
@@ -339,47 +337,20 @@ export const generateProtections = (entry, modelName) => {
                 return userRoleModel.exists({ name: roles[0], users: ctx.state.user.id })
             }
         },
-        filter: async (ctx, data, filters: any[], roles: string[]) => {
-            if (ctx && ctx.state && ctx.state.user) {
-                const ctxUser = ctx.state.user
-                const dataFilter = data.filter || {}
+        filter: async (ctx, data, allowedFilters: any[], roles: string[]) => {
+            const ctxUser = ctx?.state?.user
+            const currentFilter = data?.filter
+            if (ctxUser && currentFilter && allowedFilters?.length > 0) {
+                for (const allowedFilter of allowedFilters) {
+                    if (allowedFilter.name) {
+                        const { value, pathIs } = filterValue(currentFilter, allowedFilter.name)
 
-                // if is something restricted to filter can't be filter behind OR
-                // because it will pass security
-                // but show even data what is under protection
-                if (dataFilter.OR) {
-                    return false
-                }
-
-                // TODO: INPORTANT! is catch if secure filter is behind one $and example: filter: {$and:[{user: {{userId}}}]}
-                //       but not catch if is under depper $and ... example filter: {$and:[{$and:[{user: {{userId}}}]]}
-                let AND = null
-                if (dataFilter.AND) {
-                    AND = dataFilter.AND
-                } else if (dataFilter.length) {
-                    AND = dataFilter
-                } else {
-                    AND = [dataFilter]
-                }
-
-                for (let a of AND) {
-                    for (let filter of filters) {
-                        if (filter.name) {
-                            const value = _.get(a, filter.name)
-
-                            if (filter.value == value || (filter.value == '{{userId}}' && value == ctxUser.id)) {
-                                return true
-                            }
-                            // console.log('data.filter.AND', data.filter.AND)
-                            // console.log('data.filter.AND[0]', data.filter.AND[0])
-                            // console.log('data.filter.AND[0].user_every', data.filter.AND[0].user_every)
-                        }
+                        return pathIs === PATHIS.ALWAYS && (allowedFilter.value == value || (allowedFilter.value == '{{userId}}' && value == ctxUser.id))
                     }
                 }
             }
             return false
         },
-        checkDataContainProtectedFields,
     }
 }
 
@@ -530,4 +501,63 @@ export const createRole = async (entry, name: string) => {
     }
 
     return userRole
+}
+
+export enum PATHIS {
+    ALWAYS,
+    SOME,
+    NEVER,
+    UNDETERMINED,
+}
+
+export function checkPath(path): PATHIS {
+    if (!path) return PATHIS.NEVER
+    return path?.length === 0 || path.every((p) => p === 'AND') ? PATHIS.ALWAYS : PATHIS.SOME
+}
+
+export function filterValue(filter, filterName) {
+    let path = null
+
+    const properties = propertiesToArray(filter)
+    const selected = properties.filter((p) => p.endsWith(filterName))
+
+    if (selected.length > 1) return { pathIs: PATHIS.UNDETERMINED }
+
+    const fullPath = selected[0]
+
+    const value = fullPath ? _.get(filter, fullPath) : null
+
+    if (value) {
+        const basePath = fullPath.split(filterName).shift()
+        path =
+            basePath?.length > 0
+                ? basePath
+                      .split('.')
+                      .map((bp) => (bp === 'AND' || bp === 'OR') && bp)
+                      .filter((f) => !!f)
+                : []
+    }
+
+    const pathIs = checkPath(path)
+    return { value, path, pathIs }
+}
+
+export function propertiesToArray(obj) {
+    const isObject = (val) => typeof val === 'object'
+
+    const addDelimiter = (head, key) => {
+        // if ((head.endsWith('OR') || head.endsWith('AND')) && !isNaN(key)) {
+        //     return head
+        // } else
+        return head ? `${head}.${key}` : key
+    }
+
+    const paths = (obj = {}, head = '') => {
+        return Object.entries(obj).reduce((product, [key, value]) => {
+            const fullPath = addDelimiter(head, key)
+            return isObject(value) ? product.concat(paths(value, fullPath)) : product.concat(fullPath)
+        }, [])
+    }
+
+    return paths(obj)
 }

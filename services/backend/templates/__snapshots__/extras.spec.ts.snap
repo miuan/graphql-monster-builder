@@ -1,5 +1,26 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`checkDataContainProtectedFields should pass no issues with checkDataContainProtectedFields 1`] = `
+Array [
+  Object {
+    "name": "__private",
+    "path": "/",
+  },
+  Object {
+    "name": "__private_text",
+    "path": "/",
+  },
+  Object {
+    "name": "__unreachable",
+    "path": "/personal/",
+  },
+  Object {
+    "name": "__connect_code",
+    "path": "/personal/contacts/",
+  },
+]
+`;
+
 exports[`extras checkDataContainProtectedFields should pass no issues with checkDataContainProtectedFields 1`] = `
 Array [
   Object {
