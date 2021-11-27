@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { VAR_NAME, Types } from '../models/_MODEL_NAME_'
 import * as extras from '../extras'
 
@@ -9,23 +10,39 @@ export const _LOWER_NAME_All = (entry) => {
 
         const filter = extras.filterGen(data.filter)
         let findPromise = _LOWER_NAME_Model.find(filter)
-        if(data.skip) findPromise = findPromise.skip(data.skip)
-        if(data.limit) findPromise = findPromise.limit(data.limit)
-        if(data.orderBy){
-            const {groups: {field, type}} = data.orderBy.match(/(?<field>\w+)_(?<type>(asc|desc))/)
+        if (data.skip) findPromise = findPromise.skip(data.skip)
+        if (data.limit) findPromise = findPromise.limit(data.limit)
+        if (data.orderBy) {
+            const {
+                groups: { field, type },
+            } = data.orderBy.match(/(?<field>\w+)_(?<type>(asc|desc))/)
             findPromise = findPromise.sort([[field, type]])
         }
 
         let models = await findPromise.lean()
-        models = models.map((m)=>{
-            m.id = m._id 
-            return m
-        })
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_All']) {
             models = await entry.hooks.services['after_MODEL_NAME_All'](entry, { models, ...data })
         }
         return models
+    }
+}
+
+export const _LOWER_NAME_Count = (entry) => {
+    return async (data) => {
+        if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Count']) {
+            await entry.hooks.services['before_MODEL_NAME_Count'](entry, data)
+        }
+
+        const filter = extras.filterGen(data.filter)
+        let countPromise = _LOWER_NAME_Model.count(filter)
+
+        let count = await countPromise.lean()
+
+        if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Count']) {
+            count = await entry.hooks.services['after_MODEL_NAME_Count'](entry, { count, ...data })
+        }
+        return count
     }
 }
 
@@ -88,7 +105,7 @@ export const _LOWER_NAME_Update = (entry) => {
         _DISCONNECT_RELATIONS_
         _ALL_IDS_CONVERSIONS_UPDATE_
         _EXTRA_ACTION_BEFORE_UPDATE_
-        let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true, runValidators: true})
+        let updatedModel = await VAR_NAME.findByIdAndUpdate(id, data, { new: true, runValidators: true })
 
         // connect all relations
         _CONNECT_RELATION_UPDATE_
@@ -133,6 +150,7 @@ _SERVICE_ADD_REMOVE_
 export const generate_MODEL_NAME_Service = (entry) => {
     return {
         all: _LOWER_NAME_All(entry),
+        count: _LOWER_NAME_Count(entry),
         one: _LOWER_NAME_One(entry),
         create: _LOWER_NAME_Create(entry),
         update: _LOWER_NAME_Update(entry),

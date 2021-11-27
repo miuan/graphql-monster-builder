@@ -85,6 +85,7 @@ export const createResolvers = (structure: StructureBackend, models: SchemaModel
             const lower = firstToLower(modelName)
             queries += `\t\t${modelName}: entry.resolvers['${lower}'].one,\n`
             queries += `\t\tall${modelName}: entry.resolvers['${lower}'].all,\n`
+            queries += `\t\tcount${modelName}: entry.resolvers['${lower}'].count,\n`
 
             if (!MODELS_NOT_HAVE_CREATE.includes(modelName)) mutations += `\t\tcreate${modelName}: entry.resolvers['${lower}'].create,\n`
             mutations += `\t\tupdate${modelName}: entry.resolvers['${lower}'].update,\n`

@@ -31,8 +31,7 @@ dotenv.config({
 if (!process.env.PORT) {
     console.warn('PORT is not setup, you can use .env file')
 }
-console.info(`ENVIRONMENT:  process - ${process.env.NODE_ENV}  app - ${app.env}`)
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3001
 
 app.on('error', (err) => {
     const date = new Date()
@@ -138,12 +137,12 @@ apollo.applyMiddleware({ app })
 // EMAIL
 entry['email'] = registerSendMailService({
     SERVICE_NAME: process.env.SERVICE_NAME,
-    REPLY_EMAIL:process.env.REPLY_EMAIL,
-    SERVICE_URL:process.env.SERVICE_URL,
+    REPLY_EMAIL: process.env.REPLY_EMAIL,
+    SERVICE_URL: process.env.SERVICE_URL,
     EMAIL_WELLCOME_TITLE: process.env.EMAIL_WELLCOME_TITLE,
-    EMAIL_WELLCOME_MESSAGE:process.env.EMAIL_WELLCOME_MESSAGE,
-    EMAIL_FORGOTTEN_PASSWORD_TITLE:process.env.EMAIL_FORGOTTEN_PASSWORD_TITLE,
-    EMAIL_FORGOTTEN_PASSWORD_MESSAGE:process.env.EMAIL_FORGOTTEN_PASSWORD_MESSAGE,
+    EMAIL_WELLCOME_MESSAGE: process.env.EMAIL_WELLCOME_MESSAGE,
+    EMAIL_FORGOTTEN_PASSWORD_TITLE: process.env.EMAIL_FORGOTTEN_PASSWORD_TITLE,
+    EMAIL_FORGOTTEN_PASSWORD_MESSAGE: process.env.EMAIL_FORGOTTEN_PASSWORD_MESSAGE,
 })
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -172,19 +171,11 @@ healthCheck.get(`/health`, (ctx) => {
             SERVICE_URL: process.env.SERVICE_URL,
             REPLY_EMAIL: process.env.REPLY_EMAIL,
         },
-        passport: publicPasswordConfig
+        passport: publicPasswordConfig,
     }
 })
 app.use(healthCheck.routes())
 app.use(healthCheck.allowedMethods())
-
-////////////////////////////////////////////////////////////////////////////////////////
-// Setup connection to DB
-
-const connOptions = {
-    host: process.env.DB_HOST,
-    db: process.env.DB_NAME,
-}
 
 export async function updateAdminUser(rawPassword = true) {
     const admin_email = process.env.ADMIN_EMAIL || `admin`
@@ -199,6 +190,11 @@ export async function updateAdminUser(rawPassword = true) {
 }
 
 export const connectionPromise = new Promise((resolve, reject) => {
+    const connOptions = {
+        host: process.env.DB_HOST,
+        db: process.env.DB_NAME || 'db_graphql_monster',
+    }
+
     mongoDB.connect(connOptions).then(async () => {
         await updateAdminUser()
 

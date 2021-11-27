@@ -17,7 +17,9 @@ export const generateSchemaQueries = (models: SchemaModel[]) => {
             const name = model.modelName
             // tslint:disable-next-line:max-line-length
             result += `  all${name}(filter: ${name}Filter, orderBy: ${name}OrderBy, limit: Int, skip: Int): [${name}Model!]!
+            count${name}(filter: ${name}Filter): Int!
             ${name}(id: ID): ${name}Model\n
+
             `
         }
     }

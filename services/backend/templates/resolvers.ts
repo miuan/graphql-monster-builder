@@ -1,122 +1,143 @@
-import * as extras from '../extras';
+import * as extras from '../extras'
 
 export const _MODEL_LOWER_NAME_All = (entry, protections) => {
-  return async (root, data, ctx) => {
-    _PROTECT_ALL_;
+    return async (root, data, ctx) => {
+        _PROTECT_ALL_
 
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_NAME_All']) {
-      await entry.hooks.resolvers['before_MODEL_UPPER_NAME_All'](entry, { root, data, ctx });
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_NAME_All']) {
+            await entry.hooks.resolvers['before_MODEL_UPPER_NAME_All'](entry, { root, data, ctx })
+        }
+
+        let models = await entry.services['_MODEL_LOWER_NAME_'].all(data, ctx.userId)
+        models = models.map((m) => {
+            m.id = m._id
+            return m
+        })
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_All']) {
+            models = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_All'](entry, { models, root, data, ctx })
+        }
+        return models
     }
+}
 
-    let models = await entry.services['_MODEL_LOWER_NAME_'].all(data, ctx.userId);
+export const _MODEL_LOWER_NAME_Count = (entry, protections) => {
+    return async (root, data, ctx) => {
+        _PROTECT_ALL_
 
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_All']) {
-      models = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_All'](entry, { models, root, data, ctx });
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_NAME_Count']) {
+            await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Count'](entry, { root, data, ctx })
+        }
+
+        let models = await entry.services['_MODEL_LOWER_NAME_'].count(data, ctx.userId)
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Count']) {
+            models = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Count'](entry, { models, root, data, ctx })
+        }
+        return models
     }
-    return models;
-  };
-};
+}
 
 export const _MODEL_LOWER_NAME_One = (entry, protections) => {
-  return async (root, data, ctx) => {
-    _PROTECT_ONE_;
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_One']) {
-      await entry.hooks.resolvers['before_MODEL_UPPER_NAME_One'](entry, { root, data, ctx });
-    }
-    let model = await entry.services['_MODEL_LOWER_NAME_'].one(data.id);
+    return async (root, data, ctx) => {
+        _PROTECT_ONE_
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_One']) {
+            await entry.hooks.resolvers['before_MODEL_UPPER_NAME_One'](entry, { root, data, ctx })
+        }
+        let model = await entry.services['_MODEL_LOWER_NAME_'].one(data.id)
 
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_One']) {
-      model = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_One'](entry, { id: data.id, model, entry, root, data, ctx });
-    }
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_One']) {
+            model = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_One'](entry, { id: data.id, model, entry, root, data, ctx })
+        }
 
-    return model;
-  };
-};
+        return model
+    }
+}
 
 export const _MODEL_LOWER_NAME_Create = (entry, protections) => {
-  return async (root, data, ctx) => {
-    _PROTECT_CREATE_;
-    const presentProtectedFields = protections.checkDataContainProtectedFields(data)
-    if(presentProtectedFields && presentProtectedFields.length) {
-      ctx.throw(403, {
-        type: 'ReachProtectedFields',
-        message: 'Trying to update protected fields, which they are just read only',
-        presentProtectedFields
-      });
+    return async (root, data, ctx) => {
+        _PROTECT_CREATE_
+        const presentProtectedFields = protections.checkDataContainProtectedFields(data)
+        if (presentProtectedFields && presentProtectedFields.length) {
+            ctx.throw(403, {
+                type: 'ReachProtectedFields',
+                message: 'Trying to update protected fields, which they are just read only',
+                presentProtectedFields,
+            })
+        }
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create']) {
+            data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx })
+        }
+
+        const userId = ctx.state?.user?.id
+        _AUTOMATIC_USER_FROM_CTX_
+        let createdModel = await entry.services['_MODEL_LOWER_NAME_'].create(data, userId)
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Create']) {
+            createdModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx, createdModel })
+        }
+
+        return createdModel
     }
-
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create']) {
-      data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx });
-    }
-
-    const userId = ctx.state?.user?.id
-    _AUTOMATIC_USER_FROM_CTX_
-    let createdModel = await entry.services['_MODEL_LOWER_NAME_'].create(data, userId);
-
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Create']) {
-      createdModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Create'](entry, { root, data, ctx, createdModel });
-    }
-
-    return createdModel;
-  };
-};
+}
 
 export const _MODEL_LOWER_NAME_Update = (entry, protections) => {
-  return async (root, data, ctx) => {
-    _PROTECT_UPDATE_;
+    return async (root, data, ctx) => {
+        _PROTECT_UPDATE_
 
-    // any fields start with double underscore are protected, example __port, __readolny, ...
-    const presentProtectedFields = protections.checkDataContainProtectedFields(data)
-    if(presentProtectedFields && presentProtectedFields.length) {
-      ctx.throw(403, {
-        type: 'ReachProtectedFields',
-        message: 'Trying to update protected fields, which they are just read only',
-        presentProtectedFields
-      });
+        // any fields start with double underscore are protected, example __port, __readolny, ...
+        const presentProtectedFields = protections.checkDataContainProtectedFields(data)
+        if (presentProtectedFields && presentProtectedFields.length) {
+            ctx.throw(403, {
+                type: 'ReachProtectedFields',
+                message: 'Trying to update protected fields, which they are just read only',
+                presentProtectedFields,
+            })
+        }
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update']) {
+            data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx })
+        }
+
+        let updatedModel = await entry.services['_MODEL_LOWER_NAME_'].update(data, null, ctx.userId)
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Update']) {
+            updatedModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx, updatedModel, id: data.id })
+        }
+
+        return updatedModel
     }
-
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update']) {
-      data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx });
-    }
-
-    let updatedModel = await entry.services['_MODEL_LOWER_NAME_'].update(data, null, ctx.userId);
-
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Update']) {
-      updatedModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx, updatedModel, id: data.id });
-    }
-
-    return updatedModel;
-  };
-};
+}
 
 export const _MODEL_LOWER_NAME_Remove = (entry, protections) => {
-  return async (root, data, ctx) => {
-    
-    _PROTECT_REMOVE_;
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Remove']) {
-      await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Remove'](entry, { root, data, ctx });
+    return async (root, data, ctx) => {
+        _PROTECT_REMOVE_
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['before_MODEL_UPPER_NAME_Remove']) {
+            await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Remove'](entry, { root, data, ctx })
+        }
+
+        let removedModel = await entry.services['_MODEL_LOWER_NAME_'].remove(data.id, ctx.userId)
+
+        if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Remove']) {
+            removedModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Remove'](entry, { removedModel, root, data, ctx })
+        }
+
+        return removedModel
     }
-
-    let removedModel = await entry.services['_MODEL_LOWER_NAME_'].remove(data.id, ctx.userId);
-
-    if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Remove']) {
-      removedModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Remove'](entry, { removedModel, root, data, ctx });
-    }
-
-    return removedModel;
-  };
-};
+}
 
 _RESOLVERS_ADD_REMOVE_
 
 export const generate_MODEL_NAME_Resolver = (entry) => {
-  const protections = extras.generateProtections(entry, '_MODEL_LOWER_NAME_')
-  return {
-    all: _MODEL_LOWER_NAME_All(entry, protections),
-    one: _MODEL_LOWER_NAME_One(entry, protections),
-    create: _MODEL_LOWER_NAME_Create(entry, protections),
-    update: _MODEL_LOWER_NAME_Update(entry, protections),
-    remove: _MODEL_LOWER_NAME_Remove(entry, protections), 
-    _RESOLVERS_ADD_REMOVE_CONNECT_
-  };
-};
+    const protections = extras.generateProtections(entry, '_MODEL_LOWER_NAME_')
+    return {
+        all: _MODEL_LOWER_NAME_All(entry, protections),
+        count: _MODEL_LOWER_NAME_Count(entry, protections),
+        one: _MODEL_LOWER_NAME_One(entry, protections),
+        create: _MODEL_LOWER_NAME_Create(entry, protections),
+        update: _MODEL_LOWER_NAME_Update(entry, protections),
+        remove: _MODEL_LOWER_NAME_Remove(entry, protections),
+        _RESOLVERS_ADD_REMOVE_CONNECT_
+    }
+}

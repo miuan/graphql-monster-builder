@@ -162,12 +162,14 @@ export function createServiceWithRelation(meType, required) {
 //     else return SchemaModelRelationType.ONE_TO_ONE
 // }
 
-export async function generateAndRunServerFromSchema(name: string, schema: string, port = 3001) {
+// NODE: database name 'test_integration_all' - is for protend exception with multiple call connect with different connect string
+export async function generateAndRunServerFromSchema(name: string, schema: string, port = 3001, dbname = 'test_integration_all') {
     let server
+    let dropCollectionPromises = []
 
     const integrationTestServerPath = path.resolve(`../__generated_servers_for_integration_test__/${name}`)
 
-    await remakeServer(integrationTestServerPath, name, schema, port)
+    await remakeServer(integrationTestServerPath, name, schema, port, dbname)
 
     try {
         const module = require(path.join(integrationTestServerPath, 'server'))
@@ -192,27 +194,15 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
             return query({ query: mutation, variables }, token)
         }
 
-        // console.log(server)
-        let dropCollectionPromises = []
-        await new Promise((resolve1) => {
-            mongoose.connection.db.listCollections().toArray((err, collectionNames) => {
-                const myCollections = collectionNames.filter((collectionName) => collectionName.name.startsWith(name.toLowerCase()))
-                dropCollectionPromises = myCollections.map(
-                    (collectionName) =>
-                        new Promise((resolve, reject) => {
-                            mongoose.connection.db.dropCollection(collectionName.name, (err) => {
-                                resolve(1)
-                            })
-                        }),
-                )
+        for (const modelName of Object.keys(await server.entry.models)) {
+            await server.entry.models[modelName].remove({})
+        }
 
-                resolve1(1)
-            })
-        })
-
-        await Promise.all(dropCollectionPromises)
+        // await new Promise((resolve) => setTimeout(resolve, 1000))
         // upload user again
         await module.updateAdminUser(true)
+
+        const count = await server.entry.models.user.count({})
 
         return { ...server, query, mutate }
     } catch (ex) {
@@ -220,7 +210,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
     }
 }
 
-async function remakeServer(integrationTestServerPath: string, name: string, schema: string, port: number) {
+async function remakeServer(integrationTestServerPath: string, name: string, schema: string, port: number, dbname) {
     fs.rmdirSync(integrationTestServerPath, { recursive: true })
     await exportAsFromString(name, schema, integrationTestServerPath, {
         server: {
@@ -242,12 +232,33 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
     fs.mkdirSync(envPath, { recursive: true })
     fs.writeFileSync(
         path.join(envPath, '.env'),
-        `PORT=${port}
+        `
 ADMIN_EMAIL=admin@admin.test
 ADMIN_PASSWORD=${bcrypt.hashSync('admin@admin.test', 1)}
-DB_NAME=graphql_moster_integration
     `,
     )
+
+    const serverPaht = path.join(integrationTestServerPath, 'server.ts')
+    await replaceInFile(serverPaht, (data) => {
+        return data.replace(/3001/g, port).replace('db_graphql_monster', dbname)
+    })
+}
+
+async function replaceInFile(file, replaceFn) {
+    return new Promise((resolve) => {
+        fs.readFile(file, 'utf8', function (err, data) {
+            if (err) {
+                return console.log(err)
+            }
+
+            const result = replaceFn(data) //data.replace(/string to be replaced/g, 'replacement')
+
+            fs.writeFile(file, result, 'utf8', function (err) {
+                if (err) return console.log(err)
+                resolve(null)
+            })
+        })
+    })
 }
 
 export async function disconnectFromServer(server: any) {

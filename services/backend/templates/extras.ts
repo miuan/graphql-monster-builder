@@ -351,6 +351,7 @@ export const generateProtections = (entry, modelName) => {
             }
             return false
         },
+        checkDataContainProtectedFields,
     }
 }
 
