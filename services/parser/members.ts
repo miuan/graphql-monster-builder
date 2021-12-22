@@ -31,10 +31,6 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
         }
     } else if (params === '@readonly' || params === '@isReadonly') {
         member.isReadonly = true
-    } else if (params.startsWith('@relation(name:')) {
-        const name = params.split('"')[1]
-        if (name.startsWith('_')) throw `Line: ${member.row} relation name starting with '_' as your '${name}' is reserved`
-        member.relation = { name } as SchemaModelRelation
     } else if (params.startsWith('@default')) {
         if (member.isArray) {
             throw new Error(`Line: ${member.row}: modificator @default is not suitable for members with array type`)

@@ -1,11 +1,13 @@
 {
-  "name": "qpb",
+  "name": "graphql-monster-builder",
   "version": "1.0.0",
-  "main": "index.js",
   "author": "Milan Medlik <milan.medlik@gmail.com>",
   "license": "MIT",
+  "main": "./bin/index.js",
+  "bin": "./bin/index.js",
   "scripts": {
-    "build": "npx ts-node index.ts",
+    "preinstall": "npm build",
+    "build": "tsc index.ts --outDir dist/",
     "build:todo": "npx ts-node index.ts -bd -d ./examples/todo.schema server3",
     "test": "jest",
     "lint": "eslint \"*/**/*.{js,ts}\" --quiet --fix",
