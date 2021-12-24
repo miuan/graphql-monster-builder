@@ -109,6 +109,7 @@ export type StructureBackend = Structure & {
     gen: StructureItem
     models: StructureItem
     resolvers: StructureItem
+    api: StructureItem
     services: StructureItem
 }
 

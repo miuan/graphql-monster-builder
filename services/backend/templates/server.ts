@@ -10,16 +10,19 @@ import * as koaBody from 'koa-body'
 // tslint:disable-next-line:import-name
 
 import * as mongoDB from './gen/services/db'
-import { generateResolver } from './gen/entry'
+import { generateResolver, connectApi } from './gen/entry'
 import { createUser, createRole, generateParentLogin } from './gen/extras'
 
 // server specific
 import * as proxy from 'koa-proxy'
 
-import passportSetupAll from './services/passport'
+import { setupAuth } from './gen/api-auth'
+import setupPassport from './services/passport'
 import { generateHash } from './gen/extras'
 import { registerStorageService, registerStorageRouter } from './gen/storage'
 import { registerSendMailService } from './services/sendMail'
+import * as swaggerJSDoc from 'swagger-jsdoc'
+import { ui } from 'swagger2-koa'
 
 const app: Koa = new Koa()
 
@@ -72,7 +75,7 @@ app.use(async (ctx, next) => {
         } else {
             console.debug(`es: ${error.message}`, error.status, error)
             ctx.status = error.status
-            ctx.body = { error }
+            ctx.body = { errors: [error] }
         }
     }
 })
@@ -95,8 +98,9 @@ app.use(koaBody({ multipart: true }))
 const { entry, resolvers } = generateResolver({})
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// PASSPORT
-const publicPasswordConfig = passportSetupAll(app, entry.models['user'], {
+// AUTH LOGIN and PASSPORTS
+const authRouter = setupAuth(app, entry.models['user'])
+const publicPassportConfig = setupPassport(authRouter, entry.models['user'], {
     GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
@@ -105,13 +109,15 @@ const publicPasswordConfig = passportSetupAll(app, entry.models['user'], {
     FACEBOOK_APP_SECRET: process.env.FACEBOOK_APP_SECRET,
     SERVICE_URL: process.env.SERVICE_URL,
 })
+app.use(authRouter.routes())
+app.use(authRouter.allowedMethods())
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// PARENT ACCESS
-const parentAccess = new Router()
-parentAccess.post(`/parent/:parentAccessToken/user/:parentUserId`, generateParentLogin(entry))
-app.use(parentAccess.routes())
-app.use(parentAccess.allowedMethods())
+// API
+const apiRouter = new Router({ prefix: '/api' })
+connectApi(apiRouter, entry)
+app.use(apiRouter.routes())
+app.use(apiRouter.allowedMethods())
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // GRAPHQL
@@ -132,6 +138,30 @@ const apollo = new ApolloServer({
 })
 
 apollo.applyMiddleware({ app })
+
+////////////////////////////////////////////////////////////////////////////////////////
+// SWAGGER
+const swaggerDefinition = {
+    info: {
+        title: 'REST API for my App', // Title of the documentation
+        version: '1.0.0', // Version of the app
+        description: 'This is the REST API for my product', // short description of the app
+    },
+    host: 'localhost:3001', // the host or url of the app
+}
+
+// options for the swagger docs
+const options = {
+    // import swaggerDefinitions
+    swaggerDefinition,
+    explorer: true,
+
+    // path to the API docs
+    apis: ['**/*.ts'],
+}
+
+const swaggerSpec = swaggerJSDoc(options)
+app.use(ui(swaggerSpec as any, '/swagger'))
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // EMAIL
@@ -171,7 +201,7 @@ healthCheck.get(`/health`, (ctx) => {
             SERVICE_URL: process.env.SERVICE_URL,
             REPLY_EMAIL: process.env.REPLY_EMAIL,
         },
-        passport: publicPasswordConfig,
+        passport: publicPassportConfig,
     }
 })
 app.use(healthCheck.routes())

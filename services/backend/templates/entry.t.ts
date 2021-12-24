@@ -1,4 +1,5 @@
 import { generateDataloaders } from './dataloaders'
+import { apiMiddleware } from './api-utils'
 import * as extras from './extras'
 import { registerStorageService } from './storage'
 
@@ -53,4 +54,10 @@ export const generateResolver = (setting = {}) => {
         entry,
         resolvers,
     }
+}
+
+export function connectApi(apiRouter, entry) {
+    //apiRouter.use(apiMiddleware)
+
+    _API_CONNECTORS_
 }

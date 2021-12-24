@@ -1,39 +1,43 @@
-import path = require("path")
-import * as files from "../common/files"
-import { StructureBackend } from "../common/types"
-  
+import path = require('path')
+import * as files from '../common/files'
+import { StructureBackend } from '../common/types'
+
 export const BACKEND_STRUCTURE = {
-    schema: { 
+    schema: {
         dir: `ID/`,
         modules: ['schema.protectql'],
     },
-    gen: { 
+    gen: {
         dir: `ID/gen/`,
         modules: [],
     },
-    models: { 
-        dir:`ID/gen/models/`, 
+    models: {
+        dir: `ID/gen/models/`,
         modules: [],
     },
-    resolvers: { 
-        dir:`ID/gen/resolvers/`, 
+    resolvers: {
+        dir: `ID/gen/resolvers/`,
         modules: [],
     },
-    services: { 
-        dir:'ID/gen/services/', 
+    services: {
+        dir: 'ID/gen/services/',
         modules: [],
     },
-    services2: { 
-        dir:'ID/services/', 
+    api: {
+        dir: 'ID/gen/api/',
+        modules: [],
+    },
+    services2: {
+        dir: 'ID/services/',
         modules: [],
     },
 
-    integration_tests: { 
-        dir:'ID/gen/integration-tests/', 
+    integration_tests: {
+        dir: 'ID/gen/integration-tests/',
         modules: [],
     },
-};
-  
+}
+
 export interface BackendStructureOperatorWrite {
     write: (file: string, data: string) => boolean
     genWrite: (file: string, data: string) => boolean
@@ -52,39 +56,39 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
     }
 
     /**
-     * 
+     *
      * @param projectName project name
      * @param baseDir base dir
      */
-    init(projectName: string, baseDir: string = './graphql/generated/'){
+    init(projectName: string, baseDir: string = './graphql/generated/') {
         this.projectName = projectName
         this.baseDir = baseDir
 
-        this.structure.id = projectName.replace('../', '').replace('./', '');
-      
+        this.structure.id = projectName.replace('../', '').replace('./', '')
+
         for (const str in this.structure) {
-          if (str === 'id') {
-            continue;
-          }
-      
-          const item = this.structure[str];
-          item.dir = item.dir.replace('ID', this.baseDir);
+            if (str === 'id') {
+                continue
+            }
+
+            const item = this.structure[str]
+            item.dir = item.dir.replace('ID', this.baseDir)
         }
     }
 
     /**
      * create or clean directory for copy files
      */
-    prepareDirectory(){
-        if(!this.baseDir || !this.projectName) {
+    prepareDirectory() {
+        if (!this.baseDir || !this.projectName) {
             throw new Error('this.projectName or this.baseDir are empty, call init() fist')
         }
 
-        files.removeDirs(path.join(this.baseDir, 'gen'));
+        files.removeDirs(path.join(this.baseDir, 'gen'))
         files.createDirs(this.structure)
     }
 
-    public writeWithConfig(templateName: string, config: any, outDir=null){
+    public writeWithConfig(templateName: string, config: any, outDir = null) {
         const file = templateName.match(/(\w+)(\.t)?/)[1]
         const myConfig = config[file]
 
@@ -94,25 +98,28 @@ export class BackendDirectory implements BackendStructureOperatorWrite {
         const data = files.templateFileToText(templateFileName, myConfig?.config)
         return files.writeToFile(this.structure.schema, outputFileName, data)
     }
-    
-    public write(file: string, data: string){
+
+    public write(file: string, data: string) {
         return files.writeToFile(this.structure.schema, file, data)
     }
 
-    public genWrite(file: string, data: string){
+    public genWrite(file: string, data: string) {
         return files.writeToFile(this.structure.gen, file, data)
     }
 
-    modelsWrite(file: string, data: string){
+    modelsWrite(file: string, data: string) {
         return files.writeToFile(this.structure.models, file, data)
     }
 
-    resolversWrite(file: string, data: string){
+    resolversWrite(file: string, data: string) {
         return files.writeToFile(this.structure.resolvers, file, data)
     }
 
-    servicesWrite(file: string, data: string){
+    apiWrite(file: string, data: string) {
+        return files.writeToFile(this.structure.api, file, data)
+    }
+
+    servicesWrite(file: string, data: string) {
         return files.writeToFile(this.structure.services, file, data)
     }
-  
-  }
+}

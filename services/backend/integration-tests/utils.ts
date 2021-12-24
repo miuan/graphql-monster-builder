@@ -180,14 +180,18 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
         //    https://github.com/apollographql/apollo-server/issues/2277
         // const { query, mutate } = createTestClient(server.apollo)
 
-        const query = async (body: { query: string; variables: any }, token?: string) => {
-            const req = request(server.koa).post('/graphql').set('Content-Type', 'application/json').set('Accept', 'application/json')
+        const post = async (url, body: { query: string; variables: any }, token?: string) => {
+            const req = request(server.koa).post(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
 
             if (token) {
                 req.set('Authorization', `Bearer ${token}`)
             }
 
-            return (await req.send(body)).body
+            return await req.send(body)
+        }
+
+        const query = async (body, token?: string) => {
+            return (await post('/graphql', body, token)).body
         }
 
         const mutate = async ({ mutation, variables }: { mutation: string; variables: any }, token?: string) => {
@@ -204,7 +208,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
 
         const count = await server.entry.models.user.count({})
 
-        return { ...server, query, mutate }
+        return { ...server, query, mutate, post }
     } catch (ex) {
         console.error(ex)
     }

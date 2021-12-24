@@ -9,6 +9,7 @@ import { generateIntegrationTests } from './generators/integration'
 import { generateMongoModelToFile } from './generators/model'
 import { createModelTypeFromModel } from './generators/model-types'
 import { generateResolverToFile } from './generators/resolvers'
+import { generateRestToFile } from './generators/rest'
 import { generateSchema } from './generators/schema'
 import { generateServiceToFile } from './generators/service'
 
@@ -40,9 +41,12 @@ export const exportAsFromString = async (name, importedSchema, outDir = '.', con
     backendDirectory.genWrite(`source.schema`, importedSchema)
     backendDirectory.write(`package.json`, templateFileToText(`package.json`, null))
     backendDirectory.genWrite(`integration-tests/helper.ts`, templateFileToText(`integration-test-helper.ts`, null))
+
+    backendDirectory.genWrite('api-auth.ts', templateFileToText(`api/api-auth.t.ts`, null))
+    backendDirectory.genWrite('api-utils.ts', templateFileToText(`api/api-utils.t.ts`, null))
 }
 
-export function generateAll(backendDirectory: BackendDirectory, models: SchemaModel[], config: {integrationTestsEnable?: boolean}) {
+export function generateAll(backendDirectory: BackendDirectory, models: SchemaModel[], config: { integrationTestsEnable?: boolean }) {
     generateSchema(backendDirectory, models)
 
     let typesAll = `import { Document } from 'mongoose'\n`
@@ -52,7 +56,10 @@ export function generateAll(backendDirectory: BackendDirectory, models: SchemaMo
         typesAll += createModelTypeFromModel(model, notVirtualMembers)
 
         generateServiceToFile(backendDirectory, model)
-        if(model.type === SchemaModelType.MODEL) generateResolverToFile(backendDirectory, model)
+        if (model.type === SchemaModelType.MODEL) {
+            generateRestToFile(backendDirectory, model)
+            generateResolverToFile(backendDirectory, model)
+        }
     }
 
     backendDirectory.genWrite(`model-types.ts`, typesAll)
@@ -63,4 +70,3 @@ export function generateAll(backendDirectory: BackendDirectory, models: SchemaMo
 
     generateEntry(backendDirectory, models)
 }
-

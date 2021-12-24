@@ -1,4 +1,5 @@
 import * as extras from '../extras'
+import { UnauthorizedError, RequestError } from '../api-utils'
 
 export const _MODEL_LOWER_NAME_All = (entry, protections) => {
     return async (root, data, ctx) => {
@@ -138,6 +139,6 @@ export const generate_MODEL_NAME_Resolver = (entry) => {
         create: _MODEL_LOWER_NAME_Create(entry, protections),
         update: _MODEL_LOWER_NAME_Update(entry, protections),
         remove: _MODEL_LOWER_NAME_Remove(entry, protections),
-        _RESOLVERS_ADD_REMOVE_CONNECT_
+        _RESOLVERS_ADD_REMOVE_CONNECT_,
     }
 }

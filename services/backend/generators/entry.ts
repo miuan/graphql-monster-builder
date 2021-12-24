@@ -32,6 +32,7 @@ export const generateEntryWorker = (structure: StructureBackend, models: SchemaM
     let modelsBody = ''
     let services = ''
     let resolvers = ''
+    let apiConnectors = ''
 
     const properModels = models.filter((model) => model.type === SchemaModelType.MODEL)
     for (const model of properModels) {
@@ -46,6 +47,8 @@ export const generateEntryWorker = (structure: StructureBackend, models: SchemaM
         body += `import { generate${model.modelName}Resolver } from './resolvers/${model.modelName}'\n`
         resolvers += `entry.resolvers['${lower}'] = generate${model.modelName}Resolver(entry)\n`
 
+        body += `import { connect${model.modelName}Api } from './api/${model.modelName}'\n`
+        apiConnectors += `connect${model.modelName}Api(apiRouter, entry)\n`
         body += '\n'
     }
 
@@ -69,6 +72,7 @@ export const generateEntryWorker = (structure: StructureBackend, models: SchemaM
         _SERVICES_: services,
         _RE1SOLVERS_: resolvers,
         _RESOLVER_: resolver,
+        _API_CONNECTORS_: apiConnectors,
     })
 
     return body

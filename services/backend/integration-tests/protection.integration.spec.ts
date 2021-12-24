@@ -9,7 +9,7 @@ console.info = jest.fn()
 let serverPort = 1
 
 // @all(filter:"user_every.id={{userId}}")
-describe('protection integration', () => {
+describe('i:protection', () => {
     describe.each([
         ['admin', { admin: true, user: false, public: false }, '', '', '', '', ''],
         ['user', { admin: true, user: true, public: false }, '@create("user")', '@update("owner")', '@remove("owner")', '@one("owner")', '@all("user")'],
@@ -98,7 +98,7 @@ describe('protection integration', () => {
             ['user', allowedFor.user, user],
             ['public', allowedFor.public],
         ])('with:%s (%s)', (currentTokenName, allowed) => {
-            it('create', async () => {
+            it('create:graphql', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const mutate = {
                     mutation: `mutation CreateModel1($name: String!){
@@ -126,7 +126,32 @@ describe('protection integration', () => {
                 }
             })
 
-            it('create with user2', async () => {
+            it('create:api', async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const data = await server.post(
+                    `/api/${firstToLower(keyName)}`,
+                    {
+                        name: 'aw45eso45em',
+                    },
+                    currentUser?.token,
+                )
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    return
+                }
+
+                expect(data).toHaveProperty('status', 200)
+                expect(data.body).toHaveProperty(`create${keyName}`)
+                expect(data.body).toHaveProperty(`create${keyName}.id`)
+                expect(data.body).toHaveProperty(`create${keyName}.name`, 'aw45eso45em')
+                if (currentUser?.token) {
+                    expect(data.body).toHaveProperty(`create${keyName}.user`, currentUser?.user?.id)
+                }
+            })
+
+            it('user2 create:graphql', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const mutate = {
                     mutation: `mutation CreateModel1($name: String!, $userId: ID){
@@ -152,6 +177,33 @@ describe('protection integration', () => {
                 expect(data).toHaveProperty(`data.create${keyName}.name`, 'user242xwr')
                 if (currentUser?.token) {
                     expect(data).toHaveProperty(`data.create${keyName}.user.id`, user2?.user?.id)
+                }
+            })
+
+            it('user2 create:api', async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const data = await server.post(
+                    `/api/${firstToLower(keyName)}`,
+                    {
+                        name: 'aw45eso46em',
+                        userId: user2.user.id,
+                    },
+                    currentUser?.token,
+                )
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    return
+                }
+
+                expect(data).toHaveProperty('status', 200)
+                expect(data.body).toHaveProperty(`create${keyName}`)
+                expect(data.body).toHaveProperty(`create${keyName}.id`)
+                expect(data.body).toHaveProperty(`create${keyName}.name`, 'aw45eso46em')
+
+                if (currentUser?.token) {
+                    expect(data.body).toHaveProperty(`create${keyName}.user`, user2.user.id)
                 }
             })
 
