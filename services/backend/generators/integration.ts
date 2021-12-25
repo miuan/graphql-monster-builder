@@ -276,6 +276,30 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], forT
     return res
 }
 
+function createTestCreateApi(model: SchemaModel, members: SchemaModelMember[], forTest = false) {
+    const mutationName = `create${model.modelName}`
+    const regEx = new RegExp(`data\\.${mutationName}\\.`, 'g')
+    const lower = firstToLower(model.modelName)
+    let res = ''
+
+    const createMembers = members.filter(exludeMembersForCreation)
+
+    const config = {
+        id: VARIABLE_CONFIG_SKIP,
+    }
+
+    const variables = generateVariables(model, members, { config })
+    res += `const data = ` + JSON.stringify(variables, null, '\t').replace(/"=>/g, '').replace(/<="/g, '')
+
+    res += `
+    const ${mutationName}Response = await server.post('/api/${lower}', data ,token);
+      
+      ${generateExpects(model, createMembers, mutationName, variables, (m, v) => wrapStringValue(m, v)).replace(regEx, `body.${mutationName}.`)}
+    `
+
+    return res
+}
+
 function createTestOne(model: SchemaModel, beforeMutation = 'create') {
     const queryName = `one${model.modelName}`
     const beforeMutationName = `${beforeMutation}${model.modelName}`
@@ -373,6 +397,29 @@ function createTestAll(model: SchemaModel) {
     return res
 }
 
+function createTestAllApi(model: SchemaModel) {
+    const queryName = `all${model.modelName}`
+    const regEx = new RegExp(`data\\.${queryName}\\.`, 'g')
+    const lower = firstToLower(model.modelName)
+
+    const beforeMutationName = `create${model.modelName}`
+
+    //const variables = generateVariables(model, members, {config})
+    const variables1 = createVariablesForAll(model, `${beforeMutationName}Response`)
+    const variables2 = createVariablesForAll(model, `${beforeMutationName}Response2`)
+
+    let res = ` const ${queryName}Response = await server.get('/api/${lower}/all', token);`
+
+    // test is array is for One where is comming `createModel1Response.data.createModel1.model2` and thats generate milion of test lines
+    const arrayContaining = `expect.arrayContaining([
+        ${generateObjectContain(model.members, variables1, [], null).replace(regEx, `body.${lower}.`)},
+        ${generateObjectContain(model.members, variables2, [], null).replace(regEx, `body.${lower}.`)}
+    ])`
+    res += `\nexpect(${queryName}Response.body.${queryName}).toEqual(${arrayContaining})`
+
+    return res
+}
+
 function createVariablesForAll(model: SchemaModel, beforeMutationResponseName: string) {
     return model.members.reduce((accumulator, member) => {
         if (member.relation) {
@@ -430,6 +477,42 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
     ${generateExpects(model, membersForUpdation, mutationName, variables, (m, v) => wrapStringValue(m, v))
         .replace(/=>/g, '')
         .replace(/<=/g, '')}
+    `
+    return res
+}
+
+function createTestUpdateApi(model: SchemaModel, members: SchemaModelMember[], beforeMutation = 'create') {
+    const mutationName = `update${model.modelName}`
+    const regEx = new RegExp(`data\\.${mutationName}\\.`, 'g')
+    const lower = firstToLower(model.modelName)
+    const mutationDesc = `Update${model.modelName}`
+    const beforeMutationName = `${beforeMutation}${model.modelName}`
+
+    const membersForUpdation = members.filter(exludeMembersForUpdation)
+    const output = generateOutputFromMembers(membersForUpdation)
+    const variableInputs = generateVariableInputsFromMembers(membersForUpdation)
+    const mutationInputs = membersForUpdation
+        .map((m) => (m.relation ? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}` : `${m.name}: $${m.name}`))
+        .join(',')
+
+    const config = {
+        id: `=>${beforeMutationName}Response.id<=`,
+    }
+    // for (const memberWithRelation of members.filter((m) => m.relation && m.relation.relatedMember)) {
+    //     res += generateMongooseModelCreate(memberWithRelation, config)
+    // }
+
+    const variables = generateVariables(model, membersForUpdation, { config })
+
+    let res = `
+    const ${mutationName}Response = await server.put('/api/${lower}/' + ${beforeMutationName}Response.id,
+        ${JSON.stringify(variables, null, '\t').replace(/"=>/g, '').replace(/<="/g, '')}
+      , token);
+
+    ${generateExpects(model, membersForUpdation, mutationName, variables, (m, v) => wrapStringValue(m, v))
+        .replace(/=>/g, '')
+        .replace(/<=/g, '')
+        .replace(regEx, `body.${mutationName}.`)}
     `
     return res
 }
@@ -499,6 +582,51 @@ function createTestRemove(model: SchemaModel, beforeMutation = 'create') {
     return res
 }
 
+function createTestRemoveApi(model: SchemaModel, beforeMutation = 'create') {
+    const mutationName = `remove${model.modelName}`
+    const mutationDesc = `Remove${model.modelName}`
+    const beforeMutationName = `${beforeMutation}${model.modelName}`
+    let res = ''
+
+    const output = generateOutputFromMembers(model.members)
+    const variableInputs = generateVariableInputsFromMembers(model.members.filter((m) => m.name == 'id'))
+    const mutationInputs = model.members
+        .filter((m) => m.name == 'id')
+        .map((m) => `${m.name}: $${m.name}`)
+        .join(',')
+
+    const config = {
+        id: `=>${beforeMutationName}Response.id<=`,
+    }
+
+    const variables = generateVariables(model, model.members, { config })
+
+    res += `const ${mutationName}Mutation = \`mutation ${mutationDesc}(${variableInputs}){
+        ${mutationName}(${mutationInputs}) {
+           id
+        }
+    }\`
+    
+    const ${mutationName}Response = await server.mutate({
+        mutation: ${mutationName}Mutation,
+        variables: { id:${beforeMutationName}Response.id }
+      }, token);
+
+      ${generateExpects(
+          model,
+          model.members.filter((m) => m.name === 'id'),
+          mutationName,
+          { id: `${beforeMutationName}Response.id` },
+          (m, v) => wrapStringValue(m, v),
+      )
+          .replace(/=>/g, '')
+          .replace(/<=/g, '')}
+
+          ${generateCheckExistenceInMongo(model, `${beforeMutationName}Response.id`, false)}
+    `
+    return res
+}
+
 function generateCheckExistenceInMongo(model: SchemaModel, beforeMutationName, shouldExist = true, iteration = 0, beforeMutation = 'create') {
     const lower = _.lowerFirst(model.modelName)
     const check = `${lower}Check${iteration == 0 ? '' : iteration.toString()}`
@@ -541,8 +669,16 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 0 }) {
         test = createTestAll(model)
     } else if (name === 'remove') {
         test = createTestRemove(model)
+    } else if (name === 'create:api') {
+        test = createTestCreateApi(model, model.members)
     } else if (name === 'one:api') {
         test = createTestOneApi(model)
+    } else if (name === 'update:api') {
+        test = createTestUpdateApi(model, model.members)
+    } else if (name === 'remove:api') {
+        test = createTestRemoveApi(model)
+    } else if (name === 'all:api') {
+        test = createTestAllApi(model)
     }
 
     return `
@@ -614,9 +750,7 @@ function generateCreateModelFunction(model: SchemaModel) {
 }
 
 const protections = (model) =>
-    [
-        'admin', //'user', 'pub'
-    ]
+    ['admin', 'user', 'pub']
         .map(
             (name) =>
                 `
@@ -629,9 +763,11 @@ const protections = (model) =>
     })
 
     describe('${name}:api', ()=>{
-        
+        ${wrapTest('create:api', model, { token: name })}
         ${wrapTest('one:api', model, { token: name, createModelFn: 1 })}
-        
+        ${wrapTest('update:api', model, { token: name, createModelFn: 1 })}
+        ${wrapTest('remove:api', model, { token: name, createModelFn: 1 })}
+        ${wrapTest('all:api', model, { token: name, createModelFn: 2 })}
     })
 `,
         )
