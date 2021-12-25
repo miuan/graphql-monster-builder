@@ -18,6 +18,7 @@
     "dotenv-flow": "^3.2.0",
     "graphql": "^14.6.0",
     "graphql-tools": "^4.0.7",
+    "json5": "^2.2.0",
     "jsonwebtoken": "^8.5.1",
     "koa": "^2.11.0",
     "koa-body": "^4.1.1",

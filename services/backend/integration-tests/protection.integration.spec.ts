@@ -97,7 +97,7 @@ describe('i:protection', () => {
             ['user', allowedFor.user, user],
             ['public', allowedFor.public],
         ])('with:%s (%s)', (currentTokenName, allowed) => {
-            it('create:graphql', async () => {
+            it('should create [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const mutate = {
                     mutation: `mutation CreateModel1($name: String!){
@@ -125,7 +125,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('should create [api]', async () => {
+            it('should create [api]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const data = await server.post(
                     `/api/${firstToLower(keyName)}`,
@@ -150,7 +150,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('user2 create [graphql]', async () => {
+            it('should with user2 create [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const mutate = {
                     mutation: `mutation CreateModel1($name: String!, $userId: ID){
@@ -179,7 +179,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('user2 create:api', async () => {
+            it('shoudl with user2 create [api]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const data = await server.post(
                     `/api/${firstToLower(keyName)}`,
@@ -206,7 +206,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('should update [graphql]', async () => {
+            it('should update [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created = await model1.create({ name: 'up4date45c', user: currentUser?.user?.id })
@@ -246,7 +246,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('should update [api]', async () => {
+            it('should update [api]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const created = await model1.create({ name: 'apiup4date45c', user: currentUser?.user?.id })
                 const createId = created._id.toString()
@@ -267,7 +267,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('should update with owner change [graphql]', async () => {
+            it('should update with owner change [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created = await model1.create({ name: 'up4date45c2', user: currentUser?.user?.id })
@@ -306,7 +306,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('should update with owner change [api]', async () => {
+            it('should update with owner change [api]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const created = await model1.create({ name: 'apiup4date45c2', user: currentUser?.user?.id })
                 const createId = created._id.toString()
@@ -327,7 +327,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('should remove [graphql]', async () => {
+            it('should remove [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created1 = await model1.create({ name: 'rem28xwer1', user: currentUser?.user?.id })
@@ -378,10 +378,33 @@ describe('i:protection', () => {
                 }
             })
 
-            it('one', async () => {
+            it('should remove [api]' + (allowed ? '[200]' : '[401]'), async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const created = await model1.create({ name: 'apirem28xwer1', user: currentUser?.user?.id })
+                const createId = created._id.toString()
+                const data = await server.delete(`/api/${firstToLower(keyName)}/${createId}`, {}, currentUser?.token)
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    expect(await model1.exists({ _id: createId })).toEqual(true)
+                    return
+                }
+
+                expect(data).toHaveProperty('status', 200)
+                expect(data.body).toHaveProperty(`remove${keyName}`)
+                expect(data.body).toHaveProperty(`remove${keyName}.id`, createId)
+                expect(data.body).toHaveProperty(`remove${keyName}.name`, 'apirem28xwer1')
+                expect(await model1.exists({ _id: createId })).toEqual(false)
+                if (currentUser?.token) {
+                    expect(data.body).toHaveProperty(`remove${keyName}.user`, currentUser?.user?.id)
+                }
+            })
+
+            it('should read one [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
-                const created1 = await model1.create({ name: 'rem28xwer1', user: currentUser?.user?.id })
+                const created1 = await model1.create({ name: 'rem28xwer2', user: currentUser?.user?.id })
                 const query = `query Model1($id: ID!){
                     ${keyName}(id:$id) {
                         name,id,user{id}
@@ -406,7 +429,7 @@ describe('i:protection', () => {
                 expect(data).not.toHaveProperty('errors')
                 expect(data).toHaveProperty(`data.${keyName}`)
                 expect(data).toHaveProperty(`data.${keyName}.id`)
-                expect(data).toHaveProperty(`data.${keyName}.name`, 'rem28xwer1')
+                expect(data).toHaveProperty(`data.${keyName}.name`, 'rem28xwer2')
                 expect(data).toHaveProperty(`data.${keyName}.user.id`, currentUser?.user?.id)
 
                 // test if user 2 can edit
@@ -428,7 +451,30 @@ describe('i:protection', () => {
                 }
             })
 
-            it('all', async () => {
+            it('should read on [api]' + (allowed ? '[200]' : '[401]'), async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const created = await model1.create({ name: 'apirem28xwer2', user: currentUser?.user?.id })
+                const createId = created._id.toString()
+                const data = await server.get(`/api/${firstToLower(keyName)}/${createId}`, currentUser?.token)
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    expect(await model1.exists({ _id: createId })).toEqual(true)
+                    return
+                }
+
+                expect(data).toHaveProperty('status', 200)
+                expect(data.body).toHaveProperty(`${firstToLower(keyName)}`)
+                expect(data.body).toHaveProperty(`${firstToLower(keyName)}.id`, createId)
+                expect(data.body).toHaveProperty(`${firstToLower(keyName)}.name`, 'apirem28xwer2')
+
+                if (currentUser?.token) {
+                    expect(data.body).toHaveProperty(`${firstToLower(keyName)}.user`, currentUser?.user?.id)
+                }
+            })
+
+            it('should all [graphql]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created1 = await model1.create({ name: 'all23xwer1', user: currentUser?.user?.id })
@@ -462,9 +508,33 @@ describe('i:protection', () => {
                 )
             })
 
-            it('count', async () => {
+            it('should all [api]' + (allowed ? '[200]' : '[401]'), async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
-                const userFilterKey = protectedTo + '_count_' + currentTokenName + '_'
+
+                const created1 = await model1.create({ name: 'apiall23xwer1', user: currentUser?.user?.id })
+                const created2 = await model1.create({ name: 'apiall34xwer2', user: currentUser?.user?.id })
+                const data = await server.get(`/api/${firstToLower(keyName)}/all`, currentUser?.token)
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    return
+                }
+
+                expect(data).not.toHaveProperty('errors')
+                expect(data).toHaveProperty(`body.all${keyName}`)
+                expect(data).toHaveProperty(
+                    `body.all${keyName}`,
+                    expect.arrayContaining([
+                        expect.objectContaining({ name: 'apiall23xwer1', id: created1._id.toString() }),
+                        expect.objectContaining({ name: 'apiall34xwer2', id: created2._id.toString() }),
+                    ]),
+                )
+            })
+
+            it('should dcount [graph]' + (allowed ? '[200]' : '[401]'), async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const userFilterKey = protectedTo + '_gql_count_' + currentTokenName + '_'
                 const created1 = await model1.create({ name: userFilterKey + 'all23xwer3', user: currentUser?.user?.id })
                 const created2 = await model1.create({ name: userFilterKey + 'all34xwer4', user: currentUser?.user?.id })
                 const query = `query countModel1{
@@ -485,6 +555,30 @@ describe('i:protection', () => {
 
                 expect(data).not.toHaveProperty('errors')
                 expect(data).toHaveProperty(`data.count${keyName}`, 2)
+            })
+
+            it('should count [api]' + (allowed ? '[200]' : '[401]'), async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+
+                const userFilterKey = protectedTo + '_api_count_' + currentTokenName + '_'
+                const userFilterKey2 = protectedTo + '_api_count_2' + currentTokenName + '2_'
+                const created1 = await model1.create({ name: userFilterKey + 'apiall23xwer01', user: currentUser?.user?.id })
+                const created2 = await model1.create({ name: userFilterKey + 'apiall34xwer02', user: currentUser?.user?.id })
+                const created3 = await model1.create({ name: userFilterKey2 + 'apiall34xwer03', user: currentUser?.user?.id })
+                const data = await server.get(`/api/${firstToLower(keyName)}/count?filter={name_starts_with:"${userFilterKey}"}`, currentUser?.token)
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    return
+                }
+
+                expect(data).not.toHaveProperty('errors')
+                expect(data).toHaveProperty(`body.count${keyName}`, 2)
+
+                const data2 = await server.get(`/api/${firstToLower(keyName)}/count?filter={name_starts_with:"${userFilterKey2}"}`, currentUser?.token)
+                expect(data2).not.toHaveProperty('errors')
+                expect(data2).toHaveProperty(`body.count${keyName}`, 1)
             })
         })
     })

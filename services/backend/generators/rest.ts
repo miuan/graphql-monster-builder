@@ -88,7 +88,7 @@ export const generateProtectionFromParam = (protection: SchemaModelProtectionPar
             filters = `,{name: '${filter.name}', value: '${filter.value}'}`
         }
 
-        result += `await protections.filter(ctx, data, [${filters.substr(1)}], ${roles})`
+        result += `await paramHaveFilter(ctx, ctx.request.params, [${filters.substr(1)}], ${roles})`
     }
     return result
 }
