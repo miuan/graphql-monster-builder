@@ -19,6 +19,50 @@ const create_MODEL_NAME_ = (entry) => async (ctx) => {
     ctx.body = apiMiddleware(ctx, resData, 'create_MODEL_NAME_')
 }
 
+const update_MODEL_NAME_ = (entry) => async (ctx) => {
+    let body = ctx.request.body
+    // user is owner need id
+    body.id = ctx.request.params.id
+
+    _PROTECT_UPDATE_
+
+    if (entry.hooks.api['beforeUpdate_MODEL_NAME_']) {
+        body = (await entry.hooks.api['beforeUpdate_MODEL_NAME_'](entry, ctx, body)) || body
+    }
+
+    body.user = body.user || ctx.state?.user?.id
+    let resData = await entry.services['_MODEL_LOWER_NAME_'].update(body, ctx.state?.user?.id)
+
+    if (entry.hooks.api['afterUpdate_MODEL_NAME_']) {
+        resData = (await entry.hooks.api['afterUpdate_MODEL_NAME_'](entry, ctx, resData, body)) || resData
+    }
+
+    ctx.body = apiMiddleware(ctx, resData, 'update_MODEL_NAME_')
+}
+
+const remove_MODEL_NAME_ = (entry) => async (ctx) => {
+    let body = ctx.request.body
+    // user is owner need id
+    body.id = ctx.request.params.id
+
+    _PROTECT_REMOVE_
+
+    if (entry.hooks.api['beforeRemove_MODEL_NAME_']) {
+        body = (await entry.hooks.api['beforeRemove_MODEL_NAME_'](entry, ctx, body)) || body
+    }
+
+    body.user = body.user || ctx.state?.user?.id
+    let resData = await entry.services['_MODEL_LOWER_NAME_'].remove(body, ctx.state?.user?.id)
+
+    if (entry.hooks.api['afterRemove_MODEL_NAME_']) {
+        resData = (await entry.hooks.api['afterRemove_MODEL_NAME_'](entry, ctx, resData, body)) || resData
+    }
+
+    ctx.body = apiMiddleware(ctx, resData, 'update_MODEL_NAME_')
+}
+
 export function connect_MODEL_NAME_Api(apiRouter, entry) {
     apiRouter.post('/_MODEL_LOWER_NAME_', create_MODEL_NAME_(entry))
+    apiRouter.put('/_MODEL_LOWER_NAME_/:id', update_MODEL_NAME_(entry))
+    apiRouter.delete('/_MODEL_LOWER_NAME_/:id', remove_MODEL_NAME_(entry))
 }

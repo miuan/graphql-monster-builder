@@ -76,8 +76,8 @@ export const generateProtectionFromParam = (protection: SchemaModelProtectionPar
         // in model user is owner identified by ID
         const param = modelName && modelName === 'User' ? '_id' : 'user'
         result += objectIdField
-            ? `await userIsOwner(ctx, data, entry.models.${lower}, entry.models.userRole, '${param}', '${objectIdField}')`
-            : `await userIsOwner(ctx, data, entry.models.${lower}, entry.models.userRole, '${param}')`
+            ? `await userIsOwner(ctx, body, entry.models.${lower}, entry.models.userRole, '${param}', '${objectIdField}')`
+            : `await userIsOwner(ctx, body, entry.models.${lower}, entry.models.userRole, '${param}')`
     } else if (protection.type === SchemaModelProtectionType.ROLE) {
         const roles = `'` + protection.roles.join(`','`) + `'`
         result += `await userHaveRoles(ctx, [${roles}], entry.models.userRole)`

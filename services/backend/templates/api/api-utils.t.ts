@@ -56,7 +56,7 @@ export const userIsOwner = async (ctx, data, model, userRole, ownerField = 'user
     const userId = ctx?.state?.user?.id
 
     if (userId) {
-        const modelData = await model.findById(data[idField] || data._id, ownerField).lean()
+        const modelData = await model.findById(data[idField] || data._id).lean()
         const isOwner = modelData && modelData[ownerField] == userId
 
         return isOwner || (await userRole.exists({ name: 'admin', users: userId }))

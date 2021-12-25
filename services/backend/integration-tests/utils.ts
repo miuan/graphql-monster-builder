@@ -190,6 +190,36 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
             return await req.send(body)
         }
 
+        const put = async (url, body: { query: string; variables: any }, token?: string) => {
+            const req = request(server.koa).put(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+            if (token) {
+                req.set('Authorization', `Bearer ${token}`)
+            }
+
+            return await req.send(body)
+        }
+
+        const del = async (url, body: { query: string; variables: any }, token?: string) => {
+            const req = request(server.koa).delete(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+            if (token) {
+                req.set('Authorization', `Bearer ${token}`)
+            }
+
+            return await req.send(body)
+        }
+
+        const get = async (url, token?: string) => {
+            const req = request(server.koa).get(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+            if (token) {
+                req.set('Authorization', `Bearer ${token}`)
+            }
+
+            return await req.send()
+        }
+
         const query = async (body, token?: string) => {
             return (await post('/graphql', body, token)).body
         }
@@ -208,7 +238,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
 
         const count = await server.entry.models.user.count({})
 
-        return { ...server, query, mutate, post }
+        return { ...server, query, mutate, get, post, put, delete: del }
     } catch (ex) {
         console.error(ex)
     }

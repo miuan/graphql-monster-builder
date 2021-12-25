@@ -14,7 +14,7 @@ import {
 import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
 import { setupModelsRelations } from './relations'
-import { addDefaultModelsAndMembers, ADMIN_PROTECTION, connectedModelNameInUser, connectModelToUser, generateDefaultProtection } from './defaults'
+import { addDefaultModelsAndMembers, connectedModelNameInUser, connectModelToUser, generateDefaultProtection } from './defaults'
 import { firstToUpper } from '../common/utils'
 
 export const getModelsFromSchema = (schema): SchemaModel[] => {
@@ -257,7 +257,7 @@ export const scanProtectionUnit = (unit: string, protection: SchemaModelProtecti
         protectionCheckTheParameter(param, typeString, value, unit, row)
     }
 
-    if (protectFor === 'all') {
+    if (protectFor === 'all' && protection.all) {
         protection.all.push(param)
     } else if (protectFor === 'one') {
         protection.one.push(param)

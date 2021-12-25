@@ -25,7 +25,6 @@ describe('i:protection', () => {
             ${createProtection}
             ${updateProtection}
             ${removeProtection}
-            ${updateProtection}
             ${oneProtection}
             ${allProtection}
             type ${keyName} @model {
@@ -126,7 +125,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('create:api', async () => {
+            it('should create [api]', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const data = await server.post(
                     `/api/${firstToLower(keyName)}`,
@@ -151,7 +150,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('user2 create:graphql', async () => {
+            it('user2 create [graphql]', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
                 const mutate = {
                     mutation: `mutation CreateModel1($name: String!, $userId: ID){
@@ -207,7 +206,7 @@ describe('i:protection', () => {
                 }
             })
 
-            it('update', async () => {
+            it('should update [graphql]', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created = await model1.create({ name: 'up4date45c', user: currentUser?.user?.id })
@@ -247,7 +246,28 @@ describe('i:protection', () => {
                 }
             })
 
-            it('update with owner change', async () => {
+            it('should update [api]', async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const created = await model1.create({ name: 'apiup4date45c', user: currentUser?.user?.id })
+                const createId = created._id.toString()
+                const data = await server.put(`/api/${firstToLower(keyName)}/${createId}`, { name: 'apiupda12er15' }, currentUser?.token)
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    return
+                }
+
+                expect(data).toHaveProperty('status', 200)
+                expect(data.body).toHaveProperty(`update${keyName}`)
+                expect(data.body).toHaveProperty(`update${keyName}.id`, createId)
+                expect(data.body).toHaveProperty(`update${keyName}.name`, 'apiupda12er15')
+                if (currentUser?.token) {
+                    expect(data.body).toHaveProperty(`update${keyName}.user`, currentUser?.user?.id)
+                }
+            })
+
+            it('should update with owner change [graphql]', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created = await model1.create({ name: 'up4date45c2', user: currentUser?.user?.id })
@@ -286,7 +306,28 @@ describe('i:protection', () => {
                 }
             })
 
-            it('remove', async () => {
+            it('should update with owner change [api]', async () => {
+                const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
+                const created = await model1.create({ name: 'apiup4date45c2', user: currentUser?.user?.id })
+                const createId = created._id.toString()
+                const data = await server.put(`/api/${firstToLower(keyName)}/${createId}`, { user: user2?.user.id }, currentUser?.token)
+
+                if (!allowed) {
+                    expect(data).toHaveProperty('status', 401)
+                    expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+                    return
+                }
+
+                expect(data).toHaveProperty('status', 200)
+                expect(data.body).toHaveProperty(`update${keyName}`)
+                expect(data.body).toHaveProperty(`update${keyName}.id`, createId)
+                expect(data.body).toHaveProperty(`update${keyName}.name`, 'apiup4date45c2')
+                if (currentUser?.token) {
+                    expect(data.body).toHaveProperty(`update${keyName}.user`, user2?.user.id)
+                }
+            })
+
+            it('should remove [graphql]', async () => {
                 const currentUser = (currentTokenName === 'admin' && admin) || (currentTokenName === 'user' && user)
 
                 const created1 = await model1.create({ name: 'rem28xwer1', user: currentUser?.user?.id })
