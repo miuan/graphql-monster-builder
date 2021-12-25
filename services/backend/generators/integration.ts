@@ -3,6 +3,7 @@ import logger from '../../log'
 import { BackendDirectory } from '../backendDirectory'
 import * as _ from 'lodash'
 import { type } from 'os'
+import { firstToLower } from '../../common/utils'
 const log = logger.getLogger('model')
 
 const VARIABLE_CONFIG_SKIP = 'VARIABLE_CONFIG_SKIP'
@@ -144,7 +145,7 @@ function generateArrayContaining(relatedVariables: any, member: SchemaModelMembe
         const additions = []
         const relatedMemberName = member.relation.relatedMember?.name
         if (relatedMemberName) {
-            additions.push(`${relatedMemberName}:expect.objectContaining({id:${queryName}Response.data.${queryName}.id})`)
+            additions.push(`${relatedMemberName}:expect.objectContaining({id:${queryName}Response.id})`)
         }
         const objectContaining = generateObjectContain(member.relation.relatedModel.members, relatedVariable, additions)
         arrayContaining += `,\n\t${objectContaining}`
@@ -156,7 +157,7 @@ function generateArrayContaining(relatedVariables: any, member: SchemaModelMembe
 
 function generateObjectContain(members: SchemaModelMember[], relatedVariable: any, additions: any, wrapValue = wrapStringValue) {
     let objectContaining = ``
-    for (const relatedMember of members) {
+    for (const relatedMember of members.filter(exludeMembersForUpdation)) {
         const rmName = relatedMember.name
         const rmValue = relatedVariable[rmName]
 
@@ -214,9 +215,10 @@ function generateExpects(model: SchemaModel, members: SchemaModelMember[], query
             } else {
                 if (relatedVariables) {
                 }
-                res += `\nexpect(${queryName}Response).${not}toHaveProperty('data.${queryName}.${member.name}.id')`
+                res += `\nexpect(${queryName}Response).${not}toHaveProperty('data.${queryName}.${member.name}')`
             }
-        } else if (variables[member.name]) {
+        } else if (variables[member.name] && !['createdAt', 'updatedAt'].includes(member.name)) {
+            // const toString = ['createdAt', 'updatedAt'].includes(member.name) ? '.toString()' : ''
             let variable = variables[member.name]
 
             variable = Array.isArray(variable) ? '[' + variable.reduce((p, c) => `${p},${wrap(member, c)}`, '').substr(1) + ']' : wrap(member, variable)
@@ -277,7 +279,7 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], forT
 function createTestOne(model: SchemaModel, beforeMutation = 'create') {
     const queryName = `one${model.modelName}`
     const beforeMutationName = `${beforeMutation}${model.modelName}`
-    const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
+    const beforeMutationResponseName = `${beforeMutationName}Response`
     let res = ''
     const output = generateOutputFromMembers(model.members)
     const regEx = new RegExp(`data\\.${queryName}\\.`, 'g')
@@ -299,10 +301,38 @@ function createTestOne(model: SchemaModel, beforeMutation = 'create') {
     
     const ${queryName}Response = await server.query({
         query: ${queryName}Query,
-        variables: { id: ${beforeMutationName}Response.data.${beforeMutationName}.id}
+        variables: { id: ${beforeMutationName}Response.id}
       }, token);
 
       ${generateExpects(model, model.members, queryName, variables).replace(regEx, `data.${model.modelName}.`)}
+
+    `
+    return res
+}
+
+function createTestOneApi(model: SchemaModel, beforeMutation = 'create') {
+    const queryName = `one${model.modelName}`
+    const regEx = new RegExp(`data\\.${queryName}\\.`, 'g')
+    const lower = firstToLower(model.modelName)
+
+    const beforeMutationName = `${beforeMutation}${model.modelName}`
+    const beforeMutationResponseName = `${beforeMutationName}Response`
+    let res = ''
+
+    //const variables = generateVariables(model, members, {config})
+    const variables = model.members.reduce((accumulator, member) => {
+        if (member.relation) {
+            accumulator[member.name] = Array.from({ length: 2 }, (i, c) => ({
+                id: `${beforeMutationResponseName}.${member.name}[${c}].id`,
+            }))
+        } else accumulator[member.name] = `${beforeMutationResponseName}.${member.name}`
+        return accumulator
+    }, {})
+
+    res += `
+      const ${queryName}Response = await server.get('/api/${lower}/' + ${beforeMutationName}Response.id, token);
+
+      ${generateExpects(model, model.members, queryName, variables).replace(regEx, `body.${lower}.`)}
 
     `
     return res
@@ -317,8 +347,8 @@ function createTestAll(model: SchemaModel) {
     const regEx = new RegExp(`data\\.${queryName}\\.`, 'g')
 
     //const variables = generateVariables(model, members, {config})
-    const variables1 = createVariablesForAll(model, `${beforeMutationName}Response.data.${beforeMutationName}`)
-    const variables2 = createVariablesForAll(model, `${beforeMutationName}Response2.data.${beforeMutationName}`)
+    const variables1 = createVariablesForAll(model, `${beforeMutationName}Response`)
+    const variables2 = createVariablesForAll(model, `${beforeMutationName}Response2`)
 
     res += `const ${queryName}Query = \`query all${model.modelName} {
         all${model.modelName} {
@@ -328,7 +358,7 @@ function createTestAll(model: SchemaModel) {
     
     const ${queryName}Response = await server.query({
         query: ${queryName}Query,
-        variables: { id: ${beforeMutationName}Response.data.${beforeMutationName}.id}
+        variables: { id: ${beforeMutationName}Response.id}
       }, token)
 
     `
@@ -367,7 +397,7 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
     const mutationName = `update${model.modelName}`
     const mutationDesc = `Update${model.modelName}`
     const beforeMutationName = `${beforeMutation}${model.modelName}`
-    const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
+    const beforeMutationResponseName = `${beforeMutationName}Response`
     let res = ''
 
     const membersForUpdation = members.filter(exludeMembersForUpdation)
@@ -378,7 +408,7 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
         .join(',')
 
     const config = {
-        id: `=>${beforeMutationName}Response.data.${beforeMutationName}.id<=`,
+        id: `=>${beforeMutationName}Response.id<=`,
     }
     // for (const memberWithRelation of members.filter((m) => m.relation && m.relation.relatedMember)) {
     //     res += generateMongooseModelCreate(memberWithRelation, config)
@@ -408,7 +438,6 @@ function createTestRemove(model: SchemaModel, beforeMutation = 'create') {
     const mutationName = `remove${model.modelName}`
     const mutationDesc = `Remove${model.modelName}`
     const beforeMutationName = `${beforeMutation}${model.modelName}`
-    const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
     let res = ''
 
     const output = generateOutputFromMembers(model.members)
@@ -419,7 +448,7 @@ function createTestRemove(model: SchemaModel, beforeMutation = 'create') {
         .join(',')
 
     const config = {
-        id: `=>${beforeMutationName}Response.data.${beforeMutationName}.id<=`,
+        id: `=>${beforeMutationName}Response.id<=`,
     }
 
     const variables = generateVariables(model, model.members, { config })
@@ -432,20 +461,20 @@ function createTestRemove(model: SchemaModel, beforeMutation = 'create') {
     
     const ${mutationName}Response = await server.mutate({
         mutation: ${mutationName}Mutation,
-        variables: { id:${beforeMutationName}Response.data.${beforeMutationName}.id }
+        variables: { id:${beforeMutationName}Response.id }
       }, token);
 
       ${generateExpects(
           model,
           model.members.filter((m) => m.name === 'id'),
           mutationName,
-          { id: `${beforeMutationName}Response.data.${beforeMutationName}.id` },
+          { id: `${beforeMutationName}Response.id` },
           (m, v) => wrapStringValue(m, v),
       )
           .replace(/=>/g, '')
           .replace(/<=/g, '')}
 
-          ${generateCheckExistenceInMongo(model, `${beforeMutationName}Response.data.${beforeMutationName}.id`, false)}
+          ${generateCheckExistenceInMongo(model, `${beforeMutationName}Response.id`, false)}
     `
 
     // for (const relatedMember of model.members.filter((m) => m.relation)) {
@@ -495,13 +524,12 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 0 }) {
 
             return `
                 // createModelLine: start
-                const create${model.modelName}Data${indexName} = ${dataForCreateFn}
-                const create${model.modelName}Response${indexName} = await create${model.modelName}(server, token, create${model.modelName}Data${indexName}, null)
+                const create${model.modelName}Response${indexName} = await create${model.modelName}(server, ${token}, ${dataForCreateFn})
                 // createModelLine: end`
         }).join('\n')
     }
 
-    let test = 'a'
+    let test = ''
 
     if (name === 'create') {
         test = createTestCreate(model, model.members, true)
@@ -513,17 +541,16 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 0 }) {
         test = createTestAll(model)
     } else if (name === 'remove') {
         test = createTestRemove(model)
+    } else if (name === 'one:api') {
+        test = createTestOneApi(model)
     }
 
     return `
         it('${name} ${model.modelName}', async()=>{
-            const token = ${token}
+            const token = ${token}.token
             ${createModelLine}  
             ${test}
         })
-    
-    
-    
     `
 }
 
@@ -579,36 +606,45 @@ function generateCreateModelFunction(model: SchemaModel) {
     //     }
     // }
 
-    return `export async function create${model.modelName}(server, token, data, relations={}){
-        ${relations}
-        ${createTestCreate(model, model.members)}
-        return create${model.modelName}Response
+    const lower = _.lowerFirst(model.modelName)
+    return `export async function create${model.modelName}(server, {user}, data){
+        data.user = user.id
+        return server.entry.models['${lower}'].create(data)
     }`
 }
 
 const protections = (model) =>
-    ['adminToken', 'userToken']
+    [
+        'admin', //'user', 'pub'
+    ]
         .map(
             (name) =>
                 `
-    describe('${name}', ()=>{
+    describe('${name}:graphql', ()=>{
         ${wrapTest('create', model, { token: name })}
         ${wrapTest('one', model, { token: name, createModelFn: 1 })}
         ${wrapTest('update', model, { token: name, createModelFn: 1 })}
         ${wrapTest('remove', model, { token: name, createModelFn: 1 })}
         ${wrapTest('all', model, { token: name, createModelFn: 2 })}
     })
+
+    describe('${name}:api', ()=>{
+        
+        ${wrapTest('one:api', model, { token: name, createModelFn: 1 })}
+        
+    })
 `,
         )
         .join('\n')
-
+/*
+ */
 function createAdminTest(structure: StructureBackend, models: SchemaModel[]) {
     // throw new Error('Function not implemented.');
     let res = ''
 
     res += `
     import { connectToServer, disconnectFromServer } from './helper'
-    ${models.map((model) => generateCreateModelFunction(model))}
+    ${models.map((model) => generateCreateModelFunction(model)).join('\n')}
     `
 
     const describeModels = models
@@ -624,7 +660,7 @@ function createAdminTest(structure: StructureBackend, models: SchemaModel[]) {
     res += `
     describe('integration', () => {
         let server
-        let adminToken, userToken, publicToken
+        let admin, user, pub
         
         beforeAll(async ()=>{
             server = await connectToServer()
@@ -648,7 +684,7 @@ function createAdminTest(structure: StructureBackend, models: SchemaModel[]) {
               // expect(res).toHaveProperty('body.login.user.roles', [{ name: 'admin' }])
               expect(res).not.toHaveProperty("errors");
           
-              adminToken = res.body.login.token;
+              admin = res.body.login;
 
               const res2 = await server.post(
                 "/auth/register_v1?fields=token,refreshToken,user.id&alias=register",
@@ -669,9 +705,9 @@ function createAdminTest(structure: StructureBackend, models: SchemaModel[]) {
               // expect(res).toHaveProperty('body.register.user.roles', [{ name: 'admin' }])
               expect(res2).not.toHaveProperty("errors");
           
-              userToken = res2.body.register.token;
+              user = res2.body.register.token;
 
-              publicToken = null;
+              pub = {user: user.user, token: ''};
         })
 
         afterAll(async () => {

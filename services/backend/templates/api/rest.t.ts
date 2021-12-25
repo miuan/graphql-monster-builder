@@ -23,7 +23,7 @@ const create_MODEL_NAME_ = (entry) => async (ctx) => {
 const update_MODEL_NAME_ = (entry) => async (ctx) => {
     let body = ctx.request.body || {}
     // user is owner need id
-    body.id = ctx.request.params.id
+    body.id = ctx.params.id
 
     _PROTECT_UPDATE_
 
@@ -44,7 +44,7 @@ const update_MODEL_NAME_ = (entry) => async (ctx) => {
 const remove_MODEL_NAME_ = (entry) => async (ctx) => {
     let body = ctx.request.body || {}
     // user is owner need id
-    body.id = ctx.request.params.id
+    body.id = ctx.params.id
 
     _PROTECT_REMOVE_
 
@@ -65,7 +65,7 @@ const remove_MODEL_NAME_ = (entry) => async (ctx) => {
 const one_MODEL_NAME_ = (entry) => async (ctx) => {
     let body = ctx.request.body || {}
     // user is owner need id
-    body.id = ctx.request.params.id
+    body.id = ctx.params.id
 
     _PROTECT_ONE_
 
@@ -86,7 +86,7 @@ const one_MODEL_NAME_ = (entry) => async (ctx) => {
 const all_MODEL_NAME_ = (entry) => async (ctx) => {
     let body = ctx.request.body || {}
     // user is owner need id
-    body.id = ctx.request.params.id
+    body.id = ctx.params.id
 
     _PROTECT_ALL_
 
@@ -95,7 +95,7 @@ const all_MODEL_NAME_ = (entry) => async (ctx) => {
     }
 
     body.user = body.user || ctx.state?.user?.id
-    let resData = await entry.services['_MODEL_LOWER_NAME_'].all(ctx.request.params, ctx.state?.user?.id)
+    let resData = await entry.services['_MODEL_LOWER_NAME_'].all(ctx.params, ctx.state?.user?.id)
     resData = resData.map((m) => {
         m.id = m._id
         delete m._id
@@ -112,7 +112,7 @@ const all_MODEL_NAME_ = (entry) => async (ctx) => {
 const count_MODEL_NAME_ = (entry) => async (ctx) => {
     let body = ctx.request.body || {}
     // user is owner need id
-    body.id = ctx.request.params.id
+    body.id = ctx.params.id
 
     _PROTECT_ALL_
 

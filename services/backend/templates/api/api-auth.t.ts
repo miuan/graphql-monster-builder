@@ -110,8 +110,6 @@ async function _login(userModel, data) {
         }
 
         // clean user
-        data.user.id = data.user._id.toString()
-        data.user._id = undefined
         data.user.__password = undefined
         data.user.__forgottenPasswordToken = undefined
         data.user.__resetPasswordToken = undefined
