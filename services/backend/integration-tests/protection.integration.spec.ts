@@ -19,7 +19,7 @@ describe('i:protection', () => {
 
         beforeAll(async () => {
             const port = 3010 + ++serverPort
-            keyName = `Model1${firstToUpper(protectedTo)}Couar`
+            keyName = `Model1${firstToUpper(protectedTo)}Crud`
             emailName = `model1.${protectedTo}.couar`
             const schema = `
             ${createProtection}

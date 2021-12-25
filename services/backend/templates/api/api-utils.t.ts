@@ -51,3 +51,21 @@ export const apiMiddleware = (ctx, data, aliasDefault) => {
 export const convertRestToResolver = (resolver, name) => async (ctx) => {
     ctx.body = apiMiddleware(ctx, await resolver(null, ctx.request.body, ctx), name)
 }
+
+export const userIsOwner = async (ctx, data, model, userRole, ownerField = 'user', idField = 'id') => {
+    const userId = ctx?.state?.user?.id
+
+    if (userId) {
+        const modelData = await model.findById(data[idField] || data._id, ownerField).lean()
+        const isOwner = modelData && modelData[ownerField] == userId
+
+        return isOwner || (await userRole.exists({ name: 'admin', users: userId }))
+    }
+
+    return false
+}
+
+export const userHaveRoles = async (ctx, roles, userRoleModel) => {
+    const userId = ctx?.state?.user?.id
+    return userId && (await userRoleModel.exists({ name: roles[0], users: userId }))
+}

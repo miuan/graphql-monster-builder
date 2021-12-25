@@ -37,15 +37,19 @@ export const createRest = (model: SchemaModel) => {
 }
 
 export const compileConditionsToIfStatement = (conditions: string[], modelName: string = undefined) => {
-    const condition = conditions.join('&&')
-    let result = `if(${condition}){
-        throw new Error('Unauthorized')
-      }`
+    let result = ''
 
-    if (modelName && modelName == 'User') {
+    if (conditions?.length) {
+        const condition = conditions.join('&&')
+        result = `if( ${condition} ){
+            throw new UnauthorizedError()
+          }`
+    }
+
+    if (modelName == 'User') {
         result += `
-    if((data.roles || data.rolesIds) && !await protections.role(ctx, ['admin'])){
-        throw new Error('Unauthorized user:roles operation')
+    if(body.roles && !await userHaveRoles(ctx, ['admin'], entry.models.userRole)){
+        throw new RequestError('Unauthorized user:roles operation', 401)
     }
   `
     }
@@ -54,23 +58,29 @@ export const compileConditionsToIfStatement = (conditions: string[], modelName: 
 }
 
 export const constructConditionsFromProtection = (protections: SchemaModelProtectionParam[], modelName: string = undefined, objectIdField = undefined) => {
+    // if one of protection is public, any other doesn't make sence
+    if (protections.some((p) => p.type == SchemaModelProtectionType.PUBLIC)) {
+        return null
+    }
+
     return protections.map((protectionParam) => `!(${generateProtectionFromParam(protectionParam, modelName, objectIdField)})`)
 }
 
 export const generateProtectionFromParam = (protection: SchemaModelProtectionParam, modelName: string = undefined, objectIdField = undefined) => {
     let result = ''
+    const lower = firstToLower(modelName)
 
-    if (protection.type === SchemaModelProtectionType.PUBLIC) {
-        result += `await protections.public()`
-    } else if (protection.type === SchemaModelProtectionType.USER) {
-        result += `await protections.user(ctx)`
+    if (protection.type === SchemaModelProtectionType.USER) {
+        result += `ctx?.state?.user?.id`
     } else if (protection.type === SchemaModelProtectionType.OWNER) {
         // in model user is owner identified by ID
         const param = modelName && modelName === 'User' ? '_id' : 'user'
-        result += objectIdField ? `await protections.owner(ctx, data, '${param}', '${objectIdField}')` : `await protections.owner(ctx, data, '${param}')`
+        result += objectIdField
+            ? `await userIsOwner(ctx, data, entry.models.${lower}, entry.models.userRole, '${param}', '${objectIdField}')`
+            : `await userIsOwner(ctx, data, entry.models.${lower}, entry.models.userRole, '${param}')`
     } else if (protection.type === SchemaModelProtectionType.ROLE) {
         const roles = `'` + protection.roles.join(`','`) + `'`
-        result += `await protections.role(ctx, [${roles}])`
+        result += `await userHaveRoles(ctx, [${roles}], entry.models.userRole)`
     } else if (protection.type === SchemaModelProtectionType.FILTER) {
         const roles = protection.roles.length > 0 ? `['` + protection.roles.join(`','`) + `']` : 'null'
         let filters = ''

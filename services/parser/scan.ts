@@ -14,7 +14,7 @@ import {
 import { MONGOSEE_RESERVED_WORDS } from '../common/constatns'
 import { extractMemberFromLineParams } from './members'
 import { setupModelsRelations } from './relations'
-import { addDefaultModelsAndMembers, connectedModelNameInUser, connectModelToUser, generateDefaultProtection } from './defaults'
+import { addDefaultModelsAndMembers, ADMIN_PROTECTION, connectedModelNameInUser, connectModelToUser, generateDefaultProtection } from './defaults'
 import { firstToUpper } from '../common/utils'
 
 export const getModelsFromSchema = (schema): SchemaModel[] => {
