@@ -66,7 +66,8 @@ export function generateAll(backendDirectory: BackendDirectory, models: SchemaMo
 
     generateDataloaders(backendDirectory, models)
 
-    if (config.integrationTestsEnable) generateIntegrationTests(backendDirectory, models)
+    // if (config.integrationTestsEnable)
+    generateIntegrationTests(backendDirectory, models)
 
     generateEntry(backendDirectory, models)
 }

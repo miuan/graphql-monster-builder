@@ -8,6 +8,7 @@
   "scripts": {
     "preinstall": "npm build",
     "build": "tsc index.ts --outDir dist/",
+    "postbuild": "copyfiles -u ./services/backend/templates/* ./services/backend/templates/*/** ./dist/",
     "build:todo": "npx ts-node index.ts -bd -d ./examples/todo.schema server3",
     "test": "jest",
     "lint": "eslint \"*/**/*.{js,ts}\" --quiet --fix",
@@ -30,6 +31,7 @@
     "apollo-server-koa": "^2.24.1",
     "apollo-server-testing": "^2.24.1",
     "bcrypt": "^5.0.1",
+    "copyfiles": "^2.4.1",
     "dataloader": "^2.0.0",
     "eslint": "^7.27.0",
     "eslint-config-prettier": "^8.3.0",

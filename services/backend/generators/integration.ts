@@ -7,6 +7,9 @@ const log = logger.getLogger('model')
 
 const VARIABLE_CONFIG_SKIP = 'VARIABLE_CONFIG_SKIP'
 
+const exludeMembersForCreation = (m) => !['createdAt', 'updatedAt', 'id'].includes(m.name) && !m.relation
+const exludeMembersForUpdation = (m) => !['createdAt', 'updatedAt'].includes(m.name) && !m.relation
+
 // https://stackoverflow.com/a/31379050
 function randomDate(start = new Date(2020, 0, 1), end = new Date(), startHour = 0, endHour = 0) {
     const date = new Date(+start + Math.random() * (end.getTime() - start.getTime()))
@@ -36,13 +39,11 @@ function generateVariables(
             if (config[member.name] !== VARIABLE_CONFIG_SKIP) variables[member.name] = config[member.name]
         } else if (!member.relation) {
             const variable = generateRandomVariable(model, member)
-            variables[member.name] = !member.isArray
-                ? variable
-                : [variable, generateRandomVariable(model, member), generateRandomVariable(model, member)]
+            variables[member.name] = !member.isArray ? variable : [variable, generateRandomVariable(model, member), generateRandomVariable(model, member)]
         } else if (forMongoose && member.isRequired && !member.isArray) {
             // is relation single and is reauired
             variables[member.name] = '607bc7944481571f509470a2'
-        } else if (member.relation.name !== skipRelation && model.modelName == `User`) {
+        } /*else if (member.relation.name !== skipRelation && model.modelName == `User`) {
             // TODO: if user have relations to objects it goes to stack
             const options = { skipRelation: member.relation.name, config: { id: VARIABLE_CONFIG_SKIP } }
             const relatedModel = member.relation.relatedModel
@@ -55,17 +56,13 @@ function generateVariables(
                     () => generateVariables(relatedModel, relatedModel.members, options),
                 )
             } else {
-                variables[member.relation.payloadNameForCreate] = generateVariables(
-                    relatedModel,
-                    relatedModel.members,
-                    options,
-                )
-            }
+                variables[member.relation.payloadNameForCreate] = generateVariables(relatedModel, relatedModel.members, options)
+            } 
 
             if (config && config[member.relation.payloadNameForId]) {
                 variables[member.relation.payloadNameForId] = config[member.relation.payloadNameForId]
             }
-        }
+        } */
     }
 
     return variables
@@ -88,16 +85,11 @@ function generateMongooseModelCreate(member: SchemaModelMember, globalConfig: an
     const relatedModel = member.relation.relatedModel
     const relatedMember = member.relation.relatedMember
     const config = {
-        [relatedMember.name]:
-            !relatedMember.isArray && relatedMember.isRequired ? '607bc7944481571f509470a2' : VARIABLE_CONFIG_SKIP,
+        [relatedMember.name]: !relatedMember.isArray && relatedMember.isRequired ? '607bc7944481571f509470a2' : VARIABLE_CONFIG_SKIP,
     }
     const modelData = generateVariablesMulti(relatedModel, relatedModel.members, { config })
 
-    globalConfig[member.relation.payloadNameForId] = [
-        `=>${modelName}Data[0].id<=`,
-        `=>${modelName}Data[1].id<=`,
-        `=>${modelName}Data[2].id<=`,
-    ]
+    globalConfig[member.relation.payloadNameForId] = [`=>${modelName}Data[0].id<=`, `=>${modelName}Data[1].id<=`, `=>${modelName}Data[2].id<=`]
 
     return `const ${modelName} = server.entry.models['${_.lowerFirst(member.modelName)}']
 
@@ -116,9 +108,11 @@ function generateVariablesMulti(model: SchemaModel, members: SchemaModelMember[]
 
 function generateVariableInputsFromMembers(members: SchemaModelMember[]) {
     return members
+        .filter((m) => !m.relation)
         .map((m) => {
             let mapped = ''
 
+            // RELATION skipet becausee filter
             if (m.relation) {
                 const name = m.relation.payloadNameForCreate
                 const nameId = m.relation.payloadNameForId
@@ -136,9 +130,7 @@ function generateVariableInputsFromMembers(members: SchemaModelMember[]) {
 function generateOutputFromMembers(members: SchemaModelMember[]) {
     return members.map((m) => {
         if (m.relation) {
-            const relations = m.relation.relatedModel.members
-                .map((rm) => (rm.relation ? `${rm.name}{id}` : rm.name))
-                .join(',')
+            const relations = m.relation.relatedModel.members.map((rm) => (rm.relation ? `${rm.name}{id}` : rm.name)).join(',')
             return `${m.name}{${relations}}`
         }
         return m.name
@@ -152,9 +144,7 @@ function generateArrayContaining(relatedVariables: any, member: SchemaModelMembe
         const additions = []
         const relatedMemberName = member.relation.relatedMember?.name
         if (relatedMemberName) {
-            additions.push(
-                `${relatedMemberName}:expect.objectContaining({id:${queryName}Response.data.${queryName}.id})`,
-            )
+            additions.push(`${relatedMemberName}:expect.objectContaining({id:${queryName}Response.data.${queryName}.id})`)
         }
         const objectContaining = generateObjectContain(member.relation.relatedModel.members, relatedVariable, additions)
         arrayContaining += `,\n\t${objectContaining}`
@@ -164,12 +154,7 @@ function generateArrayContaining(relatedVariables: any, member: SchemaModelMembe
     return arrayContaining
 }
 
-function generateObjectContain(
-    members: SchemaModelMember[],
-    relatedVariable: any,
-    additions: any,
-    wrapValue = wrapStringValue,
-) {
+function generateObjectContain(members: SchemaModelMember[], relatedVariable: any, additions: any, wrapValue = wrapStringValue) {
     let objectContaining = ``
     for (const relatedMember of members) {
         const rmName = relatedMember.name
@@ -177,27 +162,17 @@ function generateObjectContain(
 
         if (rmValue) {
             if (relatedMember.relation) {
-                if (Array.isArray(rmValue)) {
-                    let newObjectsContaining = ''
-                    objectContaining += `,${rmName}: expect.arrayContaining([`
-                    for (const rmArrayValue of rmValue) {
-                        newObjectsContaining += `,\n${generateObjectContain(
-                            relatedMember.relation.relatedModel.members,
-                            rmArrayValue,
-                            [],
-                            wrapValue,
-                        )}`
-                    }
-                    objectContaining += newObjectsContaining.substr(1)
-                    objectContaining += `])`
-                } else if (typeof rmValue === 'object') {
-                    objectContaining += `,${relatedMember.name}: ${generateObjectContain(
-                        relatedMember.relation.relatedModel.members,
-                        rmValue,
-                        [],
-                        wrapValue,
-                    )}`
-                }
+                // if (Array.isArray(rmValue)) {
+                //     let newObjectsContaining = ''
+                //     objectContaining += `,${rmName}: expect.arrayContaining([`
+                //     for (const rmArrayValue of rmValue) {
+                //         newObjectsContaining += `,\n${generateObjectContain(relatedMember.relation.relatedModel.members, rmArrayValue, [], wrapValue)}`
+                //     }
+                //     objectContaining += newObjectsContaining.substr(1)
+                //     objectContaining += `])`
+                // } else if (typeof rmValue === 'object') {
+                //     objectContaining += `,${relatedMember.name}: ${generateObjectContain(relatedMember.relation.relatedModel.members, rmValue, [], wrapValue)}`
+                // }
             } else {
                 objectContaining += `,${rmName}: ${wrapValue ? wrapValue(relatedMember, rmValue) : rmValue}`
             }
@@ -209,20 +184,11 @@ function generateObjectContain(
     return `expect.objectContaining({${objectContaining.substr(1)}})`
 }
 
-function generateExpects(
-    model: SchemaModel,
-    members: SchemaModelMember[],
-    queryName: string,
-    variables: any = {},
-    wrap = (member, variable) => variable,
-    error = false,
-) {
+function generateExpects(model: SchemaModel, members: SchemaModelMember[], queryName: string, variables: any = {}, wrap = (member, variable) => variable, error = false) {
     let res = ''
 
     const not = error ? 'not.' : ''
-    res += error
-        ? `expect(${queryName}Response).toHaveProperty('errors')`
-        : `expect(${queryName}Response).not.toHaveProperty('errors')`
+    res += error ? `expect(${queryName}Response).toHaveProperty('errors')` : `expect(${queryName}Response).not.toHaveProperty('errors')`
 
     for (const member of members) {
         if (member.relation) {
@@ -244,8 +210,7 @@ function generateExpects(
                     res += `\nexpect(${queryName}Response.data.${queryName}.${member.name}).${not}toEqual(${arrayContaining})`
                 }
 
-                for (let i = 0; i < 2; i++)
-                    res += `\nexpect(${queryName}Response).${not}toHaveProperty('data.${queryName}.${member.name}.${i}.id')`
+                for (let i = 0; i < 2; i++) res += `\nexpect(${queryName}Response).${not}toHaveProperty('data.${queryName}.${member.name}.${i}.id')`
             } else {
                 if (relatedVariables) {
                 }
@@ -254,9 +219,7 @@ function generateExpects(
         } else if (variables[member.name]) {
             let variable = variables[member.name]
 
-            variable = Array.isArray(variable)
-                ? '[' + variable.reduce((p, c) => `${p},${wrap(member, c)}`, '').substr(1) + ']'
-                : wrap(member, variable)
+            variable = Array.isArray(variable) ? '[' + variable.reduce((p, c) => `${p},${wrap(member, c)}`, '').substr(1) + ']' : wrap(member, variable)
             res += `\nexpect(${queryName}Response).${not}toHaveProperty('data.${queryName}.${member.name}', ${variable})`
         } else {
             res += `\nexpect(${queryName}Response).${not}toHaveProperty('data.${queryName}.${member.name}')`
@@ -271,26 +234,23 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], forT
     const mutationDesc = `Create${model.modelName}`
     let res = ''
 
-    const output = generateOutputFromMembers(members)
-    const variableInputs = generateVariableInputsFromMembers(members.filter((m) => m.name !== 'id'))
-    const mutationInputs = members
-        .filter((m) => m.name !== 'id')
-        .map((m) =>
-            m.relation
-                ? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}`
-                : `${m.name}: $${m.name}`,
-        )
+    const createMembers = members.filter(exludeMembersForCreation)
+
+    const output = generateOutputFromMembers(forTest ? createMembers : members)
+    const variableInputs = generateVariableInputsFromMembers(createMembers)
+    const mutationInputs = createMembers
+        .map((m) => (m.relation ? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}` : `${m.name}: $${m.name}`))
         .join(',')
 
     const config = {
         id: VARIABLE_CONFIG_SKIP,
     }
 
-    if (forTest) {
-        for (const memberWithRelation of members.filter((m) => m.relation && m.relation.relatedMember)) {
-            res += generateMongooseModelCreate(memberWithRelation, config)
-        }
-    }
+    // if (forTest) {
+    //     for (const memberWithRelation of members.filter((m) => m.relation && m.relation.relatedMember)) {
+    //         res += generateMongooseModelCreate(memberWithRelation, config)
+    //     }
+    // }
 
     const variables = generateVariables(model, members, { config })
     if (forTest) res += `const data = ` + JSON.stringify(variables, null, '\t').replace(/"=>/g, '').replace(/<="/g, '')
@@ -308,7 +268,7 @@ function createTestCreate(model: SchemaModel, members: SchemaModelMember[], forT
     `
 
     if (forTest) {
-        res += generateExpects(model, members, mutationName, variables, (m, v) => wrapStringValue(m, v))
+        res += generateExpects(model, createMembers, mutationName, variables, (m, v) => wrapStringValue(m, v))
     }
 
     return res
@@ -410,24 +370,21 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
     const beforeMutationResponseName = `${beforeMutationName}Response.data.${beforeMutationName}`
     let res = ''
 
-    const output = generateOutputFromMembers(members)
-    const variableInputs = generateVariableInputsFromMembers(members)
-    const mutationInputs = members
-        .map((m) =>
-            m.relation
-                ? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}`
-                : `${m.name}: $${m.name}`,
-        )
+    const membersForUpdation = members.filter(exludeMembersForUpdation)
+    const output = generateOutputFromMembers(membersForUpdation)
+    const variableInputs = generateVariableInputsFromMembers(membersForUpdation)
+    const mutationInputs = membersForUpdation
+        .map((m) => (m.relation ? `${m.relation.payloadNameForCreate}: $${m.relation.payloadNameForCreate}, ${m.relation.payloadNameForId}: $${m.relation.payloadNameForId}` : `${m.name}: $${m.name}`))
         .join(',')
 
     const config = {
         id: `=>${beforeMutationName}Response.data.${beforeMutationName}.id<=`,
     }
-    for (const memberWithRelation of members.filter((m) => m.relation && m.relation.relatedMember)) {
-        res += generateMongooseModelCreate(memberWithRelation, config)
-    }
+    // for (const memberWithRelation of members.filter((m) => m.relation && m.relation.relatedMember)) {
+    //     res += generateMongooseModelCreate(memberWithRelation, config)
+    // }
 
-    const variables = generateVariables(model, members, { config })
+    const variables = generateVariables(model, membersForUpdation, { config })
 
     res += `const ${mutationName}Mutation = \`mutation ${mutationDesc}(${variableInputs}){
         ${mutationName}(${mutationInputs}) {
@@ -440,7 +397,7 @@ function createTestUpdate(model: SchemaModel, members: SchemaModelMember[], befo
         variables: ${JSON.stringify(variables, null, '\t').replace(/"=>/g, '').replace(/<="/g, '')}
       }, token);
 
-    ${generateExpects(model, members, mutationName, variables, (m, v) => wrapStringValue(m, v))
+    ${generateExpects(model, membersForUpdation, mutationName, variables, (m, v) => wrapStringValue(m, v))
         .replace(/=>/g, '')
         .replace(/<=/g, '')}
     `
@@ -491,40 +448,29 @@ function createTestRemove(model: SchemaModel, beforeMutation = 'create') {
           ${generateCheckExistenceInMongo(model, `${beforeMutationName}Response.data.${beforeMutationName}.id`, false)}
     `
 
-    for (const relatedMember of model.members.filter((m) => m.relation)) {
-        if (relatedMember.isArray) {
-            const check = generateCheckExistenceInMongo(
-                relatedMember.relation.relatedModel,
-                `check.id`,
-                !relatedMember.relation.relatedMember.isRequired,
-                1,
-            )
+    // for (const relatedMember of model.members.filter((m) => m.relation)) {
+    //     if (relatedMember.isArray) {
+    //         const check = generateCheckExistenceInMongo(relatedMember.relation.relatedModel, `check.id`, !relatedMember.relation.relatedMember.isRequired, 1)
 
-            res += `
-                for(const check of ${beforeMutationName}Response.data.${beforeMutationName}.${relatedMember.name}){
-                    ${check}
-                }
-            `
-        } else {
-            res += generateCheckExistenceInMongo(
-                relatedMember.relation.relatedModel,
-                `${beforeMutationName}Response.data.${beforeMutationName}.${relatedMember.name}`,
-                !relatedMember.relation.relatedMember.isRequired,
-                1,
-            )
-        }
-    }
+    //         res += `
+    //             for(const check of ${beforeMutationName}Response.data.${beforeMutationName}.${relatedMember.name}){
+    //                 ${check}
+    //             }
+    //         `
+    //     } else {
+    //         res += generateCheckExistenceInMongo(
+    //             relatedMember.relation.relatedModel,
+    //             `${beforeMutationName}Response.data.${beforeMutationName}.${relatedMember.name}`,
+    //             !relatedMember.relation.relatedMember.isRequired,
+    //             1,
+    //         )
+    //     }
+    // }
 
     return res
 }
 
-function generateCheckExistenceInMongo(
-    model: SchemaModel,
-    beforeMutationName,
-    shouldExist = true,
-    iteration = 0,
-    beforeMutation = 'create',
-) {
+function generateCheckExistenceInMongo(model: SchemaModel, beforeMutationName, shouldExist = true, iteration = 0, beforeMutation = 'create') {
     const lower = _.lowerFirst(model.modelName)
     const check = `${lower}Check${iteration == 0 ? '' : iteration.toString()}`
     const expect = shouldExist ? `toBeObject()` : `toBeNull()`
@@ -534,7 +480,7 @@ function generateCheckExistenceInMongo(
     `
 }
 
-function wrapTest(name, model: SchemaModel, { token, createModelFn = 1 }) {
+function wrapTest(name, model: SchemaModel, { token, createModelFn = 0 }) {
     const numCreatedRelations = 1
     const numLinkedRelations = 1
     let createModelLine = ''
@@ -542,25 +488,20 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 1 }) {
         createModelLine = Array.from({ length: createModelFn }, (value, index) => {
             const relatedMembers = model.members.filter((m) => m.relation)
             const indexName = index < 1 ? '' : index + 1
-            const dataForCreateFn = JSON.stringify(
-                generateVariables(
-                    model,
-                    model.members.filter((m) => m.name !== 'id'),
-                    { config: createRelatedMembersVariables(relatedMembers, numCreatedRelations) },
-                ),
-            )
+            const dataForCreateFn = JSON.stringify(generateVariables(model, model.members.filter(exludeMembersForCreation)))
 
             const relationsForCreateFnRaw = createRelatedMembersVariables(relatedMembers, numLinkedRelations, true)
             const relationsForCreateFn = JSON.stringify(relationsForCreateFnRaw)
 
             return `
+                // createModelLine: start
                 const create${model.modelName}Data${indexName} = ${dataForCreateFn}
-                const create${model.modelName}Relations${indexName} = ${relationsForCreateFn}
-                const create${model.modelName}Response${indexName} = await create${model.modelName}(server, token, create${model.modelName}Data${indexName}, create${model.modelName}Relations${indexName})`
+                const create${model.modelName}Response${indexName} = await create${model.modelName}(server, token, create${model.modelName}Data${indexName}, null)
+                // createModelLine: end`
         }).join('\n')
     }
 
-    let test = ''
+    let test = 'a'
 
     if (name === 'create') {
         test = createTestCreate(model, model.members, true)
@@ -577,9 +518,7 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 1 }) {
     return `
         it('${name} ${model.modelName}', async()=>{
             const token = ${token}
-            
-            ${createModelLine}
-
+            ${createModelLine}  
             ${test}
         })
     
@@ -588,11 +527,7 @@ function wrapTest(name, model: SchemaModel, { token, createModelFn = 1 }) {
     `
 }
 
-function createRelatedMembersVariables(
-    relatedMembers: SchemaModelMember[],
-    numLinkedRelations: number,
-    forMongoose = false,
-) {
+function createRelatedMembersVariables(relatedMembers: SchemaModelMember[], numLinkedRelations: number, forMongoose = false) {
     return relatedMembers.reduce((a, c) => {
         a[c.name] = Array.from({ length: numLinkedRelations }, (_, idx) => {
             // const requiredRelations =
@@ -621,28 +556,28 @@ function generateCreateModelFunction(model: SchemaModel) {
     const modelName = model.modelName
 
     let relations = ''
-    for (const relatedMember of model.members.filter((m) => m.relation)) {
-        const memberName = relatedMember.name
-        const memberRelationsList = `relations['${memberName}']`
+    // for (const relatedMember of model.members.filter((m) => m.relation)) {
+    //     const memberName = relatedMember.name
+    //     const memberRelationsList = `relations['${memberName}']`
 
-        if (relatedMember.isArray) {
-            relations += `
-            if(${memberRelationsList} && Array.isArray(${memberRelationsList})){
-                const model${memberName} = server.entry.models['${_.lowerFirst(memberName)}']
-                const model${memberName}Data = await Promise.all(${memberRelationsList}.map((m)=>model${memberName}.create(m)))
-                data.${relatedMember.relation.payloadNameForId} = model${memberName}Data.map(d=>d.id)
-            }
-        `
-        } else {
-            relations += `
-            if(${memberRelationsList} ){
-                const model${memberName} = server.entry.models['${_.lowerFirst(memberName)}']
-                const model${memberName}Data = await model${memberName}.create(${memberRelationsList})
-                data.${relatedMember.relation.payloadNameForId} = model${memberName}Data.id
-            }
-        `
-        }
-    }
+    //     if (relatedMember.isArray) {
+    //         relations += `
+    //         if(${memberRelationsList} && Array.isArray(${memberRelationsList})){
+    //             const model${memberName} = server.entry.models['${_.lowerFirst(memberName)}']
+    //             const model${memberName}Data = await Promise.all(${memberRelationsList}.map((m)=>model${memberName}.create(m)))
+    //             data.${relatedMember.relation.payloadNameForId} = model${memberName}Data.map(d=>d.id)
+    //         }
+    //     `
+    //     } else {
+    //         relations += `
+    //         if(${memberRelationsList} ){
+    //             const model${memberName} = server.entry.models['${_.lowerFirst(memberName)}']
+    //             const model${memberName}Data = await model${memberName}.create(${memberRelationsList})
+    //             data.${relatedMember.relation.payloadNameForId} = model${memberName}Data.id
+    //         }
+    //     `
+    //     }
+    // }
 
     return `export async function create${model.modelName}(server, token, data, relations={}){
         ${relations}
@@ -651,32 +586,102 @@ function generateCreateModelFunction(model: SchemaModel) {
     }`
 }
 
-function createAdminTest(structure: StructureBackend, model: SchemaModel) {
+const protections = (model) =>
+    ['adminToken', 'userToken']
+        .map(
+            (name) =>
+                `
+    describe('${name}', ()=>{
+        ${wrapTest('create', model, { token: name })}
+        ${wrapTest('one', model, { token: name, createModelFn: 1 })}
+        ${wrapTest('update', model, { token: name, createModelFn: 1 })}
+        ${wrapTest('remove', model, { token: name, createModelFn: 1 })}
+        ${wrapTest('all', model, { token: name, createModelFn: 2 })}
+    })
+`,
+        )
+        .join('\n')
+
+function createAdminTest(structure: StructureBackend, models: SchemaModel[]) {
     // throw new Error('Function not implemented.');
     let res = ''
 
     res += `
     import { connectToServer, disconnectFromServer } from './helper'
-    ${generateCreateModelFunction(model)}
+    ${models.map((model) => generateCreateModelFunction(model))}
     `
 
+    const describeModels = models
+        .map(
+            (model) => `
+        describe('${model.modelName}', () => {
+             ${protections(model)}
+        })
+    `,
+        )
+        .join('\n')
+
     res += `
-    describe('integration ${model.modelName} for Admin', () => {
+    describe('integration', () => {
         let server
-        beforeAll(()=>{
+        let adminToken, userToken, publicToken
+        
+        beforeAll(async ()=>{
             server = await connectToServer()
+
+            const res = await server.post(
+                "/auth/login_v1?fields=token,refreshToken,user.id&alias=login",
+                {
+                  email: "admin@admin.test",
+                  password: "admin@admin.test",
+                }
+              );
+          
+              // expect(res).toHaveProperty('status', 200)
+              expect(res).toHaveProperty("body.login.token");
+              expect(res.body.login.token).toMatch(
+                /^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/
+              );
+              expect(res).toHaveProperty("body.login.refreshToken");
+              expect(res).toHaveProperty("body.login.user.id");
+              expect(res).toHaveProperty("body.login.user.email", "admin@admin.test");
+              // expect(res).toHaveProperty('body.login.user.roles', [{ name: 'admin' }])
+              expect(res).not.toHaveProperty("errors");
+          
+              adminToken = res.body.login.token;
+
+              const res2 = await server.post(
+                "/auth/register_v1?fields=token,refreshToken,user.id&alias=register",
+                {
+                  email: "user@user.test",
+                  password: "user@user.test",
+                }
+              );
+          
+              // expect(res).toHaveProperty('status', 200)
+              expect(res2).toHaveProperty("body.register.token");
+              expect(res2.body.register.token).toMatch(
+                /^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/
+              );
+              expect(res2).toHaveProperty("body.register.refreshToken");
+              expect(res2).toHaveProperty("body.register.user.id");
+              expect(res2).toHaveProperty("body.register.user.email", "user@user.test");
+              // expect(res).toHaveProperty('body.register.user.roles', [{ name: 'admin' }])
+              expect(res2).not.toHaveProperty("errors");
+          
+              userToken = res2.body.register.token;
+
+              publicToken = null;
         })
 
         afterAll(async () => {
             disconnectFromServer(server)
         });
 
-        ${wrapTest('create', model, { token: 'res.data.login_v1.token', createModelFn: 0 })}
-        ${wrapTest('one', model, { token: 'res.data.login_v1.token' })}
-        ${wrapTest('update', model, { token: 'res.data.login_v1.token' })}
-        ${wrapTest('all', model, { token: 'res.data.login_v1.token', createModelFn: 2 })}
-        ${wrapTest('remove', model, { token: 'res.data.login_v1.token' })}
+        ${describeModels}
+       
     })`
+    //
 
     return res
 }
@@ -687,19 +692,20 @@ function createUserTest(structure: StructureBackend, model: any) {
     return ''
 }
 
-export const generateTestToFile = (backendDirectory: BackendDirectory, model: SchemaModel) => {
-    const str = createAdminTest(backendDirectory.structure, model)
+export const generateTestToFile = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
+    const str = createAdminTest(backendDirectory.structure, models)
 
-    backendDirectory.genWrite(`/integration-tests/${model.modelName}-admin.integration.spec.ts`, str)
+    backendDirectory.genWrite(`/integration-tests/integration.spec.ts`, str)
 
-    const userTest = createUserTest(backendDirectory.structure, model)
-    backendDirectory.genWrite(`/integration-tests/${model.modelName}-user.integration.spec.ts`, userTest)
+    //const userTest = createUserTest(backendDirectory.structure, model)
+    //backendDirectory.genWrite(`/integration-tests/${model.modelName}-user.integration.spec.ts`, userTest)
 }
 
 export const generateIntegrationTests = (backendDirectory: BackendDirectory, models: SchemaModel[]) => {
     log.trace('generateModels')
-    for (const model of models) {
-        log.info(`Generate model: ${model.modelName}`)
-        generateTestToFile(backendDirectory, model)
-    }
+
+    generateTestToFile(
+        backendDirectory,
+        models.filter((model) => !['File', 'User', 'UserRole'].includes(model.modelName)),
+    )
 }
