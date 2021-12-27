@@ -94,7 +94,7 @@ const createVerifyToken = async (userModel) => {
 }
 
 async function _login(userModel, data) {
-    const user = await userModel.findOne({ email: data.email })
+    const user = await userModel.findOne({ email: data.email }).populate('roles')
 
     if (user && (await compareHash(data.password, user.__password))) {
         // in login allways generate new token
@@ -246,12 +246,41 @@ const login_v1 = (userModel) => async (ctx) => (ctx.body = apiMiddleware(ctx, aw
  */
 const register_v1 = (userModel) => async (ctx) => (ctx.body = apiMiddleware(ctx, await _register(userModel, ctx.request.body), 'register_v1'))
 
+/**
+ *
+ * @swagger
+ *
+ * /auth/me:
+ *   get:
+ *     summary: "Rest API get loget user"
+ *     consumes:
+ *       - application/json
+ *     parameters:
+ *        - $ref: '#/parameters/fieldsParam'
+ *        - $ref: '#/parameters/aliasParam'
+ *     responses:
+ *       '200':
+ *         description: "loged user data"
+ *       '401':
+ *         description: "Unauthorized"
+ *
+ *
+ *
+ *
+ */
+const me_v1 = (userModel) => async (ctx) => {
+    const userId = ctx.state?.user?.id
+    if (!userId) throw new UnauthorizedError()
+    ctx.body = apiMiddleware(ctx, await userModel.findById(userId), 'me')
+}
+
 export const setupAuth = (app, userModel) => {
     passportSetupJwt(app, userModel)
 
     const authRouter = new Router({ prefix: '/auth' })
     authRouter.post('/login_v1', login_v1(userModel))
     authRouter.post('/register_v1', register_v1(userModel))
+    authRouter.get('/me', me_v1(userModel))
     return authRouter
 }
 
