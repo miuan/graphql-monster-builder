@@ -1,6 +1,10 @@
 import * as JSON5 from 'json5'
 import { apiMiddleware, userIsOwner, userHaveRoles, paramHaveFilter, RequestError, UnauthorizedError } from '../api-utils'
 
+/**
+ * _SWAGGER_
+ */
+
 const create_MODEL_NAME_ = (entry) => async (ctx) => {
     let body = ctx.request.body
 

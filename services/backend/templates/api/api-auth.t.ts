@@ -154,90 +154,137 @@ async function _register(userModel, data) {
 }
 
 /**
- *
  * @swagger
- * # components:
- * parameters:
- *   fieldsParam:
- *       in: query
- *       name: fields
- *       type: array
- *       collectionFormat: csv
- *       items:
- *         type: string
- *   aliasParam:
+ * components:
+ *   schemas:
+ *     LoginPayload:
+ *       title: Login and register payload
+ *       type: object
+ *       properties:
+ *          email:
+ *              type: string
+ *              description: user email
+ *          password:
+ *              type: string
+ *              description: user password
+ *       required:
+ *         - email
+ *         - password
+ *   parameters:
+ *     fieldsParam:
+ *         in: query
+ *         name: fields
+ *         type: array
+ *         collectionFormat: csv
+ *         items:
+ *           type: string
+ *     aliasParam:
  *       in: query
  *       name: alias
  *       type: string
  *
- *
- *
- * /auth/login_v1:
- *   post:
- *     summary: "Rest API login users"
- *     consumes:
- *       - application/json
- *     parameters:
- *        - $ref: '#/parameters/fieldsParam'
- *        - $ref: '#/parameters/aliasParam'
- *        - in: body
- *          name: login
- *          description: The user to create.
- *          schema:
- *            type: object
- *            required:
- *              - userName
- *            properties:
- *                     email:          # <!--- form field name
- *                       type: string
- *                     password:          # <!--- form field name
- *                       type: string
- *     responses:
- *       '200':
- *         description: "User succesfully loged"
- *       '401':
- *         description: "Unauthorized"
- *
- *
- *
- * responses:
- *  '401':
- *    description: Authorization information is missing or invalid.
- *
+ * paths:
+ *   /auth/login_v1:
+ *     post:
+ *       summary: Login user and retrieve token
+ *       security: []
+ *       tags:
+ *          - Auth
+ *          - query
+ *       parameters:
+ *         - $ref: '#/components/parameters/fieldsParam'
+ *         - $ref: '#/components/parameters/aliasParam'
+ *       requestBody:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginPayload'
+ *             examples:
+ *                admin:
+ *                  summary: admin example
+ *                  value:
+ *                    email: admin@admin.test
+ *                    password: admin@admin.test
+ *                user:
+ *                  summary: user example
+ *                  value:
+ *                    email: user@user.test
+ *                    password: user@user.test
+ *                user2:
+ *                  summary: user2 example
+ *                  value:
+ *                    email: user2@user.test
+ *                    password: user2@user.test
+ *       responses:
+ *         '200':
+ *           description: OK
+ *         '401':
+ *           description: unauthorized
  */
 const login_v1 = (userModel) => async (ctx) => (ctx.body = apiMiddleware(ctx, await _login(userModel, ctx.request.body), 'login_v1'))
 
 /**
  *
  * @swagger
- *
- * /auth/register_v1:
- *   post:
- *     summary: "Rest API register user"
- *     consumes:
- *       - application/json
- *     parameters:
- *        - $ref: '#/parameters/fieldsParam'
- *        - $ref: '#/parameters/aliasParam'
- *        - in: body
- *          name: register
- *          description: The user to create.
- *          schema:
- *            type: object
- *            required:
- *              - userName
- *            properties:
- *                     email:          # <!--- form field name
- *                       type: string
- *                     password:          # <!--- form field name
- *                       type: string
- *     responses:
- *       '200':
- *         description: "User succesfully loged"
- *       '401':
- *         description: "Unauthorized"
- *
- *
+ * components:
+ *   schemas:
+ *     LoginPayload:
+ *       title: Login and register payload
+ *       type: object
+ *       properties:
+ *          email:
+ *              type: string
+ *              description: user email
+ *          password:
+ *              type: string
+ *              description: user password
+ *       required:
+ *         - email
+ *         - password
+ *   parameters:
+ *     fieldsParam:
+ *         in: query
+ *         name: fields
+ *         type: array
+ *         collectionFormat: csv
+ *         items:
+ *           type: string
+ *     aliasParam:
+ *       in: query
+ *       name: alias
+ *       type: string
+ * paths:
+ *   /auth/register_v1:
+ *     post:
+ *       summary: Login user and retrieve token
+ *       tags:
+ *          - Auth
+ *          - mutation
+ *       security: []
+ *       parameters:
+ *         - $ref: '#/components/parameters/fieldsParam'
+ *         - $ref: '#/components/parameters/aliasParam'
+ *       requestBody:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginPayload'
+ *             examples:
+ *                user:
+ *                  summary: user example
+ *                  value:
+ *                    email: user@user.test
+ *                    password: user@user.test
+ *                user2:
+ *                  summary: user2 example
+ *                  value:
+ *                    email: user2@user.test
+ *                    password: user2@user.test
+ *       responses:
+ *         '200':
+ *           description: OK
+ *         '401':
+ *           description: unauthorized
  *
  * responses:
  *  401:
@@ -253,6 +300,9 @@ const register_v1 = (userModel) => async (ctx) => (ctx.body = apiMiddleware(ctx,
  * /auth/me:
  *   get:
  *     summary: "Rest API get loget user"
+ *     tags:
+ *       - User
+ *       - query
  *     consumes:
  *       - application/json
  *     parameters:
@@ -263,10 +313,6 @@ const register_v1 = (userModel) => async (ctx) => (ctx.body = apiMiddleware(ctx,
  *         description: "loged user data"
  *       '401':
  *         description: "Unauthorized"
- *
- *
- *
- *
  */
 const me_v1 = (userModel) => async (ctx) => {
     const userId = ctx.state?.user?.id
