@@ -2,54 +2,76 @@ import * as path from 'path'
 import * as request from 'supertest'
 import * as mongoose from 'mongoose'
 
-export async function connectToServer(){
+export async function connectToServer() {
+    let server
     try {
-        const module = require(path.join('./', 'server'))
-        const server = await module.connectionPromise
-        
+        const module = require(path.join('../../', 'server'))
+        server = await module.connectionPromise
 
-        // NOTE: 
+        // NOTE:
         //    createTestClient - skip the requeste layer and skip the header part
         //    https://github.com/apollographql/apollo-server/issues/2277
         // const { query, mutate } = createTestClient(server.apollo)
 
-        const query = async (body: {query:string, variables: any}, token?: string) => {
-            const req = request(server.koa)
-                .post('/graphql')
-                .set('Content-Type', 'application/json')
-                .set('Accept', 'application/json')
+        const post = async (url, body: { query: string; variables: any }, token?: string) => {
+            const req = request(server.koa).post(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
 
-            if(token){
+            if (token) {
                 req.set('Authorization', `Bearer ${token}`)
             }
 
-            return (await req.send(body)).body
-        }
-        
-        const mutate = async ({mutation, variables}: {mutation:string, variables: any}, token?: string) => {
-            return query({query: mutation, variables}, token)
+            return await req.send(body)
         }
 
-        // console.log(server)
-        let dropCollectionPromises = []
-        await new Promise((resolve1)=>{
-            mongoose.connection.db.listCollections().toArray((err, collectionNames) => {
-                const myCollections = collectionNames.filter((collectionName)=>collectionName.name.startsWith(name))
-                dropCollectionPromises = myCollections.map((collectionName)=>new Promise((resolve, reject)=>{
-                    mongoose.connection.db.dropCollection(collectionName.name, (err)=>{
-                        resolve(1)
-                    })
-                }))
+        const put = async (url, body: { query: string; variables: any }, token?: string) => {
+            const req = request(server.koa).put(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
 
-                resolve1(1)
-            })
-        })
+            if (token) {
+                req.set('Authorization', `Bearer ${token}`)
+            }
 
-        await Promise.all(dropCollectionPromises)
+            return await req.send(body)
+        }
+
+        const del = async (url, body: { query: string; variables: any }, token?: string) => {
+            const req = request(server.koa).delete(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+            if (token) {
+                req.set('Authorization', `Bearer ${token}`)
+            }
+
+            return await req.send(body)
+        }
+
+        const get = async (url, token?: string) => {
+            const req = request(server.koa).get(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+            if (token) {
+                req.set('Authorization', `Bearer ${token}`)
+            }
+
+            return await req.send()
+        }
+
+        const query = async (body, token?: string) => {
+            return (await post('/graphql', body, token)).body
+        }
+
+        const mutate = async ({ mutation, variables }: { mutation: string; variables: any }, token?: string) => {
+            return query({ query: mutation, variables }, token)
+        }
+
+        for (const modelName of Object.keys(await server.entry.models)) {
+            await server.entry.models[modelName].remove({})
+        }
+
+        // await new Promise((resolve) => setTimeout(resolve, 1000))
         // upload user again
         await module.updateAdminUser(true)
 
-    return {...server, query, mutate}
+        const count = await server.entry.models.user.count({})
+
+        return { ...server, query, mutate, get, post, put, delete: del }
     } catch (ex) {
         console.error(ex)
     }

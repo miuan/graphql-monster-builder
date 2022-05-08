@@ -2,16 +2,15 @@ import * as request from 'supertest'
 import { isExportDeclaration } from 'typescript'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
-describe('integration', () => {
-    describe('login', () => {
-        let server
-        let spyOnSendMail
-        let userModel
+describe('i:login', () => {
+    let server
+    let spyOnSendMail
+    let userModel
 
-        beforeAll(async () => {
-            server = await generateAndRunServerFromSchema(
-                'login',
-                `
+    beforeAll(async () => {
+        server = await generateAndRunServerFromSchema(
+            'login',
+            `
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
                     name: String!
@@ -32,28 +31,124 @@ describe('integration', () => {
                     model1: @relation(name: "Model1OnModel2")
                 }
             `,
+        )
+
+        spyOnSendMail = jest.spyOn(server.entry['email'], 'sendMail').mockImplementation(() => {})
+        userModel = server.entry.models['user']
+    })
+
+    beforeEach(() => {
+        spyOnSendMail.mockReset()
+    })
+
+    afterAll(async () => {
+        spyOnSendMail.mockRestore()
+        await disconnectFromServer(server)
+    })
+
+    it('health check', async () => {
+        // console.log(server)
+        const response = await request(server.koa).get('/health')
+        expect(response.status).toBe(200)
+        expect(response.body).toHaveProperty('health', 'ok')
+    })
+    describe('api', () => {
+        it('login fail', async () => {
+            // console.log(server)
+            const res = await request(server.koa).post('/auth/login_v1').send({
+                email: 'admin@admin.test',
+                password: '123',
+            })
+            expect(res.status).toBe(401)
+            expect(res.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
+        })
+
+        it('admin login', async () => {
+            const res = await request(server.koa).post('/auth/login_v1?fields=token,refreshToken,user.id&alias=login').send({
+                email: 'admin@admin.test',
+                password: 'admin@admin.test',
+            })
+
+            // expect(res).toHaveProperty('status', 200)
+            expect(res).toHaveProperty('body.login.token')
+            expect(res.body.login.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
+            expect(res).toHaveProperty('body.login.refreshToken')
+            expect(res).toHaveProperty('body.login.user.id')
+            expect(res).toHaveProperty('body.login.user.email', 'admin@admin.test')
+            // expect(res).toHaveProperty('body.login.user.roles', [{ name: 'admin' }])
+            expect(res).not.toHaveProperty('errors')
+
+            const createModel1Mutation = `mutation CreateModel1($name: String!,$opt: String,$optInt: Int,$optFloat: Float,$arrName: [String],$arrInt: [Int],$arrFloat: [Float],$optDateTime: DateTime,$model2: [InModel1MemberModel2AsModel2!],$model2Ids: [ID!]){
+            createModel1(name: $name,opt: $opt,optInt: $optInt,optFloat: $optFloat,arrName: $arrName,arrInt: $arrInt,arrFloat: $arrFloat,optDateTime: $optDateTime,model2: $model2, model2Ids: $model2Ids) {
+               name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+            }
+        }`
+
+            const createModel1Response = await server.mutate(
+                {
+                    mutation: createModel1Mutation,
+                    variables: {
+                        name: 'Model1/name/g864fds4',
+                    },
+                },
+                res.body.login.token,
             )
 
-            spyOnSendMail = jest.spyOn(server.entry['email'], 'sendMail').mockImplementation(() => {})
-            userModel = server.entry.models['user']
+            expect(createModel1Response).not.toHaveProperty('errors')
+            expect(createModel1Response).toHaveProperty('data.createModel1.name', 'Model1/name/g864fds4')
+            expect(createModel1Response).toHaveProperty('data.createModel1.id')
+
+            const oneModel1Query = `query Model1($id: ID!){
+        Model1(id: $id) {
+            name,opt,optInt,optFloat,arrName,arrInt,arrFloat,optDateTime,model2{name,opt,optFloat,model1{id},id},id
+        }
+    }`
+
+            const oneModel1Response = await server.query(
+                {
+                    query: oneModel1Query,
+                    variables: { id: createModel1Response.data.createModel1.id },
+                },
+                res.body.login.token,
+            )
+
+            expect(oneModel1Response).not.toHaveProperty('errors')
+            expect(oneModel1Response).toHaveProperty('data.Model1.name', createModel1Response.data.createModel1.name)
+            expect(oneModel1Response).toHaveProperty('data.Model1.id', createModel1Response.data.createModel1.id)
         })
 
-        beforeEach(() => {
-            spyOnSendMail.mockReset()
-        })
+        it('register', async () => {
+            const res = await request(server.koa).post('/auth/register_v1?fields=token,refreshToken,user.id&alias=login').send({
+                email: 'createdUser@createdUser43yhlzcf.com',
+                password: 'user1',
+            })
 
-        afterAll(async () => {
-            spyOnSendMail.mockRestore()
-            await disconnectFromServer(server)
-        })
+            expect(res).toHaveProperty('status', 200)
+            expect(res).toHaveProperty('body.login.token')
+            expect(res.body.login.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
+            expect(res).toHaveProperty('body.login.refreshToken')
+            expect(res).toHaveProperty('body.login.user.id')
+            expect(res).toHaveProperty('body.login.user.email', 'createdUser@createdUser43yhlzcf.com')
+            // expect(res).toHaveProperty('body.login.user.roles', [{ name: 'admin' }])
+            expect(res).not.toHaveProperty('errors')
 
-        it('health check', async () => {
-            // console.log(server)
-            const response = await request(server.koa).get('/health')
-            expect(response.status).toBe(200)
-            expect(response.body).toHaveProperty('health', 'ok')
-        })
+            const resl = await request(server.koa).post('/auth/login_v1?fields=token,refreshToken,user.id&alias=login').send({
+                email: 'createdUser@createdUser43yhlzcf.com',
+                password: 'user1',
+            })
 
+            // expect(res).toHaveProperty('status', 200)
+            expect(resl).toHaveProperty('body.login.token')
+            expect(resl.body.login.token).toMatch(/^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/)
+            expect(resl).toHaveProperty('body.login.refreshToken')
+            expect(resl).toHaveProperty('body.login.user.id')
+            expect(resl).toHaveProperty('body.login.user.email', 'createdUser@createdUser43yhlzcf.com')
+            // expect(res).toHaveProperty('body.login.user.roles', [{ name: 'admin' }])
+            expect(resl).not.toHaveProperty('errors')
+        })
+    })
+
+    describe('graphql', () => {
         it('login fail', async () => {
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
 
@@ -300,12 +395,12 @@ describe('integration', () => {
     })
 
     describe('register with extended user data', () => {
-        let server
+        let server2
         let spyOnSendMail
         let userModel
 
         beforeAll(async () => {
-            server = await generateAndRunServerFromSchema(
+            server2 = await generateAndRunServerFromSchema(
                 'login-extended-user',
                 `
                 @all(filter:"user_every.id={{userId}}")
@@ -335,8 +430,8 @@ describe('integration', () => {
             `,
             )
 
-            spyOnSendMail = jest.spyOn(server.entry['email'], 'sendMail').mockImplementation(() => {})
-            userModel = server.entry.models['user']
+            spyOnSendMail = jest.spyOn(server2.entry['email'], 'sendMail').mockImplementation(() => {})
+            userModel = server2.entry.models['user']
         })
 
         beforeEach(() => {
@@ -345,12 +440,12 @@ describe('integration', () => {
 
         afterAll(async () => {
             spyOnSendMail.mockRestore()
-            await disconnectFromServer(server)
+            await disconnectFromServer(server2)
         })
 
         it('health check', async () => {
             // console.log(server)
-            const response = await request(server.koa).get('/health')
+            const response = await request(server2.koa).get('/health')
             expect(response.status).toBe(200)
             expect(response.body).toHaveProperty('health', 'ok')
         })
@@ -358,7 +453,7 @@ describe('integration', () => {
         it('login fail', async () => {
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
 
-            const res = await server.mutate({
+            const res = await server2.mutate({
                 mutation: loginQL,
                 variables: {
                     email: 'admin@admin.test',
@@ -374,7 +469,7 @@ describe('integration', () => {
         it('admin login', async () => {
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
 
-            const res = await server.mutate({
+            const res = await server2.mutate({
                 mutation: loginQL,
                 variables: {
                     email: 'admin@admin.test',
@@ -396,7 +491,7 @@ describe('integration', () => {
             }
         }`
 
-            const createModel1Response = await server.mutate(
+            const createModel1Response = await server2.mutate(
                 {
                     mutation: createModel1Mutation,
                     variables: {
@@ -416,7 +511,7 @@ describe('integration', () => {
         }
     }`
 
-            const oneModel1Response = await server.query(
+            const oneModel1Response = await server2.query(
                 {
                     query: oneModel1Query,
                     variables: { id: createModel1Response.data.createModel1.id },
@@ -431,7 +526,7 @@ describe('integration', () => {
 
         it('register', async () => {
             const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register-extended.gql')
-            const res = await server.mutate({
+            const res = await server2.mutate({
                 mutation: registerQL,
                 variables: {
                     firstname: 'Milan',
@@ -463,7 +558,7 @@ describe('integration', () => {
 
             // TEST LOGIN with created user1
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login-extended.gql')
-            const res2 = await server.mutate({
+            const res2 = await server2.mutate({
                 mutation: loginQL,
                 variables: {
                     email: 'createdUser@createdUser44yhlzfc.com',
@@ -483,7 +578,7 @@ describe('integration', () => {
 
         it('should not register if firstname is in wrong format', async () => {
             const registerQL = loadGraphQL('./services/backend/integration-tests/graphql/login/register-extended.gql')
-            const res = await server.mutate({
+            const res = await server2.mutate({
                 mutation: registerQL,
                 variables: {
                     email: 'createdUser.com',

@@ -98,7 +98,7 @@ export const createResolver = (model: SchemaModel) => {
         : ''
 
     const file = templateFileToText('resolvers.ts', {
-        _RESOLVERS_ADD_REMOVE_CONNECT_,
+        [`_RESOLVERS_ADD_REMOVE_CONNECT_,`]: _RESOLVERS_ADD_REMOVE_CONNECT_,
         _RESOLVERS_ADD_REMOVE_,
     })
 
@@ -122,14 +122,14 @@ export const createResolver = (model: SchemaModel) => {
 
 export const compileConditionsToIfStatement = (conditions: string[], modelName: string = undefined) => {
     const condition = conditions.join('&&')
-    let result = `if(${condition}){
-        throw new Error('Unauthorized')
+    let result = `if( ${condition} ){
+        throw new UnauthorizedError()
       }`
 
     if (modelName && modelName == 'User') {
         result += `
     if((data.roles || data.rolesIds) && !await protections.role(ctx, ['admin'])){
-        throw new Error('Unauthorized user:roles operation')
+        throw new RequestError('Unauthorized user:roles operation', 401)
     }
   `
     }

@@ -257,7 +257,7 @@ export const scanProtectionUnit = (unit: string, protection: SchemaModelProtecti
         protectionCheckTheParameter(param, typeString, value, unit, row)
     }
 
-    if (protectFor === 'all') {
+    if (protectFor === 'all' && protection.all) {
         protection.all.push(param)
     } else if (protectFor === 'one') {
         protection.one.push(param)

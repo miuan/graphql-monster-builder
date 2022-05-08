@@ -392,6 +392,21 @@ describe('scan', () => {
             expect(model1FieldModel2.modelName).toEqual('Model2')
         })
 
+        it('array with required relation is not supported', async () => {
+            expect(() =>
+                getModelsFromSchema(`
+                type Model1 @model {
+                    name: String
+                    model2: [Model2] @relation(name: "Model1OnModel2")
+                }
+    
+                type Model2 @model {
+                    name: String
+                    model1: Model1! @relation(name: "Model1OnModel2")
+                }`),
+            ).toThrowError(`Line: 4: unknown param '@relation(name: \"Model1OnModel2\")'`)
+        })
+
         it('relation all good', async () => {
             const models = await getModelsFromSchema(`
                 type Model1 @model {

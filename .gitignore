@@ -9,3 +9,5 @@ file-storage
 
 services/backend/templates/__generated_services_for_test__
 services/backend/integration-tests/__generated_servers_for_test__
+
+dist

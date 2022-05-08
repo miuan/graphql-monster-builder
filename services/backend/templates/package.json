@@ -1,12 +1,12 @@
 {
-  "name": "server1",
+  "name": "graphql-monster-server",
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
   "scripts": {
     "start": "npx ts-node server.ts",
     "start:watch": "npx nodemon --exec ts-node server.ts",
-    "test": "yarn"
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
@@ -24,6 +24,7 @@
     "koa-passport": "^4.1.3",
     "koa-proxy": "^1.0.0-alpha.3",
     "koa-router": "^8.0.8",
+    "koa-send": "^5.0.1",
     "koa2-cors": "^2.0.6",
     "lodash": "^4.17.19",
     "mongoose": "^5.9.6",
@@ -36,7 +37,17 @@
     "passport-google": "^0.3.0",
     "passport-google-oauth": "^2.0.0",
     "passport-jwt": "^4.0.0",
+    "swagger-jsdoc": "^6.1.0",
+    "swagger2": "^3.0.0",
+    "swagger2-koa": "^3.0.0",
     "ts-node": "^8.8.1",
     "typescript": "^4.1.3"
+  },
+  "devDependencies": {
+    "@types/jest": "^27.0.3",
+    "jest": "^27.4.5",
+    "jest-extended": "^1.2.0",
+    "supertest": "^6.1.6",
+    "ts-jest": "^27.1.2"
   }
 }

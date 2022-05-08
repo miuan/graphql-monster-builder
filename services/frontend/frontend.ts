@@ -8,6 +8,7 @@ import generateFragments from './generators/fragments'
 import generateQueries from './generators/queries'
 import generateLists from './generators/lists'
 import generateEdits from './generators/edits'
+import injectApp from './generators/app-injector'
 
 export const frontendFromSchema = async (name, from, base = '.') => {
     const importedSchema = fs.readFileSync(from, { encoding: 'utf8' })
@@ -41,4 +42,5 @@ export const exportAsFromString = async (name, importedSchema, outDir = '.', con
     generateQueries(frontendDirectory, models)
     generateLists(frontendDirectory, models)
     generateEdits(frontendDirectory, models)
+    injectApp(frontendDirectory, models)
 }

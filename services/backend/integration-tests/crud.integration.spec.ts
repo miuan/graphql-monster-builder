@@ -1,13 +1,13 @@
 import * as request from 'supertest'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
 
-describe('couad integration', () => {
+describe('i:crud', () => {
     let server
     let res
 
     beforeAll(async () => {
         server = await generateAndRunServerFromSchema(
-            'couar',
+            'crud',
             `
                 @all(filter:"user_every.id={{userId}}")
                 type Model1 @model {
