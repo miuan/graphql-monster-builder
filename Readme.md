@@ -22,10 +22,7 @@ Example of simple todo server. Create [Schema File](https://github.com/miuan/gra
 _Note: Be sure on your system is running instance of [MongoDB](https://www.mongodb.com/)_
 
 ```
-@create("public") 
-@update("public")
-@delete("public")  
-@all("public")
+@create("public") @update("public") @delete("public") @all("public")
 type Todo @model {
     name: String!
     done: Boolean!
@@ -51,9 +48,9 @@ Now you can check the:
 - GraphQL Playground -> [http://localhost:3001/grapqhl](http://localhost:3001/graphql) 
 - Swagger -> [http://localhost:3001/swagger](http://localhost:3001/swagger) 
 
-[Image of graphql](https://github.com/miuan/graphql-monster-builder/blob/master/doc/assets/graphql.png)
+![Image of graphql](doc/assets/graphql.png)
 
-[Image of swagger](https://github.com/miuan/graphql-monster-builder/blob/master/doc/assets/swagger.png)
+![Image of swagger](doc/assets/swagger.png)
 # Documentation
 
 For more about schema definition, please visit our documentation:
