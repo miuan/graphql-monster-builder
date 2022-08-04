@@ -24,83 +24,6 @@ type Todo @model {
 
 **String!** means that the field is non-nullable, meaning that the GraphQL service promises to always give you a value when you query this field. In the type language, we'll represent those with an exclamation mark.
 
-## Default Models
-
-### User
-
-Model User is predefined and contain some main fields what is not possible change or rename `email`, `password`, `verified`, `roles`. Whole model looks like:
-
-```
-type User @model {
-    email: String! @isReadonly
-    password: String! @isReadonly
-    verified: Boolean @isReadonly
-    roles: [@relation("RoleOnUser")]
-}
-```
-
-But you can extend these fields by defining new ones
-
-```
-type User @model {
-    firstName: String
-    lastName: String
-    # the other fields like email, password, verified and roles
-    # are not present in model definition but fully accessible by GraphQL query
-}
-```
-
-### UserRole
-
-This model you can't modify or extend, but is look like this
-
-```
-type UserRole @model {
-  name: String @isUnique
-  users: [@relation("RoleOnUser")]
-}
-```
-
-# Entity
-
-Entity should start with capital letter like "**Todo**" and should have taged with reserved word **@entity**. Entity doesn't have a id, so is not possible create, update or list it from graphql. Entity have to be part of object. Also can't have a relation to another model. Lets have `Address`
-
-```
-type Address @entity {
-    name: String!
-    street: String!
-    city: String!
-}
-```
-
-now we can map entity to Todo
-
-```
-type Invoice @model {
-    customer: Address
-    seller: Address
-    totalPrice: Float
-}
-```
-
-or even we can map entity as array
-
-```
-type InvoiceItem @entity {
-    name: String!
-    count: Int!
-    price: float!
-}
-
-type Invoice @model {
-    items: [InvoiceItem]
-    customer: Address
-    seller: Address
-    totalPrice: Float
-}
-```
-
-Share one entity accross multiple models is also not problem
 
 # Fields
 
@@ -121,25 +44,7 @@ emit1: String # possible
 emit: String # not possible is reserved
 ```
 
-### Field reserved names
-
--   id
--   on
--   emit
--   \_events
--   db
--   get
--   set
--   init
--   isNew
--   errors
--   schema
--   options
--   modelName
--   collection
--   \_pres
--   \_posts
--   toObject
+_Note: There a several reserved words in mongodb (what can't be used as fiels name) like: id, on, emit,\_events, db, get, set, init, isNew, errors, schema, options, modelName, collection, \_pres, \_posts, toObject_
 
 ## Field scalar types
 
@@ -200,7 +105,82 @@ type Todo @model {
 }
 
 ```
+# Entity
 
+Entity should start with capital letter like "**Todo**" and should have taged with reserved word **@entity**. Entity doesn't have a id, so is not possible create, update or list it from graphql. Entity have to be part of object. Also can't have a relation to another model. Lets have `Address`
+
+```
+type Address @entity {
+    name: String!
+    street: String!
+    city: String!
+}
+```
+
+now we can map entity to Todo
+
+```
+type Invoice @model {
+    customer: Address
+    seller: Address
+    totalPrice: Float
+}
+```
+
+or even we can map entity as array
+
+```
+type InvoiceItem @entity {
+    name: String!
+    count: Int!
+    price: float!
+}
+
+type Invoice @model {
+    items: [InvoiceItem]
+    customer: Address
+    seller: Address
+    totalPrice: Float
+}
+```
+
+Share one entity accross multiple models is also not problem
+## Default Models
+
+### User
+
+Model User is predefined and contain some main fields what is not possible change or rename `email`, `password`, `verified`, `roles`. Whole model looks like:
+
+```
+type User @model {
+    email: String! @isReadonly
+    password: String! @isReadonly
+    verified: Boolean @isReadonly
+    roles: [@relation("RoleOnUser")]
+}
+```
+
+But you can extend these fields by defining new ones
+
+```
+type User @model {
+    firstName: String
+    lastName: String
+    # the other fields like email, password, verified and roles
+    # are not present in model definition but fully accessible by GraphQL query
+}
+```
+
+### UserRole
+
+This model you can't modify or extend, but is look like this
+
+```
+type UserRole @model {
+  name: String @isUnique
+  users: [@relation("RoleOnUser")]
+}
+```
 # Relations
 
 Each model can be connected to another model with following relations
