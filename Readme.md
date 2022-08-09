@@ -21,11 +21,12 @@ Example of simple todo server. Create [Schema File](https://github.com/miuan/gra
 
 _Note: Be sure on your system is running instance of [MongoDB](https://www.mongodb.com/)_
 
-```
-@create("public") @update("public") @delete("public") @all("public")
+```graphql
+@all(filter:"user_every.id={{userId}}")
+@create("public") @one("public") @update("public") @remove("public")
 type Todo @model {
-    name: String!
-    done: Boolean!
+  message: String
+  done: Boolean @default(false)
 }
 ```
 
@@ -48,8 +49,13 @@ Now you can check the:
 - GraphQL Playground -> [http://localhost:3001/grapqhl](http://localhost:3001/graphql) 
 - Swagger -> [http://localhost:3001/swagger](http://localhost:3001/swagger) 
 
-![Image of graphql](doc/assets/graphql.png)
-
+## GraphQL 
+Here is some examples with GraphQL mutations over `Todo` model
+![Image of graphql](doc/assets/graphql-mutations.png)
+Here is some examples with GraphQL mutations over `Todo` model
+![Image of graphql](doc/assets/graphql-queries.png)
+# Rest API
+The same can be acomplish with Rest API what is documented by Swagger
 ![Image of swagger](doc/assets/swagger.png)
 # Documentation
 
