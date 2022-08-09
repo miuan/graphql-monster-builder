@@ -218,8 +218,8 @@ app.use(healthCheck.routes())
 app.use(healthCheck.allowedMethods())
 
 export async function updateAdminUser(rawPassword = true) {
-    const admin_email = process.env.ADMIN_EMAIL || `admin`
-    const admin_pass = process.env.ADMIN_PASSWORD || `ADMIN_PASSWORD_${admin_email.length}`
+    const admin_email = process.env.ADMIN_EMAIL || `admin@graphql.monster`
+    const admin_pass = process.env.ADMIN_PASSWORD || `admin@graphql.monster`
 
     const admin_pass_raw = rawPassword ? admin_pass : await generateHash(admin_pass)
 
