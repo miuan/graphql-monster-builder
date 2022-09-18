@@ -1,0 +1,5 @@
+.vscode
+examples
+./services
+node_modules
+file-storage
