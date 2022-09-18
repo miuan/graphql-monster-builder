@@ -11,7 +11,7 @@ Build server with CRUD with GraphQL and Rest API interface. With these features:
 # Usage
 
 ```
-$ graphq-monster-builder <operation> <schema> <outdir>
+$ graphql-monster-builder <operation> <schema> <outdir>
 ```
 
 ## Example
