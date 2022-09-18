@@ -1,6 +1,6 @@
 {
   "name": "graphql-monster-builder",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "author": "Milan Medlik <milan.medlik@gmail.com>",
   "license": "MIT",
   "main": "./bin/index.js",
@@ -11,6 +11,7 @@
     "postbuild": "copyfiles -u ./services/backend/templates/* ./services/backend/templates/*/** ./dist/",
     "build:todo": "npx ts-node index.ts -bd -d ./examples/todo.schema server3",
     "test": "jest",
+    "test:all": "jest --watchAll",
     "lint": "eslint \"*/**/*.{js,ts}\" --quiet --fix",
     "prettier-format": "prettier --config .prettierrc 'services/**/*.spec.ts' --write"
   },
