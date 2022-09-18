@@ -81,20 +81,20 @@ export const createMongoModel = (structure: StructureBackend, model: SchemaModel
         );`
     }
 
-    const constructedImports = forConstructingImports.reduce((acc, cur) => {
-        acc += `import { ${firstToLower(cur)}Schema } from './${cur}'`
-        return acc
-    }, '')
-
     return templateFileToText('model.t.ts', {
         __MODEL_NAME__: modelName,
         __SCHEMA_NAME__: schemaName,
         __CONSTRUCTED_MEMBERS__: constructedMembers,
         __CONSTRUCTED_INDEXIES__: constructedIndexiesAndValidators,
-        __CONSTRUCTED_IMPORTS__: constructedImports,
+        __CONSTRUCTED_IMPORTS__: constructImports(forConstructingImports),
         __EXPORT_MODEL__: modelExport,
     })
 }
+
+export const constructImports: (relatedModels: string[]) => string = (relatedModels) => relatedModels.reduce((acc, cur) => {
+        acc += `import { ${firstToLower(cur)}Schema } from './${cur}'\n`
+        return acc
+}, '')
 
 export const transformTypeToMongoType = (structure: StructureBackend, member: SchemaModelMember) => {
     if (member.relation) {

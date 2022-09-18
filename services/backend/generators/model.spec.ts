@@ -1,6 +1,6 @@
 import { SchemaModel, SchemaModelMember } from '../../common/types'
 import { getOnlyOneRelatedMember } from '../../common/utils'
-import { constructMember } from './model'
+import { constructImports, constructMember } from './model'
 
 describe('model', () => {
     describe('constructMember', () => {
@@ -25,6 +25,16 @@ describe('model', () => {
         it('default with empty text', () => {
             const test = constructMember({ modelName: 'String', type: 'Number', isRequired: false, default: '' } as any, { id: 'schema-test-id' } as any)
             expect(test).toEqual("{type: Schema.Types.String, default: ''}")
+        })
+    })
+
+    describe('constructImports', () => {
+        it('two inports', () => {
+            expect(constructImports(['model1', 'model2'])).toMatchInlineSnapshot(`
+                "import { model1Schema } from './model1'
+                import { model2Schema } from './model2'
+                "
+            `)
         })
     })
 })
