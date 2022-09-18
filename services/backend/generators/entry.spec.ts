@@ -1,6 +1,6 @@
 import { SchemaModel, SchemaModelMember } from '../../common/types'
 import { getOnlyOneRelatedMember } from '../../common/utils'
-import { createResolvers, genAddingAndRemovingsForModel } from './entry'
+import { createResolvers, genAddingAndRemovingsForModel, generateDataloadersForResolver } from './entry'
 
 const memberZero = {
     name: 'memberZero',
@@ -21,9 +21,25 @@ const memberAnaconda = {
     isArray: true,
 } as SchemaModelMember
 
+const memberAnacondaHidden = {
+    name: 'memberAnacondaHidden',
+    modelName: 'modelAnaconda',
+    relation: { name: 'relation1', relatedModel: modelZero, relatedMember: modelZero.members[0] },
+    isArray: true,
+    isHidden: true,
+} as SchemaModelMember
+
+const memberAnacondaSystem = {
+    name: '_memberAnacondaYstem',
+    modelName: 'modelAnaconda',
+    relation: { name: 'relation1', relatedModel: modelZero, relatedMember: modelZero.members[0] },
+    isArray: true,
+    isSystem: true,
+} as SchemaModelMember
+
 const modelAnaconda = {
     modelName: 'modelAnaconda',
-    members: [memberAnaconda],
+    members: [memberAnaconda, memberAnacondaHidden, memberAnacondaSystem],
 } as SchemaModel
 
 memberZero.relation.relatedModel = modelAnaconda
@@ -43,5 +59,18 @@ describe('entry', () => {
     it('genAddingAndRemovingsForModel', () => {
         const addings = genAddingAndRemovingsForModel(modelAnaconda)
         expect(addings).toBe('')
+    })
+
+    it('generateDataloadersForResolver', () => {
+        const addings = generateDataloadersForResolver(modelAnaconda)
+        expect(addings).toMatchInlineSnapshot(`
+            ",modelAnacondaModel: {
+                memberAnaconda: async (modelZeroModel, data, koaContext) => {
+                  return entry.dataloaders['modelZero'](koaContext, modelZeroModel.memberAnaconda,true)
+                },    
+            }
+
+            "
+        `)
     })
 })
