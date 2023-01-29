@@ -60,6 +60,8 @@ export function generateAll(backendDirectory: BackendDirectory, models: SchemaMo
             generateRestToFile(backendDirectory, model)
             generateResolverToFile(backendDirectory, model)
         }
+
+        console.log(`${model.modelName} generated with ${model.members.length} members`)
     }
 
     backendDirectory.genWrite(`model-types.ts`, typesAll)

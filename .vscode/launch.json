@@ -9,12 +9,12 @@
            "type": "node",
            "request": "launch",
            "runtimeArgs": ["--nolazy", "-r", "ts-node/register"],
-           "args": ["./index.ts", "-bd", "-d", "./examples/project-with-logs.schema", "../server"],
-           "cwd": "${workspaceFolder}/builder",
+           "args": ["./index.ts", "-bd", "-d", "./examples/todo.schema", "../server"],
+           "cwd": "${workspaceFolder}",
            "internalConsoleOptions": "openOnSessionStart",
            "skipFiles": ["<node_internals>/**", "node_modules/**"],
            "env": {
-               "TS_NODE_PROJECT": "${workspaceFolder}/builder/tsconfig.json"
+               "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.json"
            }
        },{
             "name": "Server start",

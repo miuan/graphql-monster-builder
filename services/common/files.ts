@@ -11,6 +11,9 @@ import {
 } from './types';
 
 
+const globalConfig = {
+  __VERSION__: require('../../package.json').version
+}
 
 export const removeDirs = (dir, force = false) => {
   if(!fs.existsSync(dir)){
@@ -95,7 +98,8 @@ export const writeToFile = (item: StructureItem, name: string, content: string):
 
 
 
-export const templateToText = (text: string, params: any) => {
+export const templateToText = (text: string, templateConfig: any = {}) => {
+  const params = { ...templateConfig, ...globalConfig }
   if (params && params instanceof Object) {
     for (const key in params) {
       const search = new RegExp(key, 'g');
