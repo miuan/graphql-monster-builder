@@ -135,7 +135,10 @@ export const generateDataloadersForResolver = (model: SchemaModel) => {
 
     // SchemaModelRelationType.ENTITY is actualy part of object
     // have a dataloader mean it will try to use dataloade but we already have the data
-    const memberWithRelation = model.members.filter((m) => m.relation && !m.isHidden && !m.isSystem && m.relation.type !== SchemaModelRelationType.ENTITY)
+    // NOTE: !m.isSystem - can't be appplied othervise User and UserRole resolvers are not connect
+    //       {"errors":[{"message":"Cannot return null for non-nullable field UserRoleModel.name.","locations":[{"line":9,"column":7}],"path":["login_v1","user","roles",0,"name"]
+
+    const memberWithRelation = model.members.filter((m) => m.relation && !m.isHidden && m.relation.type !== SchemaModelRelationType.ENTITY)
     for (const member of memberWithRelation) {
         const memberName = member.name
         const lower = firstToLower(member.relation.relatedModel.modelName)

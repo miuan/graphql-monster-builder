@@ -58,9 +58,9 @@
             "type": "node",
             "request": "launch",
             "name": "Builder jest",
-            "program": "${workspaceFolder}/builder/node_modules/.bin/jest",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": [
-                "extras.spec.ts"
+                "resolvers.spec.ts"
             ],
             "cwd": "${workspaceFolder}/builder",
             "console": "integratedTerminal",

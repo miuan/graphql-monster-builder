@@ -67,6 +67,9 @@ describe('entry', () => {
             ",modelAnacondaModel: {
                 memberAnaconda: async (modelZeroModel, data, koaContext) => {
                   return entry.dataloaders['modelZero'](koaContext, modelZeroModel.memberAnaconda,true)
+                },
+                _memberAnacondaYstem: async (modelZeroModel, data, koaContext) => {
+                  return entry.dataloaders['modelZero'](koaContext, modelZeroModel._memberAnacondaYstem,true)
                 },    
             }
 

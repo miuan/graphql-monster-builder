@@ -135,7 +135,7 @@ describe('storage integration', () => {
         // download with id without token
         const downloadRequestId = await request(server.koa).get('/download/' + uploadJSON.id)
         expect(downloadRequestId).toHaveProperty('ok', false)
-        expect(downloadRequestId.body).toEqual(expect.objectContaining({ error: { message: 'Unauthorized' } }))
+        expect(downloadRequestId.body).toEqual(expect.objectContaining({ errors: [{ message: 'Unauthorized' }] }))
 
         loadDataFromFileSpy.mockRestore()
     })
@@ -309,6 +309,6 @@ describe('storage integration', () => {
         // download with id without token
         const downloadRequestId = await request(server.koa).get('/download/' + uploadJSON.id)
         expect(downloadRequestId).toHaveProperty('ok', false)
-        expect(downloadRequestId.body).toEqual(expect.objectContaining({ error: { message: 'Unauthorized' } }))
+        expect(downloadRequestId.body).toEqual(expect.objectContaining({ errors: [{ message: 'Unauthorized' }] }))
     })
 })
