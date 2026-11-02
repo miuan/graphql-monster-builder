@@ -33,10 +33,9 @@ const argv = yargs
     .alias('help', 'h').argv
 
 new Promise(async () => {
-    log.debug(argv)
     const schema = argv._[0]
     const outDir = argv._[1].toString()
-    log.info(`Generate schema: '${schema} to ${outDir}`)
+    console.log(`Generate schema: '${schema} to ${outDir} (version: ${require('./package.json').version})`)
     const start = Date.now()
 
     if (argv.fd) await frontendFromSchema(outDir, schema, outDir)
