@@ -1,3 +1,5 @@
+import * as jwt from 'jsonwebtoken'
+import { genPasswordAndTokens, generateTokenJWT } from '../templates/jwt'
 import * as request from 'supertest'
 import { isExportDeclaration } from 'typescript'
 import { disconnectFromServer, generateAndRunServerFromSchema, loadGraphQL } from './utils'
@@ -53,6 +55,30 @@ describe('i:login', () => {
         expect(response.body).toHaveProperty('health', 'ok')
     })
     describe('api', () => {
+        it('accepts only a valid, unexpired access token', async () => {
+            const user = await userModel.findOne({ email: 'admin@admin.test' })
+            const tokens: any = { id: user.id, roles: [] }
+            genPasswordAndTokens(tokens)
+            const valid = await request(server.koa).get('/auth/me').set('Authorization', `Bearer ${tokens.__token}`)
+            expect(valid.status).toBe(200)
+            expect(valid.body.me.id).toBe(user.id)
+
+            const payload = { id: user.id, tokenType: 'access' }
+            const invalidTokens = [
+                tokens.__refreshToken,
+                generateTokenJWT(payload, { expiresIn: -1 }),
+                jwt.sign(payload, process.env.JWT_TOKEN_SECRET, { algorithm: 'HS384', expiresIn: '1h' }),
+                jwt.sign(payload, 'wrong-secret', { expiresIn: '1h' }),
+                jwt.sign(payload, '', { algorithm: 'none' }),
+                jwt.sign(payload, process.env.JWT_TOKEN_SECRET),
+            ]
+            for (const token of invalidTokens) {
+                const res = await request(server.koa).get('/auth/me').set('Authorization', `Bearer ${token}`)
+                expect(res.body).not.toHaveProperty('me')
+                expect(res.body).toHaveProperty('errors')
+            }
+        })
+
         it('login fail', async () => {
             // console.log(server)
             const res = await request(server.koa).post('/auth/login_v1').send({

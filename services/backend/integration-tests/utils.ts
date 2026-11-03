@@ -267,6 +267,7 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
     fs.writeFileSync(
         path.join(envPath, '.env'),
         `
+JWT_TOKEN_SECRET=integration-tests-only-secret
 ADMIN_EMAIL=admin@admin.test
 ADMIN_PASSWORD=${bcrypt.hashSync('admin@admin.test', 1)}
     `,
