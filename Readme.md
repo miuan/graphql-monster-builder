@@ -27,6 +27,11 @@ with `deleteMany`/`deleteOne`, `countDocuments` and `findByIdAndDelete`.
 Database update results now expose `modifiedCount` instead of `nModified`.
 The test scripts enable Jest VM module support for the MongoDB driver's dynamic imports.
 
+Keep the `overrides` (npm) and `resolutions` (Yarn) entries when merging the
+generated `package.json`. Swagger JSDoc 6.3 pins an older vulnerable `glob`;
+these entries replace only its copy with patched `glob` 14.0.4 or newer.
+Remove this targeted replacement once Swagger JSDoc itself depends on a patched version.
+
 # Usage
 
 ```
