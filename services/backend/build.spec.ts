@@ -6,6 +6,7 @@ import {createModelTypeFromModel} from './generators/model-types'
 import { generateSchema } from './generators/schema'
 import { generateResolverToFile } from './generators/resolvers'
 import { generateServiceToFile } from './generators/service'
+import { generateRestToFile } from './generators/rest'
 import { SchemaType } from "mongoose"
 
 jest.mock('./generators/model')
@@ -13,6 +14,7 @@ jest.mock('./generators/model-types')
 jest.mock('./generators/schema')
 jest.mock('./generators/resolvers')
 jest.mock('./generators/service')
+jest.mock('./generators/rest')
 
   describe('generate:build', ()=>{
        
@@ -84,6 +86,8 @@ jest.mock('./generators/service')
         ]))
 
         expect(generateResolverToFile).toBeCalledTimes(1)
+        expect(generateRestToFile).toBeCalledTimes(1)
+        expect(generateRestToFile).toBeCalledWith(backendDirectory, modelTodo)
         expect((generateResolverToFile as any).mock.calls).toEqual(expect.arrayContaining([
           [backendDirectory, expect.not.objectContaining({type: SchemaModelType.ENTITY})]
         ]))

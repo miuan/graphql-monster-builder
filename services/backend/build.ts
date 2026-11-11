@@ -1,3 +1,4 @@
+import { ensureGeneratedJwtSecret } from './jwt-config'
 import * as fs from 'fs'
 import { templateFileToText } from '../common/files'
 import { SchemaModel, SchemaModelType } from '../common/types'
@@ -26,6 +27,7 @@ export const exportAsFromString = async (name, importedSchema, outDir = '.', con
     // TODO: in some times 'services/' is not used,
     //       so not create directory what is not necessary
     backendDirectory.prepareDirectory()
+    ensureGeneratedJwtSecret(outDir)
 
     generateAll(backendDirectory, models, config)
 
@@ -35,10 +37,13 @@ export const exportAsFromString = async (name, importedSchema, outDir = '.', con
     backendDirectory.writeWithConfig('extras', config, 'gen')
     backendDirectory.writeWithConfig('storage.t', config, 'gen')
 
+    backendDirectory.genWrite('jwt', templateFileToText('jwt.ts', null))
+
     backendDirectory.genWrite(`schemaLoad`, templateFileToText(`schemaLoad.ts`, null))
 
     backendDirectory.genWrite(`services/db`, templateFileToText(`db.ts`, null))
     backendDirectory.genWrite(`source.schema`, importedSchema)
+    backendDirectory.write('tsconfig.json', templateFileToText('tsconfig.json', null))
     backendDirectory.write(`package.json`, templateFileToText(`package.json`, null))
     backendDirectory.genWrite(`integration-tests/helper.ts`, templateFileToText(`integration-test-helper.ts`, null))
 

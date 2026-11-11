@@ -1,6 +1,7 @@
+import { genPasswordAndTokens, getJwtSecret } from './jwt'
+export { generateTokenJWT, genPasswordAndTokens } from './jwt'
 import * as passport from 'koa-passport'
 import * as bcrypt from 'bcrypt'
-import * as jwt from 'jsonwebtoken'
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
 import * as Router from 'koa-router'
@@ -25,16 +26,24 @@ export const passportSetupJwt = (app, userModel) => {
         new JwtStrategy(
             {
                 jwtFromRequest: ExtractJwt.fromExtractors([ExtractJwt.fromAuthHeaderAsBearerToken(), ExtractJwt.fromUrlQueryParameter('token')]),
-                secretOrKey: process.env.JWT_TOKEN_SECRET || 'graphql_monster_test_secret',
+                secretOrKey: getJwtSecret(),
+                algorithms: ['HS256'],
+                // Preserve TokenExpiredError responses; expiration is required and checked below.
                 ignoreExpiration: true,
             },
             async (jwt_payload, done) => {
-                if (Date.now() >= jwt_payload.exp * 1000) {
-                    return done(new TokenExpiredError())
-                } else if (!(await userModel.exists({ _id: jwt_payload.id }))) {
-                    return done(new UnauthorizedError())
+                try {
+                    if (!Number.isFinite(jwt_payload.exp) || Date.now() >= jwt_payload.exp * 1000) {
+                        return done(new TokenExpiredError())
+                    } else if (jwt_payload.tokenType !== 'access' || typeof jwt_payload.id !== 'string') {
+                        return done(new UnauthorizedError())
+                    } else if (!(await userModel.exists({ _id: jwt_payload.id }))) {
+                        return done(new UnauthorizedError())
+                    }
+                    done(null, jwt_payload)
+                } catch (error) {
+                    done(error)
                 }
-                done(null, jwt_payload)
             },
         ),
     )
@@ -53,34 +62,6 @@ export async function generateHash(password) {
 
 export async function compareHash(pass, hashPass) {
     return bcrypt.compare(pass, hashPass)
-}
-
-/**
- *
- * @param user
- * @param options
- */
-export const generateTokenJWT = (tokenizeData, opts?): string => {
-    let options = opts || {}
-
-    if (!options) {
-        options = {
-            /* expires in 365 days */
-            expiresIn: '365d',
-        }
-    }
-
-    const tokenJWT = jwt.sign(tokenizeData, process.env.JWT_TOKEN_SECRET || 'graphql_monster_test_secret', options)
-    return tokenJWT
-}
-
-export const genPasswordAndTokens = (userData) => {
-    if (!userData.id) {
-        throw 'Call genPasswordAndTokens withou user.id'
-    }
-    // TODO: schort the expire date
-    userData.__token = generateTokenJWT({ id: userData.id, roles: userData.roles || [] }, { expiresIn: '1h' })
-    userData.__refreshToken = generateTokenJWT({ id: userData.id }, { expiresIn: '365d' })
 }
 
 const createVerifyToken = async (userModel) => {
@@ -144,7 +125,7 @@ async function _register(userModel, data) {
     // user have to be in DB to have his ID for generate token
     genPasswordAndTokens(createdUser)
     // save the tokens into model
-    createdUser.save()
+    await createdUser.save()
 
     return {
         token: createdUser.__token,

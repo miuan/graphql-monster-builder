@@ -1,5 +1,6 @@
+import * as jwtTokens from './jwt'
 import * as extras from './extras'
-import { mocked } from 'ts-jest/utils'
+const mocked = jest.mocked
 
 describe('extras', () => {
     it.todo('filterGen')
@@ -207,14 +208,14 @@ describe('extras', () => {
     })
 
     describe('generateParentLogin', () => {
-        let genPasswordAndTokensStub = jest.spyOn(extras, 'genPasswordAndTokens')
+        let genPasswordAndTokensStub = jest.spyOn(jwtTokens, 'genPasswordAndTokens')
 
         afterEach(() => {
             mocked(genPasswordAndTokensStub).mockClear()
         })
 
         afterAll(() => {
-            mocked(extras.genPasswordAndTokens).mockRestore()
+            mocked(jwtTokens.genPasswordAndTokens).mockRestore()
         })
 
         it('should pass', async () => {
@@ -224,7 +225,7 @@ describe('extras', () => {
                 save: saveStub,
             }))
             const sendStub = jest.fn()
-            const genPasswordAndTokensStub = jest.spyOn(extras, 'genPasswordAndTokens').mockImplementation(() => {})
+            const genPasswordAndTokensStub = jest.spyOn(jwtTokens, 'genPasswordAndTokens').mockImplementation(() => {})
 
             process.env.PARENT_ACCESS_TOKEN = '7674123'
             process.env.PARENT_ACCESS_USER_ID = '4321123'
@@ -296,7 +297,7 @@ describe('extras', () => {
                 save: saveStub,
             }))
             const sendStub = jest.fn()
-            const genPasswordAndTokensStub = jest.spyOn(extras, 'genPasswordAndTokens').mockImplementation(() => {})
+            const genPasswordAndTokensStub = jest.spyOn(jwtTokens, 'genPasswordAndTokens').mockImplementation(() => {})
 
             process.env.PARENT_ACCESS_TOKEN = '123'
             process.env.ADMIN_EMAIL = 'admin@email.com'
@@ -327,7 +328,7 @@ describe('extras', () => {
                 save: saveStub,
             }))
             const sendStub = jest.fn()
-            const genPasswordAndTokensStub = jest.spyOn(extras, 'genPasswordAndTokens').mockImplementation(() => {})
+            const genPasswordAndTokensStub = jest.spyOn(jwtTokens, 'genPasswordAndTokens').mockImplementation(() => {})
 
             process.env.PARENT_ACCESS_TOKEN = '123'
             process.env.PARENT_ACCESS_USER_ID = '123'

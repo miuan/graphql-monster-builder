@@ -7,7 +7,7 @@ import log, { setupLogLevel } from './services/log'
 import { frontendFromSchema } from './services/frontend/frontend'
 import { exportAs } from './services/backend/build'
 
-const argv = yargs
+const parsedArguments = yargs
     .usage('Usage: $0 <command> [options] path/to/schema.file [desctination/folder]')
     .example('$0 -bd -d models.schema ../server', 'create server')
     .example('$0 -fd -d models.schema ../frontend', 'create client')
@@ -33,10 +33,10 @@ const argv = yargs
     .alias('help', 'h').argv
 
 new Promise(async () => {
-    log.debug(argv)
+    const argv = await parsedArguments
     const schema = argv._[0]
     const outDir = argv._[1].toString()
-    log.info(`Generate schema: '${schema} to ${outDir}`)
+    console.log(`Generate schema: '${schema} to ${outDir} (version: ${require('./package.json').version})`)
     const start = Date.now()
 
     if (argv.fd) await frontendFromSchema(outDir, schema, outDir)

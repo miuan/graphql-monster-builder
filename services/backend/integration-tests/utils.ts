@@ -5,8 +5,6 @@ import * as path from 'path'
 import * as bcrypt from 'bcrypt'
 import { SchemaModelRelationType } from '../../common/types'
 import { exportAsFromString } from '../build'
-import { createTestClient } from 'apollo-server-testing'
-import gql from 'graphql-tag'
 import * as mongoose from 'mongoose'
 
 import * as request from 'supertest'
@@ -163,7 +161,7 @@ export function createServiceWithRelation(meType, required) {
 // }
 
 // NODE: database name 'test_integration_all' - is for protend exception with multiple call connect with different connect string
-export async function generateAndRunServerFromSchema(name: string, schema: string, port = 3001, dbname = 'test_integration_all') {
+export async function generateAndRunServerFromSchema(name: string, schema: string, port = 0, dbname = 'test_integration_all') {
     let server
     let dropCollectionPromises = []
 
@@ -174,11 +172,6 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
     try {
         const module = require(path.join(integrationTestServerPath, 'server'))
         server = await module.connectionPromise
-
-        // NOTE:
-        //    createTestClient - skip the requeste layer and skip the header part
-        //    https://github.com/apollographql/apollo-server/issues/2277
-        // const { query, mutate } = createTestClient(server.apollo)
 
         const post = async (url, body: { query: string; variables: any }, token?: string) => {
             const req = request(server.koa).post(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
@@ -240,7 +233,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
 
         return { ...server, query, mutate, get, post, put, delete: del }
     } catch (ex) {
-        console.error(ex)
+        throw ex
     }
 }
 
@@ -267,6 +260,7 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
     fs.writeFileSync(
         path.join(envPath, '.env'),
         `
+JWT_TOKEN_SECRET=integration-tests-only-secret
 ADMIN_EMAIL=admin@admin.test
 ADMIN_PASSWORD=${bcrypt.hashSync('admin@admin.test', 1)}
     `,
@@ -296,7 +290,8 @@ async function replaceInFile(file, replaceFn) {
 }
 
 export async function disconnectFromServer(server: any) {
-    await server.koa.close()
+    await server.apollo.stop()
+    await new Promise<void>((resolve, reject) => server.koa.close(error => error ? reject(error) : resolve()))
     await new Promise((resolve, reject) => {
         server.mongoDB.close(() => {
             resolve(1)
