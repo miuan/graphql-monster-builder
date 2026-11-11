@@ -29,7 +29,7 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth": "^2.0.0",
     "passport-jwt": "^4.0.1",
-    "swagger-jsdoc": "^6.1.0",
+    "swagger-jsdoc": "^6.3.0",
     "ts-node": "^10.9.2",
     "typescript": "~5.9.3",
     "@apollo/server": "^5.5.1",
@@ -51,5 +51,13 @@
   },
   "engines": {
     "node": ">=22.18.0"
+  },
+  "overrides": {
+    "swagger-jsdoc": {
+      "glob": "^14.0.4"
+    }
+  },
+  "resolutions": {
+    "swagger-jsdoc/glob": "^14.0.4"
   }
 }
