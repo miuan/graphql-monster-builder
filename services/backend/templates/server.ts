@@ -20,7 +20,7 @@ import { createUser, createRole, generateParentLogin } from './gen/extras'
 
 import { setupAuth } from './gen/api-auth'
 import setupPassport from './services/passport'
-import { generateHash } from './gen/extras'
+import { getAdminPasswordHash } from './gen/extras'
 import { registerStorageService, registerStorageRouter } from './gen/storage'
 import { registerSendMailService } from './services/sendMail'
 import * as swaggerJSDoc from 'swagger-jsdoc'
@@ -224,15 +224,15 @@ healthCheck.get(`/health`, (ctx) => {
 app.use(healthCheck.routes())
 app.use(healthCheck.allowedMethods())
 
-export async function updateAdminUser(rawPassword = true) {
+export async function updateAdminUser(passwordIsHashed = false) {
     const admin_email = process.env.ADMIN_EMAIL || `admin@graphql.monster`
     const admin_pass = process.env.ADMIN_PASSWORD || `admin@graphql.monster`
 
-    const admin_pass_raw = rawPassword ? admin_pass : await generateHash(admin_pass)
+    const adminPasswordHash = await getAdminPasswordHash(admin_pass, passwordIsHashed)
 
     // TODO: add all roles what is in schema
     const adminRole = await createRole(entry, 'admin')
-    const adminUser = await createUser(entry, admin_email, admin_pass_raw, [adminRole._id])
+    const adminUser = await createUser(entry, admin_email, adminPasswordHash, [adminRole._id])
     return [adminUser, adminRole]
 }
 

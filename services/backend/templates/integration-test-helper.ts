@@ -62,7 +62,7 @@ export async function connectToServer() {
 
         // await new Promise((resolve) => setTimeout(resolve, 1000))
         // upload user again
-        await module.updateAdminUser(true)
+        await module.updateAdminUser()
 
         const count = await server.entry.models.user.countDocuments({})
 
