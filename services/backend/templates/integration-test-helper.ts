@@ -8,11 +8,6 @@ export async function connectToServer() {
         const module = require(path.join('../../', 'server'))
         server = await module.connectionPromise
 
-        // NOTE:
-        //    createTestClient - skip the requeste layer and skip the header part
-        //    https://github.com/apollographql/apollo-server/issues/2277
-        // const { query, mutate } = createTestClient(server.apollo)
-
         const post = async (url, body: { query: string; variables: any }, token?: string) => {
             const req = request(server.koa).post(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
 
@@ -78,7 +73,8 @@ export async function connectToServer() {
 }
 
 export async function disconnectFromServer(server: any) {
-    await server.koa.close()
+    await server.apollo.stop()
+    await new Promise<void>((resolve, reject) => server.koa.close(error => error ? reject(error) : resolve()))
     await new Promise((resolve, reject) => {
         server.mongoDB.close(() => {
             resolve(1)

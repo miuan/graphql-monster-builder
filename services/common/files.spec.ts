@@ -17,8 +17,8 @@ describe('files', () => {
     })
 
     afterAll(()=>{
-        (<any>fs.existsSync).mockRestore()
-        (<any>fs.writeFileSync).mockRestore()
+        existsSyncMock.mockRestore()
+        writeFileSyncMock.mockRestore()
     })
 
     it('should call writeFileSync in writeToFile on when the file doesn\'t exists', () => {

@@ -1,6 +1,6 @@
 import * as jwtTokens from './jwt'
 import * as extras from './extras'
-import { mocked } from 'ts-jest/utils'
+const mocked = jest.mocked
 
 describe('extras', () => {
     it.todo('filterGen')

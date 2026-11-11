@@ -21,9 +21,9 @@ describe('StructureOperator', () => {
     })
 
     afterAll(()=>{
-        (<any>files.writeToFile).mockRestore()
-        (<any>files.removeDirs).mockRestore()
-        (<any>files.createDirs).mockRestore()
+        writeToFileMock.mockRestore()
+        removeDirsMock.mockRestore()
+        createDirsMock.mockRestore()
     })
 
     it('should handle id for windows path', () => {

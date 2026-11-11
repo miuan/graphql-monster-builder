@@ -430,7 +430,11 @@ describe('i:protection', () => {
                 expect(data).toHaveProperty(`data.${keyName}`)
                 expect(data).toHaveProperty(`data.${keyName}.id`)
                 expect(data).toHaveProperty(`data.${keyName}.name`, 'rem28xwer2')
-                expect(data).toHaveProperty(`data.${keyName}.user.id`, currentUser?.user?.id)
+                if (currentUser) {
+                    expect(data).toHaveProperty(`data.${keyName}.user.id`, currentUser.user.id)
+                } else {
+                    expect(data).toHaveProperty(`data.${keyName}.user`, null)
+                }
 
                 // test if user 2 can edit
                 const data2 = await server.query(

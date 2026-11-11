@@ -8,6 +8,11 @@ Build server with CRUD with GraphQL and Rest API interface. With these features:
 -   Integrated GraphQL documentation and Swagger for Rest API
 -   Prepared [CRA templates](https://github.com/graphql-monster/cra-template-graphql-monster) for easy connect to React App (ES6 or [Typescipt](https://github.com/miuan/cra-template-graphql-monster-typescript))
 
+# Requirements
+
+Node.js 22.18 or newer (Node.js 24 recommended) and a running MongoDB instance.
+Generated servers use Apollo Server 5, GraphQL 16 and Koa 3.
+
 # Usage
 
 ```
@@ -62,7 +67,7 @@ older tokens do not contain the required token type.
 
 Now you can check the:
 
--   GraphQL Playground -> [http://localhost:3001/grapqhl](http://localhost:3001/graphql)
+-   Apollo Sandbox -> [http://localhost:3001/grapqhl](http://localhost:3001/graphql)
 -   Swagger -> [http://localhost:3001/swagger](http://localhost:3001/swagger)
 
 ## GraphQL
