@@ -58,7 +58,7 @@ export const addInjectionToMergedResolvers = (mergedResolvers: IResolvers, injec
  * @param schemasFile? path to file with schema
  * @return excutable schema
  */
-export const schemaLoad = (resolvers: [IResolvers] | IResolvers, schemasFile = '/graphql/schema.graphql') => {
+export const schemaLoad = (resolvers: IResolvers[] | IResolvers, schemasFile = '/graphql/schema.graphql') => {
   const schemas = fs.readFileSync(path.resolve(schemasFile), 'utf8');
 
   let mergedResolvers: IResolvers;
