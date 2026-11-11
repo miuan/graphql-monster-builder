@@ -10,7 +10,7 @@ Build server with CRUD with GraphQL and Rest API interface. With these features:
 
 # Requirements
 
-Node.js 22.18 or newer (Node.js 24 recommended) and a running MongoDB instance.
+Node.js 22.18+ (22.x), or Node.js 24.11+ (recommended) and a running MongoDB instance.
 Generated servers use Apollo Server 5, GraphQL 16, Mongoose 9 and Koa 3.
 
 ## Upgrading an existing generated server
@@ -31,6 +31,25 @@ Keep the `overrides` (npm) and `resolutions` (Yarn) entries when merging the
 generated `package.json`. Swagger JSDoc 6.3 pins an older vulnerable `glob`;
 these entries replace only its copy with patched `glob` 14.0.4 or newer.
 Remove this targeted replacement once Swagger JSDoc itself depends on a patched version.
+
+## Development checks
+
+Use Node.js 22.18+ within the 22.x line, or Node.js 24.11+.
+
+```sh
+yarn lint
+yarn lint:fix
+yarn test --runInBand
+yarn prettier-format
+```
+
+ESLint uses `eslint.config.cjs`. It checks generator source and tests, excluding
+`dist/` and code templates. Existing style and unused-variable cleanup items are
+reported as warnings; errors fail the command. `lint` checks files, and `lint:fix`
+applies available fixes. Prettier 3 runs separately with `.prettierrc.js`.
+The generated Jest configuration registers the jest-extended 7 matchers explicitly.
+The builder also targets patched `minimatch` versions for ESLint and the TypeScript
+parser using npm overrides and Yarn resolutions until those tools update their dependencies.
 
 # Usage
 

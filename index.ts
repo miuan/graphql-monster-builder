@@ -32,7 +32,7 @@ const parsedArguments = yargs
     .help()
     .alias('help', 'h').argv
 
-new Promise(async () => {
+async function main() {
     const argv = await parsedArguments
     const schema = argv._[0]
     const outDir = argv._[1].toString()
@@ -52,4 +52,9 @@ new Promise(async () => {
 
     log.info(`Done in ${ms}ms. Next step:`)
     log.info(`\tcd ${outDir}/ && yarn && yarn start\n`)
+}
+
+main().catch((error) => {
+    log.error(error)
+    process.exitCode = 1
 })

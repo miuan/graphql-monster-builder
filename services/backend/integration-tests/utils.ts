@@ -169,72 +169,69 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
 
     await remakeServer(integrationTestServerPath, name, schema, port, dbname)
 
-    try {
-        const module = require(path.join(integrationTestServerPath, 'server'))
-        server = await module.connectionPromise
+    const module = require(path.join(integrationTestServerPath, 'server'))
+    server = await module.connectionPromise
 
-        const post = async (url, body: { query: string; variables: any }, token?: string) => {
-            const req = request(server.koa).post(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+    const post = async (url, body: { query: string; variables: any }, token?: string) => {
+        const req = request(server.koa).post(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
 
-            if (token) {
-                req.set('Authorization', `Bearer ${token}`)
-            }
-
-            return await req.send(body)
+        if (token) {
+            req.set('Authorization', `Bearer ${token}`)
         }
 
-        const put = async (url, body: { query: string; variables: any }, token?: string) => {
-            const req = request(server.koa).put(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
-
-            if (token) {
-                req.set('Authorization', `Bearer ${token}`)
-            }
-
-            return await req.send(body)
-        }
-
-        const del = async (url, body: { query: string; variables: any }, token?: string) => {
-            const req = request(server.koa).delete(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
-
-            if (token) {
-                req.set('Authorization', `Bearer ${token}`)
-            }
-
-            return await req.send(body)
-        }
-
-        const get = async (url, token?: string) => {
-            const req = request(server.koa).get(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
-
-            if (token) {
-                req.set('Authorization', `Bearer ${token}`)
-            }
-
-            return await req.send()
-        }
-
-        const query = async (body, token?: string) => {
-            return (await post('/graphql', body, token)).body
-        }
-
-        const mutate = async ({ mutation, variables }: { mutation: string; variables: any }, token?: string) => {
-            return query({ query: mutation, variables }, token)
-        }
-
-        for (const modelName of Object.keys(await server.entry.models)) {
-            await server.entry.models[modelName].deleteMany({})
-        }
-
-        // await new Promise((resolve) => setTimeout(resolve, 1000))
-        // upload user again
-        await module.updateAdminUser(true)
-
-        const count = await server.entry.models.user.countDocuments({})
-
-        return { ...server, query, mutate, get, post, put, delete: del }
-    } catch (ex) {
-        throw ex
+        return await req.send(body)
     }
+
+    const put = async (url, body: { query: string; variables: any }, token?: string) => {
+        const req = request(server.koa).put(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+        if (token) {
+            req.set('Authorization', `Bearer ${token}`)
+        }
+
+        return await req.send(body)
+    }
+
+    const del = async (url, body: { query: string; variables: any }, token?: string) => {
+        const req = request(server.koa).delete(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+        if (token) {
+            req.set('Authorization', `Bearer ${token}`)
+        }
+
+        return await req.send(body)
+    }
+
+    const get = async (url, token?: string) => {
+        const req = request(server.koa).get(url).set('Content-Type', 'application/json').set('Accept', 'application/json')
+
+        if (token) {
+            req.set('Authorization', `Bearer ${token}`)
+        }
+
+        return await req.send()
+    }
+
+    const query = async (body, token?: string) => {
+        return (await post('/graphql', body, token)).body
+    }
+
+    const mutate = async ({ mutation, variables }: { mutation: string; variables: any }, token?: string) => {
+        return query({ query: mutation, variables }, token)
+    }
+
+    for (const modelName of Object.keys(await server.entry.models)) {
+        await server.entry.models[modelName].deleteMany({})
+    }
+
+    // await new Promise((resolve) => setTimeout(resolve, 1000))
+    // upload user again
+    await module.updateAdminUser(true)
+
+    const count = await server.entry.models.user.countDocuments({})
+
+    return { ...server, query, mutate, get, post, put, delete: del }
+
 }
 
 async function remakeServer(integrationTestServerPath: string, name: string, schema: string, port: number, dbname) {
