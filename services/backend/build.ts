@@ -44,6 +44,7 @@ export const exportAsFromString = async (name, importedSchema, outDir = '.', con
     backendDirectory.genWrite(`services/db`, templateFileToText(`db.ts`, null))
     backendDirectory.genWrite(`source.schema`, importedSchema)
     backendDirectory.write('tsconfig.json', templateFileToText('tsconfig.json', null))
+    backendDirectory.write('jest.config.js', templateFileToText('jest.config.js', null))
     backendDirectory.write(`package.json`, templateFileToText(`package.json`, null))
     backendDirectory.genWrite(`integration-tests/helper.ts`, templateFileToText(`integration-test-helper.ts`, null))
 

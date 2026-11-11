@@ -7,6 +7,6 @@ module.exports = {
       "!**/node_modules/**",
       "!**/vendor/**"
     ],
-    "setupFilesAfterEnv": ["jest-extended"],
+    "setupFilesAfterEnv": ["jest-extended/all"],
     testTimeout: 500000
   };

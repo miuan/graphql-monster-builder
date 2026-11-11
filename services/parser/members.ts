@@ -37,7 +37,7 @@ export const extractMemberFromLineParams = (member: SchemaModelMember, params) =
         }
 
         const match = params.match(/@default\( *((:?"(?<hasText>[^"]*)")|(?<hasNumber>[0-9]+)|(?<hasBoolean>true|false)) *\)/)
-        const { hasText, hasNumber, hasBoolean } = match?.groups
+        const { hasText, hasNumber, hasBoolean } = match?.groups ?? {}
 
         if (!hasText && !hasNumber && !hasBoolean) {
             throw new Error(

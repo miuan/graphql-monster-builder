@@ -619,6 +619,10 @@ describe('scan', () => {
             expect(member).toHaveProperty('default', 'def member value')
         })
 
+        it('reports malformed defaults as schema errors', () => {
+            expect(() => extractMemberFromLine('name: String @default()', 10)).toThrow(/modificator @default must have a text value/)
+        })
+
         it('default text array', () => {
             expect(() => extractMemberFromLine('defMember2: [String] @default("def member value")', 1)).toThrowError(/modificator @default is not suitable for members with array type/)
         })
