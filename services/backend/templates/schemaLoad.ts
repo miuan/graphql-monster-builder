@@ -4,7 +4,6 @@
  */
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { IResolvers } from '@graphql-tools/utils';
-import * as _ from 'lodash';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -19,7 +18,7 @@ import * as fs from 'fs';
 const mapKeysFromInjection = (desc, source, typeName) => {
   // list of each member from source
   // could be members of `injection.Query` or `injection.Mutation`
-  const allMembers = _.keys(source);
+  const allMembers = Object.keys(source ?? {});
 
   // each member add one by one to `desc`
   allMembers.forEach((memberName) => {

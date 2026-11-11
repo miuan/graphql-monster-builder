@@ -1,7 +1,6 @@
 import React from "react";
 import { loader } from 'graphql.macro';
 import { useParams } from "react-router-dom";
-import * as _ from 'lodash'
 
 import BaseEdit from "../../components/Editor/Edit"
 import { createDefaultFilter } from "../../components/List/FilteredList";

@@ -1,4 +1,3 @@
-import * as _ from 'lodash'
 export class RequestError extends Error {
     status: number
 
@@ -94,7 +93,12 @@ export function filterValue(filter, filterName) {
 
     const fullPath = selected[0]
 
-    const value = fullPath ? _.get(filter, fullPath) : null
+    // Paths come from propertiesToArray, including numeric array indices.
+    const value = fullPath
+        ? fullPath in Object(filter)
+            ? filter[fullPath]
+            : fullPath.split('.').reduce((current, key) => current?.[key], filter)
+        : null
 
     if (value) {
         const basePath = fullPath.split(filterName).shift()

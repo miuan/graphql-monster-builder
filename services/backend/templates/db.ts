@@ -3,7 +3,6 @@
  *     Do NOT edit! For more info see: https://github.com/miuan/graphql-monster-builder
  */
 import * as mongoose from 'mongoose'
-import * as _ from 'lodash'
 
 // is it for healt check
 export const status = {
@@ -15,8 +14,8 @@ export const status = {
 // Create the database connection
 export const connect = (options): Promise<any> => {
 
-  const host = _.get(options, 'host', '127.0.0.1')
-  const db = _.get(options, 'db', 'protectql')
+  const host = options?.host === undefined ? '127.0.0.1' : options.host
+  const db = options?.db === undefined ? 'protectql' : options.db
 
   const connURI = `mongodb://${host}:27017/${db}`
   console.debug(options)
