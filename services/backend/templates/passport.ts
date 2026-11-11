@@ -37,30 +37,13 @@ export const setupPassport = (authRouter, userModel, config) => {
         const verified = profile.emails[0].verified
         const __password = `passport:${type}:${profile.id}`
 
-        const handleExistiongUser = (err, existingUser) => {
+        return userModel.findOne({ __password }, { _id: 1, roles: 1 }).then(async (existingUser) => {
             if (existingUser) return done(null, existingUser)
-
-            userModel.create(
-                {
-                    email,
-                    verified,
-                    __password,
-                    roles: [],
-                    password: '*****',
-                },
-                (errCreate, createdUser) => {
-                    if (errCreate && errCreate.message.match(/index: email_1 dup key/)) {
-                        const capType = capitalizeFirstLetter(type)
-                        console.error(`You trying to register user through ${capType} but user with this email (${email}) already exist`, profile)
-                        return done(new Error(`You trying to register user through ${capType} but user with this email (${email}) already exist`))
-                    }
-
-                    done(errCreate, createdUser)
-                },
-            )
-        }
-
-        userModel.findOne({ __password }, { _id: 1, roles: 1 }, null, handleExistiongUser)
+            const createdUser = await userModel.create({
+                email, verified, __password, roles: [], password: '*****',
+            })
+            done(null, createdUser)
+        }).catch((error) => done(error))
     }
 
     if (githubActive(config)) {
@@ -76,8 +59,8 @@ export const setupPassport = (authRouter, userModel, config) => {
             ),
         )
 
-        authRouter.get('/github', passport.authenticate('github', { scope: ['user:email'] }))
-        authRouter.get('/github/callback', passport.authenticate('github', { failureRedirect: '/login' }), sentTokenFor3partyLogin)
+        authRouter.get('/github', passport.authenticate('github', { scope: ['user:email'], session: false }))
+        authRouter.get('/github/callback', passport.authenticate('github', { failureRedirect: '/login', session: false }), sentTokenFor3partyLogin)
     }
 
     if (googleActive(config)) {
@@ -98,9 +81,10 @@ export const setupPassport = (authRouter, userModel, config) => {
             '/google',
             passport.authenticate('google', {
                 scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
+                session: false,
             }),
         )
-        authRouter.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), sentTokenFor3partyLogin)
+        authRouter.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), sentTokenFor3partyLogin)
     }
 
     if (facebookActive(config)) {
@@ -116,8 +100,8 @@ export const setupPassport = (authRouter, userModel, config) => {
             ),
         )
 
-        authRouter.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }))
-        authRouter.get('/facebook/callback', passport.authenticate('facebook'), sentTokenFor3partyLogin)
+        authRouter.get('/facebook', passport.authenticate('facebook', { scope: ['email'], session: false }))
+        authRouter.get('/facebook/callback', passport.authenticate('facebook', { session: false }), sentTokenFor3partyLogin)
     }
 
     return publicPassportConfig(config)

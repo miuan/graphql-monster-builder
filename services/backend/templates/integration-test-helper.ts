@@ -57,14 +57,14 @@ export async function connectToServer() {
         }
 
         for (const modelName of Object.keys(await server.entry.models)) {
-            await server.entry.models[modelName].remove({})
+            await server.entry.models[modelName].deleteMany({})
         }
 
         // await new Promise((resolve) => setTimeout(resolve, 1000))
         // upload user again
         await module.updateAdminUser(true)
 
-        const count = await server.entry.models.user.count({})
+        const count = await server.entry.models.user.countDocuments({})
 
         return { ...server, query, mutate, get, post, put, delete: del }
     } catch (ex) {
@@ -75,10 +75,6 @@ export async function connectToServer() {
 export async function disconnectFromServer(server: any) {
     await server.apollo.stop()
     await new Promise<void>((resolve, reject) => server.koa.close(error => error ? reject(error) : resolve()))
-    await new Promise((resolve, reject) => {
-        server.mongoDB.close(() => {
-            resolve(1)
-        })
-    })
+    await server.mongoDB.close()
     console.log('server closed!')
 }

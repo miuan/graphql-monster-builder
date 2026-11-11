@@ -15,7 +15,7 @@ export const status = {
 // Create the database connection
 export const connect = (options): Promise<any> => {
 
-  const host = _.get(options, 'host', 'localhost')
+  const host = _.get(options, 'host', '127.0.0.1')
   const db = _.get(options, 'db', 'protectql')
 
   const connURI = `mongodb://${host}:27017/${db}`
@@ -23,8 +23,6 @@ export const connect = (options): Promise<any> => {
   console.debug(connURI)
 
   status.connection = connURI
-
-  // mongoose.plugin((schema) => { schema.options.usePushEach = true })
 
   // CONNECTION EVENTS
   // When successfully connected
@@ -46,24 +44,11 @@ export const connect = (options): Promise<any> => {
     console.debug('Mongoose default connection disconnected')
   })
 
-  return mongoose.connect(connURI, { useNewUrlParser: true })
+  return mongoose.connect(connURI)
 }
 
-// If the Node process ends, close the Mongoose connection
-export const close = (cb) => {
-  mongoose.connection.close(() => {
-    cb()
-  })
-}
+export const close = () => mongoose.connection.close()
 
-export const disconnect = () => {
-  mongoose.disconnect()
-}
+export const disconnect = () => mongoose.disconnect()
 
-export const disconnectAndWait = async () => {
-  mongoose.disconnect()
-
-  while(status.status != 'disconnected'){
-    await new Promise((resolved, rejected) => setTimeout(resolved, 100))
-  }
-}
+export const disconnectAndWait = () => mongoose.disconnect()

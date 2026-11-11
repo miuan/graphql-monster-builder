@@ -43,8 +43,8 @@ export const _FUNC_LINK_NAME_ = (entry) => {
         //_PAYLOAD_PARAM_2:  _RELATED_MODEL_NAME_Related
         _RELATED_PARAM_NAME_1_, 
         _RELATED_PARAM_NAME_2_,
-        _PAYLOAD_PARAM_1_ModifiedCount: _LOWER_NAME_UpdateStats.nModified,
-        _PAYLOAD_PARAM_2_ModifiedCount: _LOWER_NAME_UpdateStats.nModified
+        _PAYLOAD_PARAM_1_ModifiedCount: _LOWER_NAME_UpdateStats.modifiedCount,
+        _PAYLOAD_PARAM_2_ModifiedCount: _RELATED_MODEL_NAME_UpdateStats.modifiedCount
       };
     };
   };
@@ -88,8 +88,8 @@ export const _FUNC_LINK_NAME_ = (entry) => {
       return {
         _RELATED_PARAM_NAME_1_, 
         _RELATED_PARAM_NAME_2_,
-        _PAYLOAD_PARAM_1_ModifiedCount: _LOWER_NAME_UpdateStats.nModified,
-        _PAYLOAD_PARAM_2_ModifiedCount: _LOWER_NAME_UpdateStats.nModified
+        _PAYLOAD_PARAM_1_ModifiedCount: _LOWER_NAME_UpdateStats.modifiedCount,
+        _PAYLOAD_PARAM_2_ModifiedCount: _RELATED_MODEL_NAME_UpdateStats.modifiedCount
         // _PAYLOAD_PARAM_1: _LOWER_NAME_Related,
         // _PAYLOAD_PARAM_2:  _RELATED_MODEL_NAME_Related
       };

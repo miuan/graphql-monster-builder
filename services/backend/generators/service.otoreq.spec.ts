@@ -74,7 +74,7 @@ describe.skip('service otoreq', () => {
             it('delete', async () => {
                 await serviceWithRelation.removeFn('id-of-removing-1', null, ['123'])
                 expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-                expect(serviceWithRelation.service.model.findByIdAndRemove).toBeCalled()
+                expect(serviceWithRelation.service.model.findByIdAndDelete).toBeCalled()
                 expect(serviceWithRelation.entry.services.modelWithOthers.remove).toBeCalled()
                 expect(serviceWithRelation.entry.services.modelWithOthers.remove).toBeCalledWith('resolved-findOne-id-1', null, ['123', 'relationOneToOneRequired'])
             })
@@ -82,7 +82,7 @@ describe.skip('service otoreq', () => {
             it('delete with skip relation', async () => {
                 await serviceWithRelation.removeFn('id-of-removing-1', null, ['modelWithOthers'])
                 expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-                expect(serviceWithRelation.service.model.findByIdAndRemove).toBeCalled()
+                expect(serviceWithRelation.service.model.findByIdAndDelete).toBeCalled()
                 expect(serviceWithRelation.entry.services.modelWithOthers.remove).not.toBeCalled()
             })
         })
