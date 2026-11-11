@@ -1,280 +1,100 @@
-import 'jest-extended'
-import * as fs from 'fs'
-import { SchemaModel, SchemaModelProtection, SchemaModelProtectionType, SchemaModelRelationType } from '../../common/types'
-import * as extras from '../templates/extras'
-import * as _ from 'lodash'
-import { createService, createServiceWithRelation, prepareDirectories, testDirFullPath } from '../integration-tests/utils'
+import { createRelationFixture } from './generator-fixtures'
 
-describe.skip('service', () => {
-    let existsSyncMock
-    let writeFileSyncMock
-
-    let testResolverWithPublic
-    beforeAll(() => {
-        prepareDirectories()
-        //}
-    })
-
-    afterAll(() => {
-        fs.rmdirSync(testDirFullPath)
-    })
-
-    describe('hooks', () => {
-        let hookService
-        beforeAll(() => {
-            hookService = createService({ modelName: 'Hook', members: [] })
+// Exercise emitted service code using model metadata from the real schema parser.
+describe.each([true, false])('generated service, array relation: %s', (many) => {
+    describe.each([true, false])('inverse array relation: %s', (inverseMany) => {
+        let fixture: ReturnType<typeof createRelationFixture>
+        beforeEach(() => {
+            fixture = createRelationFixture(many, inverseMany, false)
+        })
+        afterEach(() => {
+            fixture.dispose()
         })
 
-        describe.each(['before', 'after'])('%s ', (method) => {
-            beforeEach(() => {
-                hookService.mockClearToAll()
-            })
+        it('converts supplied IDs and links the inverse relation on creation', async () => {
+            fixture.model.create.mockResolvedValue({ id: 'saved-id' })
+            const input = many ? { relatedIds: ['related-id'] } : { relatedId: 'related-id' }
+            await fixture.service.create(input)
+            expect(fixture.model.create).toHaveBeenCalledWith(expect.objectContaining({ related: many ? ['related-id'] : 'related-id' }))
+            expect(fixture.related.updateMany).toHaveBeenCalledWith({ _id: { $in: ['related-id'] } }, inverseMany ? { $push: { main: { $each: ['saved-id'] } } } : { main: 'saved-id' })
+        })
 
-            it.each([
-                ['create', 'create'],
-                ['update', 'findByIdAndUpdate'],
-                ['remove', 'findByIdAndDelete'],
-            ])('%s', async (forWho, modelMethod) => {
-                const hookName = _.camelCase(`${method} Hook ${forWho}`)
-                const methodName = _.camelCase(`hook ${forWho}`)
-                const entry = { hooks: { services: {} } }
-                entry.hooks.services[hookName] = jest.fn()
+        it('creates nested related objects before saving the parent', async () => {
+            fixture.model.create.mockResolvedValue({ id: 'saved-id' })
+            fixture.relatedService.create.mockResolvedValue({ id: 'related-id' })
+            await fixture.service.create({ related: many ? [{ name: 'nested' }] : { name: 'nested' } })
+            expect(fixture.relatedService.create).toHaveBeenCalledWith({ name: 'nested' })
+            expect(fixture.model.create).toHaveBeenCalledWith(expect.objectContaining({ related: many ? ['related-id'] : 'related-id' }))
+            expect(fixture.relatedService.create.mock.invocationCallOrder[0]).toBeLessThan(fixture.model.create.mock.invocationCallOrder[0])
+        })
 
-                const methodFn = hookService.service[methodName](entry)
+        it('disconnects old relationships before updating and validates the update', async () => {
+            fixture.model.findByIdAndUpdate.mockResolvedValue({ id: 'saved-id' })
+            await fixture.service.update(many ? { relatedIds: ['related-id'] } : { relatedId: 'related-id' }, 'parent-id')
+            expect(fixture.related.updateMany).toHaveBeenNthCalledWith(
+                1,
+                inverseMany ? { main: { $all: ['parent-id'] } } : { main: 'parent-id' },
+                inverseMany ? { $pull: { main: 'parent-id' } } : { main: null },
+            )
+            expect(fixture.model.findByIdAndUpdate).toHaveBeenCalledWith('parent-id', expect.objectContaining({ related: many ? ['related-id'] : 'related-id' }), { new: true, runValidators: true })
+            expect(fixture.related.updateMany.mock.invocationCallOrder[0]).toBeLessThan(fixture.model.findByIdAndUpdate.mock.invocationCallOrder[0])
+        })
 
-                const aId = 'random-id-value'
-                const aObject = {}
-                const aResultedObject = { _id: aId }
+        it('unlinks inverse references when deleting the parent', async () => {
+            await fixture.service.remove('parent-id')
+            expect(fixture.related.updateMany).toHaveBeenCalledTimes(1)
+            expect(fixture.model.findByIdAndDelete).toHaveBeenCalledWith('parent-id')
+        })
 
-                hookService.model[modelMethod].mockImplementation(() => aResultedObject)
+        it('skips a relation already being removed to prevent recursive deletion', async () => {
+            await fixture.service.remove('parent-id', null, ['related'])
+            expect(fixture.related.updateMany).not.toHaveBeenCalled()
+            expect(fixture.model.findByIdAndDelete).toHaveBeenCalledWith('parent-id')
+        })
 
-                if (forWho == 'create') await methodFn(aObject)
-                else if (forWho == 'update') await methodFn(aObject, aId)
-                else if (forWho == 'remove') await methodFn(aId, aObject)
-
-                expect(entry.hooks.services[hookName]).toBeCalledTimes(1)
-                expect(entry.hooks.services[hookName].mock.calls[0][0]).toEqual(entry)
-
-                // hook create doesn't have id
-                if (hookName !== 'beforeHookCreate') {
-                    expect(entry.hooks.services[hookName].mock.calls[0][1]).toHaveProperty('id', aId)
-                }
-
-                // hook before remove doesn't have data
-                if (hookName !== 'beforeHookRemove') {
-                    const hookData = method == 'before' ? aObject : aResultedObject
-                    expect(entry.hooks.services[hookName].mock.calls[0][1]).toHaveProperty('data', hookData)
-                }
-
-                expect(hookService.model[modelMethod]).toBeCalledTimes(1)
-
-                if (method == 'after') expect(hookService.model[modelMethod]).toHaveBeenCalledBefore(entry.hooks.services[hookName])
-                else expect(hookService.model[modelMethod]).toHaveBeenCalledAfter(entry.hooks.services[hookName])
-            })
+        it('does not disconnect relations when updating only a scalar', async () => {
+            await fixture.service.update({ name: 'changed' }, 'parent-id')
+            expect(fixture.related.updateMany).not.toHaveBeenCalled()
         })
     })
+})
 
-    describe('relations', () => {
-        describe.each([
-            [true, ''],
-            [false, ''],
-            //
-        ])('themIsArray:%s %s', (themIsArray, required) => {
-            let serviceWithRelation
-            beforeAll(() => {
-                serviceWithRelation = createServiceWithRelation(themIsArray, required)
-            })
+describe.each(['Create', 'Update', 'Remove'] as const)('generated service %s hooks', (operation) => {
+    let fixture: ReturnType<typeof createRelationFixture>
+    beforeEach(() => {
+        fixture = createRelationFixture(false, false, false)
+    })
+    afterEach(() => {
+        fixture.dispose()
+    })
 
-            beforeEach(() => {
-                serviceWithRelation.mockClearToAll()
-            })
+    it('runs hooks around the database operation and keeps the actor ID', async () => {
+        const database = fixture.model[operation === 'Create' ? 'create' : operation === 'Update' ? 'findByIdAndUpdate' : 'findByIdAndDelete']
+        database.mockResolvedValue({ id: 'parent-id' })
+        const before = jest.fn(async (_entry, payload) => ({ ...payload.data, name: 'from-hook' }))
+        const after = jest.fn().mockResolvedValue({ id: 'after-hook' })
+        fixture.entry.hooks.services['beforeMain' + operation] = before
+        fixture.entry.hooks.services['afterMain' + operation] = after
+        const result =
+            operation === 'Create'
+                ? await fixture.service.create({ name: 'original' }, 'actor-id')
+                : operation === 'Update'
+                  ? await fixture.service.update({ name: 'original' }, 'parent-id', 'actor-id')
+                  : await fixture.service.remove('parent-id', 'actor-id')
+        expect(before).toHaveBeenCalledWith(fixture.entry, expect.objectContaining({ ctxUserId: 'actor-id' }))
+        expect(after).toHaveBeenCalledWith(fixture.entry, expect.objectContaining({ ctxUserId: 'actor-id', data: { id: 'parent-id' } }))
+        expect(before.mock.invocationCallOrder[0]).toBeLessThan(database.mock.invocationCallOrder[0])
+        expect(after.mock.invocationCallOrder[0]).toBeGreaterThan(database.mock.invocationCallOrder[0])
+        if (operation !== 'Remove') expect(database.mock.calls[0][operation === 'Create' ? 0 : 1].name).toBe('from-hook')
+        expect(result).toEqual({ id: 'after-hook' })
+    })
 
-            it('create no affect relation', async () => {
-                await serviceWithRelation.createFn({})
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-            })
-
-            it('create ids relation', async () => {
-                serviceWithRelation.service.model.create.mockResolvedValue({ id: 'resolved-create-id-1' })
-                await serviceWithRelation.createFn({ toThemIds: ['them-id-1', 'them-id-2'] })
-                expect(serviceWithRelation.service.model.create).toBeCalledTimes(1)
-                expect(serviceWithRelation.service.model.create).toBeCalledWith({ toThem: ['them-id-1', 'them-id-2'] })
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalledTimes(1)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(
-                        1,
-                        { _id: { $in: ['them-id-1', 'them-id-2'] } },
-                        { $push: { backToMe: { $each: ['resolved-create-id-1'] } } },
-                    )
-                } else {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { _id: { $in: ['them-id-1', 'them-id-2'] } }, { backToMe: 'resolved-create-id-1' })
-                }
-            })
-
-            it('create object relation', async () => {
-                serviceWithRelation.service.model.create.mockResolvedValue({ id: 'resolved-create-id-1' })
-                serviceWithRelation.entry.services.modelWithOthers.create.mockResolvedValueOnce({ id: 'resolved-relation-create-id-1' }).mockResolvedValueOnce({ id: 'resolved-relation-create-id-2' })
-                await serviceWithRelation.createFn({ toThem: [{ name: 'name1' }, { name: 'name2' }] })
-                expect(serviceWithRelation.service.model.create).toBeCalledTimes(1)
-                expect(serviceWithRelation.service.model.create).toBeCalledWith({ toThem: ['resolved-relation-create-id-1', 'resolved-relation-create-id-2'] })
-
-                expect(serviceWithRelation.entry.services.modelWithOthers.create).toBeCalledTimes(2)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(1, { name: 'name1' })
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(2, { name: 'name2' })
-                } else {
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(1, { name: 'name1' })
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(2, { name: 'name2' })
-                }
-
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalledTimes(1)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(
-                        1,
-                        { _id: { $in: ['resolved-relation-create-id-1', 'resolved-relation-create-id-2'] } },
-                        { $push: { backToMe: { $each: ['resolved-create-id-1'] } } },
-                    )
-                } else {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(
-                        1,
-                        { _id: { $in: ['resolved-relation-create-id-1', 'resolved-relation-create-id-2'] } },
-                        { backToMe: 'resolved-create-id-1' },
-                    )
-                }
-            })
-
-            it('update no affect relation', async () => {
-                await serviceWithRelation.updateFn({})
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-            })
-
-            it('update ids relation', async () => {
-                serviceWithRelation.service.model.findByIdAndUpdate.mockResolvedValue({ id: 'resolved-findByIdAndUpdate-id-1' })
-                await serviceWithRelation.updateFn({ toThemIds: ['them-id-1', 'them-id-2'] }, 'me-id-1')
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledTimes(1)
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledWith('me-id-1', { toThem: ['them-id-1', 'them-id-2'] }, { new: true })
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalledTimes(2)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: { $all: ['me-id-1'] } }, { $pull: { backToMe: 'me-id-1' } })
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(
-                        2,
-                        { _id: { $in: ['them-id-1', 'them-id-2'] } },
-                        { $push: { backToMe: { $each: ['resolved-findByIdAndUpdate-id-1'] } } },
-                    )
-                } else {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1' }, { backToMe: null })
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(
-                        2,
-                        { _id: { $in: ['them-id-1', 'them-id-2'] } },
-                        { backToMe: 'resolved-findByIdAndUpdate-id-1' },
-                    )
-                }
-            })
-
-            it('update object relation', async () => {
-                serviceWithRelation.service.model.findByIdAndUpdate.mockResolvedValue({ id: 'resolved-findByIdAndUpdate-id-1' })
-                serviceWithRelation.entry.services.modelWithOthers.create.mockResolvedValueOnce({ id: 'resolved-create-id-1' }).mockResolvedValueOnce({ id: 'resolved-create-id-2' })
-
-                await serviceWithRelation.updateFn({ toThem: [{ name: 'name1' }, { name: 'name2' }] }, 'me-id-1')
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledTimes(1)
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledWith('me-id-1', { toThem: ['resolved-create-id-1', 'resolved-create-id-2'] }, { new: true })
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalledTimes(1)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: { $all: ['me-id-1'] } }, { $pull: { backToMe: 'me-id-1' } })
-                } else {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1' }, { backToMe: null })
-                }
-
-                expect(serviceWithRelation.entry.services.modelWithOthers.create).toBeCalledTimes(2)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(1, { backToMe: ['me-id-1'], name: 'name1' })
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(2, { backToMe: ['me-id-1'], name: 'name2' })
-                } else {
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1', name: 'name1' })
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(2, { backToMe: 'me-id-1', name: 'name2' })
-                }
-            })
-        })
-
-        describe.each([
-            [true, ''],
-            [false, ''],
-            // [SchemaModelRelationType.ONE_TO_ONE, 'required']
-        ])('%s %s', (themIsArray, required) => {
-            let serviceWithRelation
-            beforeAll(() => {
-                serviceWithRelation = createServiceWithRelation(themIsArray, required)
-            })
-
-            beforeEach(() => {
-                serviceWithRelation.mockClearToAll()
-            })
-
-            it('update no affect relation', async () => {
-                await serviceWithRelation.updateFn({})
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-            })
-
-            it('update id relation', async () => {
-                serviceWithRelation.service.model.findByIdAndUpdate.mockResolvedValue({ id: 'resolved-findByIdAndUpdate-id-1' })
-                await serviceWithRelation.updateFn({ toThemId: 'them-id-1' }, 'me-id-1')
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledTimes(1)
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledWith('me-id-1', { toThem: 'them-id-1' }, { new: true })
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalledTimes(2)
-
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: { $all: ['me-id-1'] } }, { $pull: { backToMe: 'me-id-1' } })
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(
-                        2,
-                        { _id: { $in: ['them-id-1'] } },
-                        { $push: { backToMe: { $each: ['resolved-findByIdAndUpdate-id-1'] } } },
-                    )
-                } else {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1' }, { backToMe: null })
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(2, { _id: { $in: ['them-id-1'] } }, { backToMe: 'resolved-findByIdAndUpdate-id-1' })
-                }
-            })
-
-            it('update object relation', async () => {
-                serviceWithRelation.service.model.findByIdAndUpdate.mockResolvedValue({ id: 'resolved-findByIdAndUpdate-id-1' })
-                serviceWithRelation.entry.services.modelWithOthers.create.mockResolvedValueOnce({ id: 'resolved-create-id-1' }).mockResolvedValueOnce({ id: 'resolved-create-id-2' })
-
-                await serviceWithRelation.updateFn({ toThem: { name: 'name1' } }, 'me-id-1')
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledTimes(1)
-                expect(serviceWithRelation.service.model.findByIdAndUpdate).toBeCalledWith('me-id-1', { toThem: 'resolved-create-id-1' }, { new: true })
-
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalledTimes(1)
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: { $all: ['me-id-1'] } }, { $pull: { backToMe: 'me-id-1' } })
-                } else {
-                    expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1' }, { backToMe: null })
-                }
-
-                expect(serviceWithRelation.entry.services.modelWithOthers.create).toBeCalledTimes(1)
-                if (themIsArray) {
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(1, { backToMe: ['me-id-1'], name: 'name1' })
-                } else {
-                    expect(serviceWithRelation.entry.services.modelWithOthers.create).toHaveBeenNthCalledWith(1, { backToMe: 'me-id-1', name: 'name1' })
-                }
-            })
-
-            it('delete', async () => {
-                await serviceWithRelation.removeFn('id-of-removing-1')
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalled()
-                expect(serviceWithRelation.service.model.findByIdAndDelete).toBeCalled()
-            })
-
-            it('delete skip relation to me', async () => {
-                await serviceWithRelation.removeFn('id-of-removing-1', null, ['modelWithOthers'])
-                expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-                expect(serviceWithRelation.service.model.findByIdAndDelete).toBeCalled()
-            })
-        })
+    it('stops before touching the database if the before hook fails', async () => {
+        fixture.entry.hooks.services['beforeMain' + operation] = jest.fn().mockRejectedValue(new Error('hook failed'))
+        const result = operation === 'Create' ? fixture.service.create({}) : operation === 'Update' ? fixture.service.update({}, 'parent-id') : fixture.service.remove('parent-id')
+        await expect(result).rejects.toThrow('hook failed')
+        expect(fixture.model.create).not.toHaveBeenCalled()
+        expect(fixture.model.findByIdAndUpdate).not.toHaveBeenCalled()
+        expect(fixture.model.findByIdAndDelete).not.toHaveBeenCalled()
     })
 })

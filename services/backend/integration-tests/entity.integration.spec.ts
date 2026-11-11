@@ -76,7 +76,6 @@ describe('entity integration', () => {
                     optFloat: Float
                 }
             `,
-            3003,
         )
 
         const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')

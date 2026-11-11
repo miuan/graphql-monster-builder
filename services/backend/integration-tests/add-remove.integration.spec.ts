@@ -30,7 +30,6 @@ describe('add-remove integration', () => {
                     model1: [@relation(name: "Model1ToModel2")]
                 }
             `,
-            3004,
         )
 
         const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')

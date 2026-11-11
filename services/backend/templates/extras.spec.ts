@@ -3,16 +3,6 @@ import * as extras from './extras'
 const mocked = jest.mocked
 
 describe('extras', () => {
-    it.todo('filterGen')
-    it.todo('generateProtections: user')
-    it.todo('generateProtections: owner')
-    it.todo('generateProtections: role')
-    it.todo('generateChangePassword')
-    it.todo('generateLogin')
-    it.todo('checkPasswordIsNotIncluded')
-    it.todo('genPasswordAndTokens')
-    it.todo('generateTokenJWT')
-    it.todo('generateHash')
     describe('propertiesToArray', () => {
         it('1', () => {
             const pa = extras.propertiesToArray({

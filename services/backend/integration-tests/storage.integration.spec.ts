@@ -15,7 +15,6 @@ describe('storage integration', () => {
                     
                 }
             `,
-            3004,
         )
 
         const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')

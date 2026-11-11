@@ -6,7 +6,6 @@ console.log = jest.fn()
 console.debug = jest.fn()
 console.warn = jest.fn()
 console.info = jest.fn()
-let serverPort = 1
 
 // @all(filter:"user_every.id={{userId}}")
 describe('i:protection', () => {
@@ -18,7 +17,6 @@ describe('i:protection', () => {
         let admin, user, server, keyName, emailName, model1, user2
 
         beforeAll(async () => {
-            const port = 3010 + ++serverPort
             keyName = `Model1${firstToUpper(protectedTo)}Crud`
             emailName = `model1.${protectedTo}.couar`
             const schema = `
@@ -31,7 +29,7 @@ describe('i:protection', () => {
                 name: String!
             }
         `
-            server = await generateAndRunServerFromSchema(`protection_${protectedTo}_couar`, schema, port, 'test-protection-for-all')
+            server = await generateAndRunServerFromSchema(`protection_${protectedTo}_couar`, schema, 'test-protection-for-all')
             model1 = server.entry.models[firstToLower(keyName)]
 
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')
@@ -591,7 +589,6 @@ describe('i:protection', () => {
         let admin, user, server, keyName, model1, user2, emailName
         const protectedTo = 'Filter'
         beforeAll(async () => {
-            const port = 3030 + serverPort++
             keyName = `Model1${firstToUpper(protectedTo)}Couar`
             emailName = `model1.${protectedTo}.couar`
             const schema = `
@@ -600,7 +597,7 @@ describe('i:protection', () => {
                 name: String!
             }
         `
-            server = await generateAndRunServerFromSchema(`protection-${protectedTo}-COUAR`, schema, port)
+            server = await generateAndRunServerFromSchema(`protection-${protectedTo}-COUAR`, schema)
             model1 = server.entry.models[firstToLower(keyName)]
 
             const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')

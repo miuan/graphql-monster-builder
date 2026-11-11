@@ -13,7 +13,7 @@ export const _MODEL_LOWER_NAME_All = (entry, protections) => {
             await entry.hooks.resolvers['before_MODEL_UPPER_NAME_All'](entry, { root, data, ctx })
         }
 
-        let models = await entry.services['_MODEL_LOWER_NAME_'].all(data, ctx.userId)
+        let models = await entry.services['_MODEL_LOWER_NAME_'].all(data, ctx.state?.user?.id)
         models = models.map((m) => {
             m.id = m._id
             return m
@@ -34,7 +34,7 @@ export const _MODEL_LOWER_NAME_Count = (entry, protections) => {
             await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Count'](entry, { root, data, ctx })
         }
 
-        let models = await entry.services['_MODEL_LOWER_NAME_'].count(data, ctx.userId)
+        let models = await entry.services['_MODEL_LOWER_NAME_'].count(data, ctx.state?.user?.id)
 
         if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Count']) {
             models = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Count'](entry, { models, root, data, ctx })
@@ -105,7 +105,7 @@ export const _MODEL_LOWER_NAME_Update = (entry, protections) => {
             data = await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx })
         }
 
-        let updatedModel = await entry.services['_MODEL_LOWER_NAME_'].update(data, null, ctx.userId)
+        let updatedModel = await entry.services['_MODEL_LOWER_NAME_'].update(data, null, ctx.state?.user?.id)
 
         if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Update']) {
             updatedModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Update'](entry, { root, data, ctx, updatedModel, id: data.id })
@@ -122,7 +122,7 @@ export const _MODEL_LOWER_NAME_Remove = (entry, protections) => {
             await entry.hooks.resolvers['before_MODEL_UPPER_NAME_Remove'](entry, { root, data, ctx })
         }
 
-        let removedModel = await entry.services['_MODEL_LOWER_NAME_'].remove(data.id, ctx.userId)
+        let removedModel = await entry.services['_MODEL_LOWER_NAME_'].remove(data.id, ctx.state?.user?.id)
 
         if (entry.hooks && entry.hooks.resolvers && entry.hooks.resolvers['after_MODEL_UPPER_NAME_Remove']) {
             removedModel = await entry.hooks.resolvers['after_MODEL_UPPER_NAME_Remove'](entry, { removedModel, root, data, ctx })

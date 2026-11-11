@@ -31,7 +31,6 @@ describe('i:crud', () => {
                     model1: @relation(name: "Model1OnModel2")!
                 }
             `,
-            3002,
         )
 
         const loginQL = loadGraphQL('./services/backend/integration-tests/graphql/login/login.gql')

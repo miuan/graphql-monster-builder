@@ -188,7 +188,7 @@ export const generateChangePassword = (entry) => async (root, data, ctx) => {
     userForUpdate.__password = await generateHash(data.newPassword)
     genPasswordAndTokens(userForUpdate)
 
-    userForUpdate.save()
+    await userForUpdate.save()
 
     return {
         token: userForUpdate.__token,

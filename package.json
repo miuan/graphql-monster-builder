@@ -16,7 +16,9 @@
     "test:all": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --watchAll",
     "lint": "eslint .",
     "prettier-format": "prettier --config .prettierrc.js 'services/**/*.spec.ts' --write",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "test:unit": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --testPathIgnorePatterns=integration-tests",
+    "test:integration": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --testPathPattern=integration-tests"
   },
   "dependencies": {
     "@types/node": "^14.14.9",

@@ -47,6 +47,16 @@ ESLint uses `eslint.config.cjs`. It checks generator source and tests, excluding
 `dist/` and code templates. Existing style and unused-variable cleanup items are
 reported as warnings; errors fail the command. `lint` checks files, and `lint:fix`
 applies available fixes. Prettier 3 runs separately with `.prettierrc.js`.
+The default test run uses two workers. To run only unit tests without MongoDB, use
+`yarn test:unit`; HTTP/database tests run with `yarn test:integration`. Add
+`--runInBand` for a sequential run.
+
+Integration tests bind automatically assigned ports and use isolated generated
+files and database names for each run and worker. They ignore the application's
+`PORT` and `DB_NAME`; `DB_HOST` can select the MongoDB host. Global teardown removes
+only the test databases recorded for that run. Unit fixtures use temporary directories
+and the real schema parser. Lint rejects committed `.only` tests.
+
 The generated Jest configuration registers the jest-extended 7 matchers explicitly.
 The builder also targets patched `minimatch` versions for ESLint and the TypeScript
 parser using npm overrides and Yarn resolutions until those tools update their dependencies.

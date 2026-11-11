@@ -26,11 +26,17 @@ describe('StructureOperator', () => {
         createDirsMock.mockRestore()
     })
 
-    it('should handle id for windows path', () => {
-    
+    it('preserves a Windows output path when preparing directory names', () => {
+        const directory = new BackendDirectory()
+        const output = String.raw`C:\projects\generated`
+        directory.init('example', output)
+        expect(directory.baseDir).toBe(output)
+        for (const [name, item] of Object.entries(directory.structure)) {
+            if (name !== 'id') expect((item as any).dir.startsWith(output)).toBe(true)
+        }
     })
 
-    it.only('should after init all structured item startsWith ../praha3/mainProject', () => {
+    it('should after init all structured item startsWith ../praha3/mainProject', () => {
         const structureOperator = new BackendDirectory()
         structureOperator.init('mainProject', '../praha3')
 

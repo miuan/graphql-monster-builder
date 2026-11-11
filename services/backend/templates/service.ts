@@ -126,8 +126,8 @@ export const _LOWER_NAME_Update = (entry) => {
     }
 }
 
-export const _LOWER_NAME_Remove = (entry, ctxUserId = null) => {
-    return async (id, userId, skipRelations = []) => {
+export const _LOWER_NAME_Remove = (entry) => {
+    return async (id, ctxUserId = null, skipRelations = []) => {
         if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Remove']) {
             await entry.hooks.services['before_MODEL_NAME_Remove'](entry, { id, ctxUserId })
         }
