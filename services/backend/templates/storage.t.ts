@@ -64,7 +64,7 @@ export function registerStorageRouter(entry: any, router: any, targetDir: any) {
     //     fs.mkdirSync(targetDir, { recursive: true })
     // }
     router.post('/upload', async (ctx) => {
-        const uploadingFiles = ctx.request.files && Object.keys(ctx.request.files)
+        const uploadingFiles = Object.values(ctx.request.files || {}).flatMap((files) => Array.isArray(files) ? files : [files])
         if (!uploadingFiles || uploadingFiles.length < 1) {
             ctx.throw(400, 'Upload expect multipart form with file')
         }
@@ -83,8 +83,8 @@ export function registerStorageRouter(entry: any, router: any, targetDir: any) {
             ctx.throw(401, 'Unauthorized: unknown user')
         }
 
-        for (const uploadingFile of uploadingFiles) {
-            const { path: tempFileLocation, name, type, size } = ctx.request.files[uploadingFile]
+        for (const fileUpload of uploadingFiles) {
+            const { filepath: tempFileLocation, originalFilename: name, mimetype: type, size } = fileUpload
             const publicKey = await generateUniqFilePublicKey(fileModel)
             const __path = path.join(targetDir, publicKey)
 

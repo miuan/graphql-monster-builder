@@ -17,7 +17,7 @@ export const generateDataloadersWorker = (models: SchemaModel[]): string => {
  
   interface IServiceDataloader {
     find(filter);
-    count(param);
+    countDocuments(param);
   }
 
   interface IMyDataloader extends DataLoader<{}, {}>{
@@ -44,7 +44,7 @@ export const generateDataloadersWorker = (models: SchemaModel[]): string => {
       return emptyResults;
     }
   
-    const count = await dataloader.service.count({_id:{$in:keys}});
+    const count = await dataloader.service.countDocuments({_id:{$in:keys}});
   
     // we have to do this check if in keys only 1 item, as dataloader cannot handle it
     if (loadMany && keys.length && count === keys.length) {

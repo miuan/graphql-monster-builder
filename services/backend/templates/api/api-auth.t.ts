@@ -4,7 +4,7 @@ import * as passport from 'koa-passport'
 import * as bcrypt from 'bcrypt'
 import * as _ from 'lodash'
 import * as crypto from 'crypto'
-import * as Router from 'koa-router'
+import { Router } from '@koa/router'
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt'
 import { Strategy as AnonymousStrategy } from 'passport-anonymous'
 
@@ -53,7 +53,7 @@ export const passportSetupJwt = (app, userModel) => {
     // Initialize Passport and restore authentication state, if any, from the session.
     // It is use for GithubStrategy, GoogleStrategy, FacebookStrategy, ...
     app.use(passport.initialize())
-    app.use(passport.authenticate(['jwt', 'anonymous']))
+    app.use(passport.authenticate(['jwt', 'anonymous'], { session: false }))
 }
 
 export async function generateHash(password) {

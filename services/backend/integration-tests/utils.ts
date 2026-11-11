@@ -45,7 +45,7 @@ export const createService = (model) => {
         `export const ${camelName}Model = {
         create: jest.fn(), //.mockImplementation(async (data)=>data),
         findByIdAndUpdate: jest.fn(), //.mockImplementation(async (id, data)=>data),
-        findByIdAndRemove: jest.fn() //.mockImplementation(async (data)=>data),
+        findByIdAndDelete: jest.fn() //.mockImplementation(async (data)=>data),
     } as any;
     export const Types = {ObjectId: jest.fn().mockImplementation(()=>'random-id')}
     export default ${camelName}Model`,
@@ -60,7 +60,7 @@ export const createService = (model) => {
             mockClearToAll: () => {
                 model.create.mockClear()
                 model.findByIdAndUpdate.mockClear()
-                model.findByIdAndRemove.mockClear()
+                model.findByIdAndDelete.mockClear()
             },
         }
     } catch (ex) {
@@ -222,14 +222,14 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
         }
 
         for (const modelName of Object.keys(await server.entry.models)) {
-            await server.entry.models[modelName].remove({})
+            await server.entry.models[modelName].deleteMany({})
         }
 
         // await new Promise((resolve) => setTimeout(resolve, 1000))
         // upload user again
         await module.updateAdminUser(true)
 
-        const count = await server.entry.models.user.count({})
+        const count = await server.entry.models.user.countDocuments({})
 
         return { ...server, query, mutate, get, post, put, delete: del }
     } catch (ex) {
@@ -292,11 +292,7 @@ async function replaceInFile(file, replaceFn) {
 export async function disconnectFromServer(server: any) {
     await server.apollo.stop()
     await new Promise<void>((resolve, reject) => server.koa.close(error => error ? reject(error) : resolve()))
-    await new Promise((resolve, reject) => {
-        server.mongoDB.close(() => {
-            resolve(1)
-        })
-    })
+    await server.mongoDB.close()
     console.log('server closed!')
 }
 

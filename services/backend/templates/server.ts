@@ -9,9 +9,9 @@ import * as dotenv from 'dotenv-flow'
 import * as fs from 'fs'
 
 import * as Koa from 'koa'
-import * as Router from 'koa-router'
+import { Router } from '@koa/router'
 import * as cors from '@koa/cors'
-import * as koaBody from 'koa-body'
+import { koaBody } from 'koa-body'
 // tslint:disable-next-line:import-name
 
 import * as mongoDB from './gen/services/db'
@@ -24,7 +24,7 @@ import { generateHash } from './gen/extras'
 import { registerStorageService, registerStorageRouter } from './gen/storage'
 import { registerSendMailService } from './services/sendMail'
 import * as swaggerJSDoc from 'swagger-jsdoc'
-import { ui } from 'swagger2-koa'
+import { koaSwagger } from 'koa2-swagger-ui'
 
 const app: Koa = new Koa()
 
@@ -45,11 +45,11 @@ app.on('error', (err) => {
 })
 
 // If the Node process ends, close the Mongoose connection
-process.on('SIGINT', () => {
-    mongoDB.close(() => {
-        console.debug('Mongoose default connection disconnected through app termination')
-        process.exit(0)
-    })
+process.on('SIGINT', async () => {
+    await apollo.stop()
+    await mongoDB.close()
+    console.debug('Mongoose default connection disconnected through app termination')
+    process.exit(0)
 })
 
 // handle errors
@@ -178,7 +178,7 @@ const options = {
 }
 
 const swaggerSpec = swaggerJSDoc(options)
-app.use(ui(swaggerSpec as any, '/swagger'))
+app.use(koaSwagger({ routePrefix: '/swagger', swaggerOptions: { spec: swaggerSpec } }))
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // EMAIL
@@ -202,7 +202,7 @@ if (!fs.existsSync(storageTargetDir)) {
 // TODO: please introduce better solution that with this entry
 entry['storage'] = registerStorageService(entry.models['file'], storageTargetDir)
 
-const storageRouter = new Router('/storage')
+const storageRouter = new Router()
 registerStorageRouter(entry, storageRouter, storageTargetDir)
 app.use(storageRouter.routes())
 app.use(storageRouter.allowedMethods())

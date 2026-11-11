@@ -11,7 +11,21 @@ Build server with CRUD with GraphQL and Rest API interface. With these features:
 # Requirements
 
 Node.js 22.18 or newer (Node.js 24 recommended) and a running MongoDB instance.
-Generated servers use Apollo Server 5, GraphQL 16 and Koa 3.
+Generated servers use Apollo Server 5, GraphQL 16, Mongoose 9 and Koa 3.
+
+## Upgrading an existing generated server
+
+Generate into a fresh directory first. The builder preserves existing files outside
+`gen/`, including `server.ts`, `services/passport.ts`, `package.json` and
+`tsconfig.json`. Merge their updated versions into your application before
+regenerating `gen/` and reinstalling dependencies. Preserve your environment
+configuration, generated JWT secret, hooks and stored files.
+
+Mongoose 9 uses promise-based database APIs. Custom hooks that call Mongoose
+must replace removed APIs such as `remove`, `count` and `findByIdAndRemove`
+with `deleteMany`/`deleteOne`, `countDocuments` and `findByIdAndDelete`.
+Database update results now expose `modifiedCount` instead of `nModified`.
+The test scripts enable Jest VM module support for the MongoDB driver's dynamic imports.
 
 # Usage
 

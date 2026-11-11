@@ -33,7 +33,7 @@ describe.skip('service', () => {
             it.each([
                 ['create', 'create'],
                 ['update', 'findByIdAndUpdate'],
-                ['remove', 'findByIdAndRemove'],
+                ['remove', 'findByIdAndDelete'],
             ])('%s', async (forWho, modelMethod) => {
                 const hookName = _.camelCase(`${method} Hook ${forWho}`)
                 const methodName = _.camelCase(`hook ${forWho}`)
@@ -267,13 +267,13 @@ describe.skip('service', () => {
             it('delete', async () => {
                 await serviceWithRelation.removeFn('id-of-removing-1')
                 expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).toBeCalled()
-                expect(serviceWithRelation.service.model.findByIdAndRemove).toBeCalled()
+                expect(serviceWithRelation.service.model.findByIdAndDelete).toBeCalled()
             })
 
             it('delete skip relation to me', async () => {
                 await serviceWithRelation.removeFn('id-of-removing-1', null, ['modelWithOthers'])
                 expect(serviceWithRelation.entry.models.modelWithOthers.updateMany).not.toBeCalled()
-                expect(serviceWithRelation.service.model.findByIdAndRemove).toBeCalled()
+                expect(serviceWithRelation.service.model.findByIdAndDelete).toBeCalled()
             })
         })
     })

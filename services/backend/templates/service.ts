@@ -39,7 +39,7 @@ export const _LOWER_NAME_Count = (entry) => {
         }
 
         const filter = extras.filterGen(data.filter)
-        let countPromise = _LOWER_NAME_Model.count(filter)
+        let countPromise = _LOWER_NAME_Model.countDocuments(filter)
 
         let count = await countPromise.lean()
 
@@ -56,7 +56,7 @@ export const _LOWER_NAME_One = (entry) => {
             await entry.hooks.services['before_MODEL_NAME_One'](entry, { id })
         }
         let model = await _LOWER_NAME_Model.findById(id).lean()
-        model.id = id
+        if (model) model.id = id
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_One']) {
             model = await entry.hooks.services['after_MODEL_NAME_One'](entry, { id, model })
@@ -70,7 +70,7 @@ export const _LOWER_NAME_Create = (entry) => {
     return async (data, ctxUserId = null) => {
         // before real object exist
         // we generate TEMPORARY-ID for related objects what they have a required relation...
-        const id = Types.ObjectId()
+        const id = new Types.ObjectId()
 
         _ALL_IDS_CONVERSIONS_CREATE_
         if (entry.hooks && entry.hooks.services['before_MODEL_NAME_Create']) {
@@ -135,7 +135,7 @@ export const _LOWER_NAME_Remove = (entry, ctxUserId = null) => {
         // disconnect all relations
         _DISCONNECT_RELATIONS_IN_REMOVE
         _EXTRA_ACTION_BEFORE_REMOVE_
-        let removedModel = await VAR_NAME.findByIdAndRemove(id)
+        let removedModel = await VAR_NAME.findByIdAndDelete(id)
 
         if (entry.hooks && entry.hooks.services['after_MODEL_NAME_Remove']) {
             removedModel = await entry.hooks.services['after_MODEL_NAME_Remove'](entry, {

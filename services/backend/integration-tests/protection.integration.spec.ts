@@ -354,7 +354,7 @@ describe('i:protection', () => {
                     expect(data).not.toHaveProperty('errors')
                     expect(data).toHaveProperty(`data.remove${keyName}`)
                     expect(data).toHaveProperty(`data.remove${keyName}.id`)
-                    expect(await model1.exists({ _id: created1._id.toString() })).toEqual(false)
+                    expect(await model1.exists({ _id: created1._id.toString() })).toBeNull()
                 }
 
                 // test if user 2 can edit
@@ -371,10 +371,10 @@ describe('i:protection', () => {
                 // with another user should be posible remove only in public mode
                 if (protectedTo === 'public') {
                     expect(data2).not.toHaveProperty('errors')
-                    expect(await model1.exists({ _id: created2._id.toString() })).toEqual(false)
+                    expect(await model1.exists({ _id: created2._id.toString() })).toBeNull()
                 } else {
                     expect(data2).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ message: 'Unauthorized' })]))
-                    expect(await model1.exists({ _id: created2._id.toString() })).toEqual(true)
+                    expect(await model1.exists({ _id: created2._id.toString() })).not.toBeNull()
                 }
             })
 
@@ -387,7 +387,7 @@ describe('i:protection', () => {
                 if (!allowed) {
                     expect(data).toHaveProperty('status', 401)
                     expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
-                    expect(await model1.exists({ _id: createId })).toEqual(true)
+                    expect(await model1.exists({ _id: createId })).not.toBeNull()
                     return
                 }
 
@@ -395,7 +395,7 @@ describe('i:protection', () => {
                 expect(data.body).toHaveProperty(`remove${keyName}`)
                 expect(data.body).toHaveProperty(`remove${keyName}.id`, createId)
                 expect(data.body).toHaveProperty(`remove${keyName}.name`, 'apirem28xwer1')
-                expect(await model1.exists({ _id: createId })).toEqual(false)
+                expect(await model1.exists({ _id: createId })).toBeNull()
                 if (currentUser?.token) {
                     expect(data.body).toHaveProperty(`remove${keyName}.user`, currentUser?.user?.id)
                 }
@@ -464,7 +464,7 @@ describe('i:protection', () => {
                 if (!allowed) {
                     expect(data).toHaveProperty('status', 401)
                     expect(data.body).toHaveProperty('errors', expect.arrayContaining([expect.objectContaining({ name: 'Unauthorized' })]))
-                    expect(await model1.exists({ _id: createId })).toEqual(true)
+                    expect(await model1.exists({ _id: createId })).not.toBeNull()
                     return
                 }
 

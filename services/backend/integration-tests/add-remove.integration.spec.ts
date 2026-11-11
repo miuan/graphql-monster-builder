@@ -71,6 +71,21 @@ describe('add-remove integration', () => {
         await disconnectFromServer(server)
     })
 
+    it('reports the modified count for each side of an existing partial relation', async () => {
+        const second = await server.entry.models.model2.create({ name: 'partial-second' })
+        const first = await server.entry.models.model1.create({ name: 'partial-first', model2: [second._id] })
+        const response = await server.mutate({
+            mutation: `mutation($first: ID!, $second: ID!) {
+                linkModel1ToModel2(model1Id: $first, model2Id: $second) {
+                    model1ModifiedCount model2ModifiedCount
+                }
+            }`,
+            variables: { first: first.id, second: second.id },
+        }, loginRes.data.login_v1.token)
+        expect(response).not.toHaveProperty('errors')
+        expect(response.data.linkModel1ToModel2).toEqual({ model1ModifiedCount: 0, model2ModifiedCount: 1 })
+    })
+
     it('link model1 and model2', async () => {
         const token = loginRes.data.login_v1.token
 

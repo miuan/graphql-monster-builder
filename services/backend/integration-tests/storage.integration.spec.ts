@@ -135,7 +135,7 @@ describe('storage integration', () => {
         // download with id without token
         const downloadRequestId = await request(server.koa).get('/download/' + uploadJSON.id)
         expect(downloadRequestId).toHaveProperty('ok', false)
-        expect(downloadRequestId.body).toEqual(expect.objectContaining({ errors: [{ message: 'Unauthorized' }] }))
+        expect(downloadRequestId.body).toEqual(expect.objectContaining({ errors: expect.arrayContaining([expect.objectContaining({ message: 'Unauthorized' })]) }))
 
         loadDataFromFileSpy.mockRestore()
     })
@@ -250,6 +250,21 @@ describe('storage integration', () => {
         expect(() => fs.statSync(createFileRaw.__path)).toThrowError(/ENOENT: no such file/)
     })
 
+    it('stores multiple files uploaded under the same multipart field', async () => {
+        const response = await request(server.koa)
+            .post('/upload')
+            .set('Authorization', 'Bearer ' + res.data.login_v1.token)
+            .attach('files', './package.json', { filename: 'multipart-a.json', contentType: 'application/json' })
+            .attach('files', './package.json', { filename: 'multipart-b.json', contentType: 'application/json' })
+        expect(response.status).toBe(200)
+        const files = await server.entry.models.file.find({ name: { $in: ['multipart-a.json', 'multipart-b.json'] } }).select('+__path')
+        expect(files).toHaveLength(2)
+        for (const file of files) {
+            expect(fs.readFileSync(file.__path, 'utf8')).toBe(fs.readFileSync('./package.json', 'utf8'))
+            await server.entry.services.file.remove(file.id)
+        }
+    })
+
     it('upload file', async () => {
         const token = res.data.login_v1.token
         const uploadRequest = await request(server.koa)
@@ -309,6 +324,6 @@ describe('storage integration', () => {
         // download with id without token
         const downloadRequestId = await request(server.koa).get('/download/' + uploadJSON.id)
         expect(downloadRequestId).toHaveProperty('ok', false)
-        expect(downloadRequestId.body).toEqual(expect.objectContaining({ errors: [{ message: 'Unauthorized' }] }))
+        expect(downloadRequestId.body).toEqual(expect.objectContaining({ errors: expect.arrayContaining([expect.objectContaining({ message: 'Unauthorized' })]) }))
     })
 })

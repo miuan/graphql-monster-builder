@@ -13,7 +13,6 @@ export const __SCHEMA_NAME__: Schema = new Schema(
     },
     {
         timestamps: true,
-        usePushEach: true,
         versionKey: false,
     },
 )
