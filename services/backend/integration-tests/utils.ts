@@ -2,7 +2,6 @@ import * as fs from 'fs'
 import * as service from '../generators/service'
 import * as _ from 'lodash'
 import * as path from 'path'
-import * as bcrypt from 'bcrypt'
 import { SchemaModelRelationType } from '../../common/types'
 import { exportAsFromString } from '../build'
 import * as mongoose from 'mongoose'
@@ -226,7 +225,7 @@ export async function generateAndRunServerFromSchema(name: string, schema: strin
 
     // await new Promise((resolve) => setTimeout(resolve, 1000))
     // upload user again
-    await module.updateAdminUser(true)
+    await module.updateAdminUser()
 
     const count = await server.entry.models.user.countDocuments({})
 
@@ -259,7 +258,7 @@ async function remakeServer(integrationTestServerPath: string, name: string, sch
         `
 JWT_TOKEN_SECRET=integration-tests-only-secret
 ADMIN_EMAIL=admin@admin.test
-ADMIN_PASSWORD=${bcrypt.hashSync('admin@admin.test', 1)}
+ADMIN_PASSWORD=admin@admin.test
     `,
     )
 

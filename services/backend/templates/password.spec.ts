@@ -1,4 +1,4 @@
-import { compareHash, generateHash } from './extras'
+import { compareHash, generateHash, getAdminPasswordHash } from './extras'
 
 describe('password hashing compatibility', () => {
     it('accepts an existing bcrypt 5 hash and rejects the wrong password', async () => {
@@ -13,5 +13,25 @@ describe('password hashing compatibility', () => {
         expect(hash).not.toBe('new-test-password')
         expect(await compareHash('new-test-password', hash)).toBe(true)
         expect(await compareHash('wrong-password', hash)).toBe(false)
+    })
+})
+
+describe('admin bootstrap passwords', () => {
+    it('hashes plaintext configuration before it is stored', async () => {
+        const hash = await getAdminPasswordHash('bootstrap-test-password')
+        expect(hash).not.toBe('bootstrap-test-password')
+        expect(await compareHash('bootstrap-test-password', hash)).toBe(true)
+        expect(await compareHash('wrong-password', hash)).toBe(false)
+    })
+
+    it('preserves legacy bcrypt hashes instead of hashing them again', async () => {
+        const hash = '$2b$04$5FicjiuYszDbF8N6.gxUYuM5v/P/mQcGJIk1XeOmehsC8CwjQNfcO'
+        expect(await getAdminPasswordHash(hash)).toBe(hash)
+        expect(await getAdminPasswordHash(hash, true)).toBe(hash)
+        expect(await compareHash('legacy-test-password', hash)).toBe(true)
+    })
+
+    it('rejects plaintext explicitly marked as an existing hash', async () => {
+        await expect(getAdminPasswordHash('bootstrap-test-password', true)).rejects.toThrow('not a valid bcrypt hash')
     })
 })

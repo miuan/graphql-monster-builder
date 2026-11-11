@@ -12,6 +12,13 @@ export async function generateHash(password) {
     return bcrypt.hash(password, 10)
 }
 
+// Preserve existing bcrypt configuration while hashing plaintext bootstrap passwords.
+export async function getAdminPasswordHash(password: string, passwordIsHashed = false): Promise<string> {
+    if (/^\$2[ab]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(password)) return password
+    if (passwordIsHashed) throw new Error('The configured admin password is not a valid bcrypt hash')
+    return generateHash(password)
+}
+
 export async function compareHash(pass, hashPass) {
     return bcrypt.compare(pass, hashPass)
 }

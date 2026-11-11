@@ -103,6 +103,19 @@ Access tokens expire after one hour; refresh tokens expire after
 After upgrading and regenerating an existing server, users must log in again:
 older tokens do not contain the required token type.
 
+The bootstrap administrator is configured with `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+in `config/environment/.env` or the process environment. Without those values,
+both default to `admin@graphql.monster`. Set your own values for a deployed server:
+
+```dotenv
+ADMIN_EMAIL=admin@example.test
+ADMIN_PASSWORD=your-private-password
+```
+
+Plaintext `ADMIN_PASSWORD` values are hashed with bcrypt before database storage.
+Existing bcrypt hashes are also accepted and preserved. The configured admin
+account and password are synchronized on every server startup, including restarts.
+
 Now you can check the:
 
 -   Apollo Sandbox -> [http://localhost:3001/grapqhl](http://localhost:3001/graphql)
